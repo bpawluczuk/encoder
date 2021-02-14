@@ -23,11 +23,11 @@ session = InteractiveSession(config=config)
 test_dir = "/Users/bpawluczuk/Sites/python/VAE/data/test/clooney/"
 train_dir = "/Users/bpawluczuk/Sites/python/VAE/data/train/clooney/"
 
-train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\cloony\\"
-test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\\cloony\\"
-
-train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\craig\\"
-test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\\craig\\"
+# train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\cloony\\"
+# test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\\cloony\\"
+#
+# train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\craig\\"
+# test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\\craig\\"
 
 height = 128
 width = 128
@@ -52,34 +52,32 @@ def imagetensor(imagedir, width, height):
 x_train = imagetensor(train_dir, width, height)
 x_test = x_train
 
-# x_test = imagetensor(test_dir, width, height)
-
 # ********************************************************************
 
-input_img = Input(shape=(width, height, 1))
+input_img = Input(shape=(width, height, 1), name='encoder_input')
 
 # encoder
-# input = 28 x 28 x 1 (wide and thin)
-conv1 = Conv2D(128, (3, 3), activation='relu', padding='same')(input_img)  # 28 x 28 x 32
-pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)  # 14 x 14 x 32
-conv2 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool1)  # 14 x 14 x 64
-pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)  # 7 x 7 x 64
-encoder_conv3 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool2)  # 7 x 7 x 128 (small and thick)
+x = Conv2D(128, (3, 3), activation='relu', padding='same')(input_img)
+x = MaxPooling2D(pool_size=(2, 2))(x)
+x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
+x = MaxPooling2D(pool_size=(2, 2))(x)
+encoder = Conv2D(64, (3, 3), name='encoder_output', activation='relu', padding='same')(x)
 
 # decoder
-conv4 = Conv2D(64, (3, 3), activation='relu', padding='same')(encoder_conv3)  # 7 x 7 x 128
-up1 = UpSampling2D((2, 2))(conv4)  # 14 x 14 x 128
-conv5 = Conv2D(256, (3, 3), activation='relu', padding='same')(up1)  # 14 x 14 x 64
-up2 = UpSampling2D((2, 2))(conv5)  # 28 x 28 x 64
-decoded = Conv2D(1, (3, 3), activation='sigmoid', padding='same')(up2)  # 28 x 28 x 1
+x = Conv2D(64, (3, 3), name='decoder_input', activation='relu', padding='same')(encoder)
+x = UpSampling2D((2, 2))(x)
+x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
+x = UpSampling2D((2, 2))(x)
+decoder = Conv2D(1, (3, 3), name='decoder_output', activation='sigmoid', padding='same')(x)
 
-autoencoder = Model(input_img, decoded)
+autoencoder = Model(input_img, decoder)
 autoencoder.compile(loss='mean_squared_error', optimizer=optimizers.RMSprop())
+autoencoder.summary()
 
 # ********************************************************************
 
 autoencoder.fit(x_train, x_train,
-                epochs=300,
+                epochs=3,
                 batch_size=4,
                 shuffle=True,
                 validation_data=(x_test, x_test),
