@@ -1,12 +1,14 @@
 import os, shutil
 import numpy as np
 import matplotlib.pyplot as plt
-import keras
-from tensorflow.keras import layers
-from tensorflow.keras import models
-from tensorflow.keras import optimizers
-from keras.callbacks import TensorBoard
 from PIL import Image
+import keras
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import UpSampling2D
+from tensorflow.keras.models import Model
+from tensorflow.keras import optimizers
+from tensorflow.keras.callbacks import TensorBoard
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -23,8 +25,8 @@ train_dir = "/Users/bpawluczuk/Sites/python/VAE/data/train/clooney/"
 train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\cloony\\"
 test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\cloony\\"
 
-height = 256
-width = 256
+height = 128
+width = 128
 
 
 # ********************************************************************
@@ -55,20 +57,20 @@ input_img = keras.Input(shape=(width, height, 1))
 
 # encoder
 # input = 28 x 28 x 1 (wide and thin)
-conv1 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(input_img)  # 28 x 28 x 32
-pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)  # 14 x 14 x 32
-conv2 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(pool1)  # 14 x 14 x 64
-pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2)  # 7 x 7 x 64
-conv3 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(pool2)  # 7 x 7 x 128 (small and thick)
+conv1 = Conv2D(128, (3, 3), activation='relu', padding='same')(input_img)  # 28 x 28 x 32
+pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)  # 14 x 14 x 32
+conv2 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool1)  # 14 x 14 x 64
+pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)  # 7 x 7 x 64
+conv3 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool2)  # 7 x 7 x 128 (small and thick)
 
 # decoder
-conv4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(conv3)  # 7 x 7 x 128
-up1 = layers.UpSampling2D((2, 2))(conv4)  # 14 x 14 x 128
-conv5 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(up1)  # 14 x 14 x 64
-up2 = layers.UpSampling2D((2, 2))(conv5)  # 28 x 28 x 64
-decoded = layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same')(up2)  # 28 x 28 x 1
+conv4 = Conv2D(512, (3, 3), activation='relu', padding='same')(conv3)  # 7 x 7 x 128
+up1 = UpSampling2D((2, 2))(conv4)  # 14 x 14 x 128
+conv5 = Conv2D(256, (3, 3), activation='relu', padding='same')(up1)  # 14 x 14 x 64
+up2 = UpSampling2D((2, 2))(conv5)  # 28 x 28 x 64
+decoded = Conv2D(1, (3, 3), activation='sigmoid', padding='same')(up2)  # 28 x 28 x 1
 
-autoencoder = keras.Model(input_img, decoded)
+autoencoder = Model(input_img, decoded)
 autoencoder.compile(loss='mean_squared_error', optimizer=optimizers.RMSprop())
 
 # ********************************************************************
