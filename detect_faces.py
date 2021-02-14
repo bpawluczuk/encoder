@@ -10,6 +10,10 @@ source_dir = "C:\\Sites\\python\\encoder\\dataset\\grab\\cloony\\images\\"
 direct_dir = "C:\\Sites\\python\\encoder\\dataset\\grab\\cloony\\faces\\"
 train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\cloony"
 
+source_dir = "C:\\Sites\\python\\encoder\\dataset\\grab\\craig\\images\\"
+direct_dir = "C:\\Sites\\python\\encoder\\dataset\\grab\\craig\\faces\\"
+train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\craig"
+
 inc = 0
 for file in os.listdir(source_dir):
     inc = inc + 1
@@ -21,9 +25,6 @@ for file in os.listdir(source_dir):
 
     faces = face_cascade.detectMultiScale(
         gray,
-        # scaleFactor=1.3,
-        # minNeighbors=3,
-        # minSize=(30, 30)
     )
 
     print("[INFO] Found {0} Faces.".format(len(faces)))
