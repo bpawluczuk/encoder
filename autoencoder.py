@@ -1,4 +1,4 @@
-import os, shutil
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -7,6 +7,8 @@ from tensorflow.keras import Input
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import UpSampling2D
+from tensorflow.keras.layers import LeakyReLU
+from tensorflow.keras.activations import sigmoid
 from tensorflow.keras.models import Model
 from tensorflow.keras import optimizers
 from tensorflow.keras.callbacks import TensorBoard
@@ -31,6 +33,7 @@ train_dir = "/Users/bpawluczuk/Sites/python/VAE/data/train/clooney/"
 
 height = 128
 width = 128
+chanels = 1
 
 
 # ********************************************************************
@@ -54,25 +57,50 @@ x_test = x_train
 
 # ********************************************************************
 
-input_img = Input(shape=(width, height, 1), name='encoder_input')
+input_img = Input(shape=(width, height, chanels), name='encoder_input')
 
 # encoder
-x = Conv2D(128, (3, 3), activation='relu', padding='same')(input_img)
+x = Conv2D(128, (3, 3), padding='same')(input_img)
+x = LeakyReLU()(x)
 x = MaxPooling2D(pool_size=(2, 2))(x)
-x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
+x = Conv2D(256, (3, 3), padding='same')(x)
+x = LeakyReLU()(x)
 x = MaxPooling2D(pool_size=(2, 2))(x)
-encoder = Conv2D(64, (3, 3), name='encoder_output', activation='relu', padding='same')(x)
+x = Conv2D(64, (3, 3), name='encoder_output', padding='same')(x)
+x = LeakyReLU()(x)
+encoder_output = x
+
+encoder = Model(input_img, encoder_output, name="encoder_model")
+encoder.summary()
+
 
 # decoder
-x = Conv2D(64, (3, 3), name='decoder_input', activation='relu', padding='same')(encoder)
-x = UpSampling2D((2, 2))(x)
-x = Conv2D(256, (3, 3), activation='relu', padding='same')(x)
-x = UpSampling2D((2, 2))(x)
-decoder = Conv2D(1, (3, 3), name='decoder_output', activation='sigmoid', padding='same')(x)
+decoder_input = Input(shape=(32, 32, 64), name="decoder_input")
 
-autoencoder = Model(input_img, decoder)
-autoencoder.compile(loss='mean_squared_error', optimizer=optimizers.RMSprop())
+x = Conv2D(64, (3, 3), padding='same')(decoder_input)
+x = LeakyReLU()(x)
+x = UpSampling2D((2, 2))(x)
+x = Conv2D(256, (3, 3), padding='same')(x)
+x = LeakyReLU()(x)
+x = UpSampling2D((2, 2))(x)
+x = Conv2D(1, (3, 3), name='decoder_output', padding='same')(x)
+x = sigmoid(x)
+decoder_output = x
+
+decoder = Model(decoder_input, decoder_output, name="decoder_model")
+decoder.summary()
+
+# ********************************************************************
+
+autoencoder_input = Input(shape=(width, height, chanels), name="autoencoder_input")
+autoencoder_encoder_output = encoder(autoencoder_input)
+
+autoencoder_decoder_output = decoder(autoencoder_encoder_output)
+autoencoder = Model(autoencoder_input, autoencoder_decoder_output, name="autoencoder")
+
 autoencoder.summary()
+
+autoencoder.compile(loss='mean_squared_error', optimizer=optimizers.RMSprop())
 
 # ********************************************************************
 
@@ -83,9 +111,9 @@ autoencoder.fit(x_train, x_train,
                 validation_data=(x_test, x_test),
                 callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
 
-# autoencoder.save('encoder_cloony_1.h5')
-# autoencoder.save('encoder_craig_1.h5')
-# autoencoder = load_model('encoder_1.h5')
+encoder.save('models/encoder_A.h5')
+decoder.save('models/decoder_A.h5')
+decoder.save('models/autoencoder_A.h5')
 
 decoded_imgs = autoencoder.predict(x_test)
 
