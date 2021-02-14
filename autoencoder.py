@@ -22,14 +22,14 @@ session = InteractiveSession(config=config)
 
 # ********************************************************************
 
-test_dir = "/Users/bpawluczuk/Sites/python/VAE/data/test/clooney/"
-train_dir = "/Users/bpawluczuk/Sites/python/VAE/data/train/clooney/"
+# test_dir = "/Users/bpawluczuk/Sites/python/VAE/data/test/clooney/"
+# train_dir = "/Users/bpawluczuk/Sites/python/VAE/data/train/clooney/"
 
 # train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\cloony\\"
 # test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\\cloony\\"
-#
-# train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\craig\\"
-# test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\\craig\\"
+
+train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\craig\\"
+test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\\craig\\"
 
 height = 128
 width = 128
@@ -105,15 +105,15 @@ autoencoder.compile(loss='mean_squared_error', optimizer=optimizers.RMSprop())
 # ********************************************************************
 
 autoencoder.fit(x_train, x_train,
-                epochs=3,
+                epochs=200,
                 batch_size=4,
                 shuffle=True,
                 validation_data=(x_test, x_test),
                 callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
 
-encoder.save('models/encoder_A.h5')
-decoder.save('models/decoder_A.h5')
-decoder.save('models/autoencoder_A.h5')
+encoder.save('models/encoder_B.h5')
+decoder.save('models/decoder_B.h5')
+decoder.save('models/autoencoder_B.h5')
 
 decoded_imgs = autoencoder.predict(x_test)
 
