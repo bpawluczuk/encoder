@@ -19,10 +19,12 @@ session = InteractiveSession(config=config)
 
 test_dir = "/Users/bpawluczuk/Sites/python/VAE/data/test/clooney/"
 train_dir = "/Users/bpawluczuk/Sites/python/VAE/data/train/clooney/"
-validate_dir = "/Users/bpawluczuk/Sites/python/VAE/data/validate/clooney/"
 
-height = 128
-width = 128
+train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\cloony\\"
+test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\cloony\\"
+
+height = 256
+width = 256
 
 
 # ********************************************************************
@@ -72,15 +74,15 @@ autoencoder.compile(loss='mean_squared_error', optimizer=optimizers.RMSprop())
 # ********************************************************************
 
 autoencoder.fit(x_train, x_train,
-                epochs=30,
-                batch_size=3,
+                epochs=300,
+                batch_size=20,
                 shuffle=True,
                 validation_data=(x_test, x_test),
                 callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
 
-# autoencoder.save('vae_1.h5')
+autoencoder.save('encoder_1.h5')
 
-# autoencoder = load_model('vae_1.h5')
+# autoencoder = load_model('encoder_1.h5')
 
 decoded_imgs = autoencoder.predict(x_test)
 
