@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
-source_dir = "C:\Sites\python\VAE\dataset\cloony\\"
-direct_dir = "C:\Sites\python\VAE\dataset\cloony_faces\\"
+source_dir = "C:\Sites\python\encoder\dataset\grab\cloony\images\\"
+direct_dir = "C:\Sites\python\encoder\dataset\grab\cloony\faces\\"
 
 for file in os.listdir(source_dir):
     image = cv2.imread(source_dir + file)
