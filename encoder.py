@@ -23,15 +23,17 @@ session = InteractiveSession(config=config)
 test_dir = "/Users/bpawluczuk/Sites/python/VAE/data/test/clooney/"
 train_dir = "/Users/bpawluczuk/Sites/python/VAE/data/train/clooney/"
 
-train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\cloony\\"
-test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\cloony\\"
+train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\cloony\\"
+test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\\cloony\\"
+
+train_dir = "C:\\Sites\\python\\encoder\\dataset\\train\\craig\\"
+test_dir = "C:\\Sites\\python\\encoder\\dataset\\test\\craig\\"
 
 height = 128
 width = 128
 
 
 # ********************************************************************
-
 
 def imagetensor(imagedir, width, height):
     for i, im in enumerate(os.listdir(imagedir)):
@@ -77,14 +79,14 @@ autoencoder.compile(loss='mean_squared_error', optimizer=optimizers.RMSprop())
 # ********************************************************************
 
 autoencoder.fit(x_train, x_train,
-                epochs=30,
+                epochs=300,
                 batch_size=4,
                 shuffle=True,
                 validation_data=(x_test, x_test),
                 callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
 
-autoencoder.save('encoder_1.h5')
-
+# autoencoder.save('encoder_cloony_1.h5')
+# autoencoder.save('encoder_craig_1.h5')
 # autoencoder = load_model('encoder_1.h5')
 
 decoded_imgs = autoencoder.predict(x_test)

@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 from bing_image_downloader import downloader
 
 downloader.download(
-    "cloony",
-    limit=10000,
+    "bond craig",
+    limit=1000,
     output_dir='dataset',
     adult_filter_off=True,
     force_replace=False,
