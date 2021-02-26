@@ -25,15 +25,8 @@ session = InteractiveSession(config=config)
 # ********************************************************************
 
 
-train_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/deepfake/bruce/"
-
-bruce_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/deepfake/bruce/"
-jason_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/deepfake/jason/"
-jasonfake_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/deepfake/jasonfake/"
-cloony_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/deepfake/cloony/"
-
-train_cloony = "/Users/bpawluczuk/Sites/python/encoder/dataset/train/cloony/"
-train_craig = "/Users/bpawluczuk/Sites/python/encoder/dataset/train/craig/"
+train_bruce = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/bruce/"
+train_jenifer = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/jenifer/"
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
@@ -106,32 +99,29 @@ autoencoder_B.compile(optimizer=optimizers.RMSprop(), loss='mean_squared_error')
 
 # ********************************************************************
 
-# x_train_1 = imagetensor(train_cloony, width, height)
-# x_test_1 = x_train_1
+x_train_1 = imagetensor(train_bruce, width, height)
+x_test_1 = x_train_1
 
-x_train_1 = imagetensor(jasonfake_dir, width, height)
-x_test_1 = imagetensor(jasonfake_dir, width, height)
-
-autoencoder_B.fit(x_train_1, x_train_1,
+autoencoder_A.fit(x_train_1, x_train_1,
                   epochs=10,
                   batch_size=4,
                   shuffle=True,
                   validation_data=(x_test_1, x_test_1),
                   callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
 
-# x_train_2 = imagetensor(train_craig, width, height)
-# x_test_2 = x_train_2
-#
-# autoencoder_B.fit(x_train_2, x_train_2,
-#                   epochs=20,
-#                   batch_size=4,
-#                   shuffle=True,
-#                   validation_data=(x_test_2, x_test_2),
-#                   callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
+x_train_2 = imagetensor(train_jenifer, width, height)
+x_test_2 = x_train_2
 
-# encoder.save_weights("models/encoder.h5")
-# decoder_A.save_weights("models/decoder_A.h5")
-# decoder_B.save_weights("models/decoder_B.h5")
+autoencoder_B.fit(x_train_2, x_train_2,
+                  epochs=20,
+                  batch_size=4,
+                  shuffle=True,
+                  validation_data=(x_test_2, x_test_2),
+                  callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
+
+encoder.save_weights("models/encoder.h5")
+decoder_A.save_weights("models/decoder_A.h5")
+decoder_B.save_weights("models/decoder_B.h5")
 
 # try:
 #     encoder.load_weights("models/encoder.h5")
@@ -146,14 +136,12 @@ autoencoder_B.fit(x_train_1, x_train_1,
 # decoded_jason = autoencoder_B.predict(x_test_2)
 # cv2.imshow("jason", decoded_jason[0])
 
-x_train_3 = imagetensor(jason_dir, width, height)
-x_test_3 = x_train_3
 
-decoded_result = autoencoder_B.predict(x_test_3)
-cv2.imshow("result", decoded_result[0])
+# decoded_result = autoencoder_B.predict(x_test_3)
+# cv2.imshow("result", decoded_result[0])
 
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
 
 # n = 5
 # plt.figure(figsize=(4, 4))

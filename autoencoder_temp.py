@@ -14,6 +14,7 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.activations import sigmoid
 from tensorflow.keras.layers import Reshape
+from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.models import Model
 from tensorflow.keras import optimizers
 from tensorflow.keras.optimizers import Adam
@@ -75,6 +76,7 @@ x_test = x_train
 def conv(filters):
     def block(x):
         x = Conv2D(filters, kernel_size=5, strides=2, padding='same')(x)
+        x = BatchNormalization()(x)
         x = LeakyReLU(0.1)(x)
         return x
 
