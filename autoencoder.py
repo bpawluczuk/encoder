@@ -24,9 +24,8 @@ session = InteractiveSession(config=config)
 
 # ********************************************************************
 
-
-train_bruce = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/bruce/"
-train_jenifer = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/jenifer/"
+train_bruce = "C:\\Sites\\python\\encoder\\dataset\\frames\\bruce\\"
+train_jenifer = "C:\\Sites\\python\\encoder\\dataset\\frames\\bruce\\"
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
@@ -99,40 +98,44 @@ autoencoder_B.compile(optimizer=optimizers.RMSprop(), loss='mean_squared_error')
 
 # ********************************************************************
 
-x_train_1 = imagetensor(train_bruce, width, height)
-x_test_1 = x_train_1
+# x_train_1 = imagetensor(train_bruce, width, height)
+# x_test_1 = x_train_1
 
-autoencoder_A.fit(x_train_1, x_train_1,
-                  epochs=10,
-                  batch_size=4,
-                  shuffle=True,
-                  validation_data=(x_test_1, x_test_1),
-                  callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
+# autoencoder_A.fit(x_train_1, x_train_1,
+#                   epochs=10,
+#                   batch_size=4,
+#                   shuffle=True,
+#                   validation_data=(x_test_1, x_test_1),
+#                   callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
 
-x_train_2 = imagetensor(train_jenifer, width, height)
-x_test_2 = x_train_2
+# x_train_2 = imagetensor(train_jenifer, width, height)
+# x_test_2 = x_train_2
 
-autoencoder_B.fit(x_train_2, x_train_2,
-                  epochs=20,
-                  batch_size=4,
-                  shuffle=True,
-                  validation_data=(x_test_2, x_test_2),
-                  callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
+# autoencoder_B.fit(x_train_2, x_train_2,
+#                   epochs=10,
+#                   batch_size=4,
+#                   shuffle=True,
+#                   validation_data=(x_test_2, x_test_2),
+#                   callbacks=[TensorBoard(log_dir='/tmp/autoencoder')])
 
-encoder.save_weights("models/encoder.h5")
-decoder_A.save_weights("models/decoder_A.h5")
-decoder_B.save_weights("models/decoder_B.h5")
+# encoder.save_weights("models/encoder.h5")
+# decoder_A.save_weights("models/decoder_A.h5")
+# decoder_B.save_weights("models/decoder_B.h5")
 
-# try:
-#     encoder.load_weights("models/encoder.h5")
-#     decoder_A.load_weights("models/decoder_A.h5")
-#     decoder_B.load_weights("models/decoder_B.h5")
-# except:
-#     pass
+try:
+    encoder.load_weights("models/encoder.h5")
+    decoder_A.load_weights("models/decoder_A.h5")
+    decoder_B.load_weights("models/decoder_B.h5")
+except:
+    pass
 
-# decoded_bruce = autoencoder_A.predict(x_test_1)
-# cv2.imshow("bruce", decoded_bruce[0])
-#
+autoencoder = Model(x, decoder_B(encoder(x)))
+test_bruce = "C:\\Sites\\python\\encoder\\dataset\\test\\jenifer\\"
+x_test = imagetensor(test_bruce, width, height)
+
+decoded_bruce = autoencoder.predict(x_test)
+cv2.imshow("bruce", decoded_bruce[0])
+
 # decoded_jason = autoencoder_B.predict(x_test_2)
 # cv2.imshow("jason", decoded_jason[0])
 
@@ -143,23 +146,23 @@ decoder_B.save_weights("models/decoder_B.h5")
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()
 
-# n = 5
-# plt.figure(figsize=(4, 4))
-# for i in range(1, n + 1):
-#     # Display original
-#     ax = plt.subplot(2, n, i)
-#     plt.imshow(x_test[i].reshape(width, height))
-#     plt.gray()
-#     ax.get_xaxis().set_visible(False)
-#     ax.get_yaxis().set_visible(False)
-#
-#     # Display reconstruction
-#     ax = plt.subplot(2, n, i + n)
-#     plt.imshow(decoded_imgs[i].reshape(width, height))
-#     plt.gray()
-#     ax.get_xaxis().set_visible(False)
-#     ax.get_yaxis().set_visible(False)
-# plt.show()
+n = 5
+plt.figure(figsize=(4, 4))
+for i in range(1, n + 1):
+    # Display original
+    ax = plt.subplot(2, n, i)
+    plt.imshow(x_test[i].reshape(width, height))
+    plt.gray()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+
+    # Display reconstruction
+    ax = plt.subplot(2, n, i + n)
+    plt.imshow(decoded_bruce[i].reshape(width, height))
+    plt.gray()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+plt.show()
 
 # decoded_img = autoencoder.predict(x_test)
 # plt.figure()
