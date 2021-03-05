@@ -9,7 +9,7 @@ from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.layers import LeakyReLU
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.activations import sigmoid
 from tensorflow.keras.layers import Reshape
@@ -91,8 +91,9 @@ optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 def conv(filters):
     def block(x):
         x = Conv2D(filters, kernel_size=5, strides=2, padding='same')(x)
-        x = BatchNormalization()(x)
+#        x = BatchNormalization()(x)
         x = LeakyReLU(0.1)(x)
+#        x = Dropout(0.4)(x)
         return x
 
     return block
@@ -155,15 +156,15 @@ autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error')
 
 autoencoder_A.summary()
 
-images_A = get_image_paths("data/bruce")
-images_B = get_image_paths("data/jenifer")
+images_A = get_image_paths("dataset/frames/bruce")
+images_B = get_image_paths("dataset/frames/matt")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 for epoch in range(100000):
-    batch_size = 32
+    batch_size = 48
     warped_A, target_A = get_training_data(images_A, batch_size)
     warped_B, target_B = get_training_data(images_B, batch_size)
 

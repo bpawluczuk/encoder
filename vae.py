@@ -9,13 +9,20 @@ from tensorflow import keras
 from tensorflow.keras.layers import *
 
 from tensorflow import keras
-from keras import backend as K
-from keras.models import Model
-from keras.metrics import binary_crossentropy
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.metrics import binary_crossentropy
 
 from utils import get_image_paths, load_images, stack_images
 from training_data import get_training_data
 from pixel_shuffler import PixelShuffler
+
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
+
+config = ConfigProto()
+config.gpu_options.allow_growth = True
+session = InteractiveSession(config=config)
 
 # ********************************************************************
 
@@ -28,9 +35,6 @@ ENCODER_DIM = 1024
 
 # ********************************************************************
 
-
-# ********************************************************************
-
 class VAE:
     _image_shape = (64, 64, 3)
     _latent_dim = 2
@@ -38,14 +42,24 @@ class VAE:
     def _get_z(self):
         input_img = Input(shape=self._image_shape)
 
-        x = Conv2D(32, 3, padding='same', activation='relu')(input_img)
-        x = Conv2D(64, 3, padding='same', activation='relu', strides=(2, 2))(x)
-        x = Conv2D(64, 3, padding='same', activation='relu')(x)
-        x = Conv2D(64, 3, padding='same', activation='relu')(x)
+        x = Conv2D(32, 3, padding='same')(input_img)
+        x = LeakyReLU(0.1)(x)
+
+        x = Conv2D(64, 3, padding='same', strides=(2, 2))(x)
+        x = LeakyReLU(0.1)(x)
+
+        x = Conv2D(64, 3, padding='same')(x)
+        x = LeakyReLU(0.1)(x)
+
+        x = Conv2D(64, 3, padding='same')(x)
+        x = BatchNormalization()(x)
+        x = LeakyReLU(0.1)(x)
+        x = Dropout(0.4)(x)
 
         self._shape_before_flattening = K.int_shape(x)
 
         x = Flatten()(x)
+        print(K.int_shape(x))
         x = Dense(32, activation='relu')(x)
 
         self.z_mean = Dense(self._latent_dim)(x)
@@ -73,7 +87,9 @@ class VAE:
         x = Reshape(self._shape_before_flattening[1:])(x)
 
         # Apply reverse operation to the initial stack of Conv2D: a Conv2DTranspose
-        x = Conv2DTranspose(32, 3, padding='same', activation='relu', strides=(2, 2))(x)
+        x = Conv2DTranspose(32, 3, padding='same', strides=(2, 2))(x)
+        x = LeakyReLU(0.1)(x)
+
         # We end up with a feature map of the same size as the original input
         x = Conv2D(self._image_shape[-1], 3, padding='same', activation='sigmoid')(x)
 
@@ -112,11 +128,15 @@ disable_eager_execution()
 
 batch_size = 32
 images_A = get_image_paths("data/bruce")
+images_B = get_image_paths("dataset/frames/matt")
 images_A = load_images(images_A) / 255.0
-warped_A, target_A = get_training_data(images_A, batch_size)
+images_B = load_images(images_B) / 255.0
 
 vae = VAE()._get_vae()
+
 for epoch in range(100000):
+    batch_size = 32
+    warped_A, target_A = get_training_data(images_A, batch_size)
     loss_A = vae.train_on_batch(warped_A, target_A)
     print(epoch, loss_A)
 
@@ -146,4 +166,3 @@ for epoch in range(100000):
     key = cv2.waitKey(1)
 
 # ********************************************************************
-
