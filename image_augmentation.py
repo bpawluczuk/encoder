@@ -40,3 +40,28 @@ def random_warp(image):
     target_image = cv2.warpAffine(image, mat, (64, 64))
 
     return warped_image, target_image
+
+
+# get pair of random warped images from aligned face image
+def random_warp2(image, coverage=80, scale=5, zoom=2):
+    assert image.shape == (256, 256, 3)
+    range_ = numpy.linspace(128 - coverage // 2, 128 + coverage // 2, 5)
+
+    mapx = numpy.broadcast_to(range_, (5, 5))
+    mapy = mapx.T
+
+    mapx = mapx + numpy.random.normal(size=(5, 5), scale=scale)
+    mapy = mapy + numpy.random.normal(size=(5, 5), scale=scale)
+
+    interp_mapx = cv2.resize(mapx, (80 * zoom, 80 * zoom))[8 * zoom:72 * zoom, 8 * zoom:72 * zoom].astype('float32')
+    interp_mapy = cv2.resize(mapy, (80 * zoom, 80 * zoom))[8 * zoom:72 * zoom, 8 * zoom:72 * zoom].astype('float32')
+
+    warped_image = cv2.remap(image, interp_mapx, interp_mapy, cv2.INTER_LINEAR)
+
+    src_points = numpy.stack([mapx.ravel(), mapy.ravel()], axis=-1)
+    dst_points = numpy.mgrid[0:65 * zoom:16 * zoom, 0:65 * zoom:16 * zoom].T.reshape(-1, 2)
+    mat = umeyama(src_points, dst_points, True)[0:2]
+
+    target_image = cv2.warpAffine(image, mat, (64 * zoom, 64 * zoom))
+
+    return warped_image, target_image
