@@ -100,6 +100,13 @@ autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error')
 
 autoencoder_A.summary()
 
+try:
+    encoder.load_weights("models/64/encoder.h5")
+    decoder_A.load_weights("models/64/decoder_A.h5")
+    decoder_B.load_weights("models/64/decoder_B.h5")
+except:
+    print("models does not exist")
+
 images_A = get_image_paths("data/bruce")
 images_B = get_image_paths("data/matt")
 images_A = load_images(images_A) / 255.0

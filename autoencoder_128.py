@@ -1,4 +1,3 @@
-
 import numpy
 import cv2
 
@@ -26,14 +25,15 @@ ENCODER_DIM = 1024
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
+
 # ********************************************************************
 
 def conv(filters):
     def block(x):
         x = Conv2D(filters, kernel_size=5, strides=2, padding='same')(x)
-#        x = BatchNormalization()(x)
+        #        x = BatchNormalization()(x)
         x = LeakyReLU(0.1)(x)
-#        x = Dropout(0.4)(x)
+        #        x = Dropout(0.4)(x)
         return x
 
     return block
@@ -73,6 +73,7 @@ def Decoder():
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
     return Model(input_, x)
 
+
 # ********************************************************************
 
 def save_model_weights():
@@ -96,6 +97,13 @@ autoencoder_A.compile(optimizer=optimizer, loss='mean_absolute_error')
 autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error')
 
 autoencoder_A.summary()
+
+try:
+    encoder.load_weights("models/128/encoder.h5")
+    decoder_A.load_weights("models/128/decoder_A.h5")
+    decoder_B.load_weights("models/128/decoder_B.h5")
+except:
+    print("models does not exist")
 
 images_A = get_image_paths("data/bruce")
 images_B = get_image_paths("data/matt")
