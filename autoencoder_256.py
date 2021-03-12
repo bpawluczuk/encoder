@@ -20,7 +20,7 @@ session = InteractiveSession(config=config)
 
 # ********************************************************************
 
-IMAGE_SHAPE = (256, 256, 3)
+IMAGE_SHAPE = (128, 128, 3)
 ENCODER_DIM = 1024
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
@@ -66,7 +66,6 @@ def Encoder():
 def Decoder():
     input_ = Input(shape=(16, 16, 512))
     x = input_
-    x = upscale(1024)(x)
     x = upscale(512)(x)
     x = upscale(256)(x)
     x = upscale(128)(x)
@@ -118,8 +117,8 @@ try:
 except:
     print("load images failed")
 
-for epoch in range(10):
-    batch_size = 32
+for epoch in range(100000):
+    batch_size = 16
     warped_A, target_A = get_training_data(images_A, batch_size)
     warped_B, target_B = get_training_data(images_B, batch_size)
 

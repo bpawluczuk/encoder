@@ -12,7 +12,7 @@ def load_images(image_paths, convert=None):
     if convert:
         iter_all_images = (convert(img) for img in iter_all_images)
     for i, image in enumerate(iter_all_images):
-        image = getFace(image, 256)
+        image = getFace(image, 128)
         if i == 0:
             all_images = numpy.empty((len(image_paths),) + image.shape, dtype=image.dtype)
         all_images[i] = image

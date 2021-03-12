@@ -13,7 +13,8 @@ def getFace(source_image, size):
         w = faceRect.right() - x
         h = faceRect.bottom() - y
 
-        sub_face = source_image[x:x+w, y:y+h]
+        offset = 40
+        sub_face = source_image[x - offset:x + w + offset, y - offset:y + h + offset]
 
         sub_face = cv2.resize(sub_face, (int(size), int(size)))
     return sub_face

@@ -105,8 +105,8 @@ try:
 except:
     print("models does not exist")
 
-images_A = get_image_paths("data/bruce")
-images_B = get_image_paths("data/matt")
+images_A = get_image_paths("dataset/frames/bruce_face_mask")
+images_B = get_image_paths("dataset/frames/matt_face_mask")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
