@@ -103,39 +103,39 @@ images_A = get_image_paths("data/harrison")
 images_B = get_image_paths("data/ryan")
 
 
-def convert_one_image(autoencoder, image):
-    assert image.shape == (512, 512, 3)
+def convert_one_image(autoencoder, source_image):
+    assert source_image.shape == (512, 512, 3)
     crop = slice(132, 388)
-    face = image[crop, crop]
+    source_image_face = source_image[crop, crop]
 
-    cv2.imshow("one", image)
-    cv2.imshow("two", face)
+    cv2.imshow("source_image", source_image)
+    cv2.imshow("source_image_face", source_image_face)
 
-    output_file = "output/face.jpg"
-    cv2.imwrite(str(output_file), face)
+    output_file = "seamless/image.jpg"
+    cv2.imwrite(str(output_file), image)
 
-    face = cv2.resize(face, (128, 128))
-    face = numpy.expand_dims(face, 0)
+    source_image_face = cv2.resize(source_image_face, (128, 128))
+    source_image_face = numpy.expand_dims(source_image_face, 0)
 
-    new_face = autoencoder.predict(face / 255.0)[0]
-    new_face = numpy.clip(new_face * 255, 0, 255).astype(image.dtype)
-    new_face = cv2.resize(new_face, (256, 256))
-    new_image = image.copy()
+    predict_face = autoencoder.predict(source_image_face / 255.0)[0]
+    predict_face = numpy.clip(predict_face * 255, 0, 255).astype(image.dtype)
+    predict_face = cv2.resize(predict_face, (256, 256))
+    destination_image = source_image.copy()
 
-    cv2.imshow("four", new_face)
+    cv2.imshow("predict_face", predict_face)
 
-    new_image[crop, crop] = new_face
+    destination_image[crop, crop] = predict_face
+    output_file = "seamless/destination_image.jpg"
+    cv2.imwrite(str(output_file), destination_image)
+    cv2.imshow("destination_image", destination_image)
 
-    # ret, thresh = cv2.threshold(cv2.cvtColor(new_image, cv2.COLOR_BGR2GRAY), 220, 255, cv2.THRESH_BINARY)
-    # new_image[thresh == 255] = 255
+    seamless_destination_image = seamless_images("seamless/destination_image.jpg", "seamless/image.jpg")
+    output_file = "output/seamless_new_image.jpg"
+    cv2.imwrite(str(output_file), seamless_destination_image)
+    cv2.imshow("seamless_destination_image", seamless_destination_image)
 
-    cv2.imshow("five", new_image)
+    return seamless_destination_image
 
-    new_image = seamless_images("seamless/new_image.jpg", "seamless/image.jpg")
-    output_file = "output/new_image.jpg"
-    cv2.imwrite(str(output_file), new_image)
-
-    return new_image
 
 output_dir = Path('output')
 output_dir.mkdir(parents=True, exist_ok=True)
@@ -145,6 +145,6 @@ for fn in images_A:
     new_image = convert_one_image(autoencoder_B, image)
     output_file = output_dir / Path(fn).name
     cv2.imwrite(str(output_file), new_image)
-    # cv2.imshow("", new_image)
+
 
 key = cv2.waitKey(0)
