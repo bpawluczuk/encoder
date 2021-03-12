@@ -15,6 +15,11 @@ def getFace(source_image, size):
 
         offset = 40
         sub_face = source_image[x - offset:x + w + offset, y - offset:y + h + offset]
-
         sub_face = cv2.resize(sub_face, (int(size), int(size)))
+
+    if  sub_face.any():
+        ss="sss"
+    else:
+       print("dupa")
+
     return sub_face
