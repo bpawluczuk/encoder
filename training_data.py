@@ -2,6 +2,7 @@ import numpy
 from image_augmentation import random_transform
 from image_augmentation import random_warp
 import cv2
+from crop_face import getFace
 
 random_transform_args = {
     'rotation_range': 10,
@@ -14,9 +15,11 @@ random_transform_args = {
 def get_training_data(images, batch_size):
     indices = numpy.random.randint(len(images), size=batch_size)
     for i, index in enumerate(indices):
+
         image = images[index]
+
         image = random_transform(image, **random_transform_args)
-        warped_img, target_img = random_warp(image, coverage=256, scale=5, zoom=2)
+        warped_img, target_img = random_warp(image, size=256, scale=5, zoom=4)
 
         cv2.imshow("warped_image", warped_img)
         cv2.imshow("target_img", target_img)
@@ -28,5 +31,5 @@ def get_training_data(images, batch_size):
         warped_images[i] = warped_img
         target_images[i] = target_img
 
-    # key = cv2.waitKey(0)
+    key = cv2.waitKey(0)
     return warped_images, target_images

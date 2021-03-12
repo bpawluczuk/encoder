@@ -96,6 +96,8 @@ try:
     encoder.load_weights("models/128/encoder.h5")
     decoder_A.load_weights("models/128/decoder_A.h5")
     decoder_B.load_weights("models/128/decoder_B.h5")
+
+    print("... load models")
 except:
     print("models does not exist")
 
@@ -107,6 +109,10 @@ def convert_one_image(autoencoder, source_image):
     assert source_image.shape == (512, 512, 3)
     crop = slice(132, 388)
     source_image_face = source_image[crop, crop]
+
+    color = (255, 0, 0)
+    source_image_rect = cv2.rectangle(source_image, (132, 132), (388, 388), color, 1)
+    cv2.imshow("source_image_rect", source_image_rect)
 
     cv2.imshow("source_image", source_image)
     cv2.imshow("source_image_face", source_image_face)
@@ -144,7 +150,6 @@ for fn in images_A:
     image = cv2.imread(fn)
     new_image = convert_one_image(autoencoder_B, image)
     output_file = output_dir / Path(fn).name
-    cv2.imwrite(str(output_file), new_image)
-
+    # cv2.imwrite(str(output_file), new_image)
 
 key = cv2.waitKey(0)

@@ -41,4 +41,7 @@ def seamless_images(source_image_path, destination_image_path):
         cv2.NORMAL_CLONE
     )
 
+    output_file = "seamless/final_destination_face_mask.jpg"
+    cv2.imwrite(str(output_file), final_destination_face_mask)
+
     return seamlesscloned_face

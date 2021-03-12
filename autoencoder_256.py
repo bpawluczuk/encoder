@@ -20,7 +20,7 @@ session = InteractiveSession(config=config)
 
 # ********************************************************************
 
-IMAGE_SHAPE = (128, 128, 3)
+IMAGE_SHAPE = (256, 256, 3)
 ENCODER_DIM = 1024
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
@@ -60,15 +60,13 @@ def Encoder():
     x = Dense(8 * 8 * 1024)(x)
     x = Reshape((8, 8, 1024))(x)
     x = upscale(512)(x)
-    # x = upscale(1024)(x)
     return Model(input_, x)
 
 
 def Decoder():
     input_ = Input(shape=(16, 16, 512))
     x = input_
-    # x = upscale(1024)(x)
-    # x = upscale(512)(x)
+    x = upscale(1024)(x)
     x = upscale(512)(x)
     x = upscale(256)(x)
     x = upscale(128)(x)
@@ -104,47 +102,53 @@ try:
     encoder.load_weights("models/128/encoder.h5")
     decoder_A.load_weights("models/128/decoder_A.h5")
     decoder_B.load_weights("models/128/decoder_B.h5")
+
+    print("... load models")
 except:
     print("models does not exist")
 
-images_A = get_image_paths("data/harrison")
-images_B = get_image_paths("data/ryan")
-images_A = load_images(images_A) / 255.0
-images_B = load_images(images_B) / 255.0
+try:
+    images_A = get_image_paths("data/harrison")
+    images_B = get_image_paths("data/ryan")
+    images_A = load_images(images_A) / 255.0
+    images_B = load_images(images_B) / 255.0
 
-images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
+    images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
+    print("... load images")
+except:
+    print("load images failed")
 
-for epoch in range(100000):
+for epoch in range(10):
     batch_size = 32
     warped_A, target_A = get_training_data(images_A, batch_size)
     warped_B, target_B = get_training_data(images_B, batch_size)
 
-    # loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
-    # loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
-    # print(epoch, loss_A, loss_B)
-    #
-    # if epoch % 100 == 0:
-    #     save_model_weights()
-    #     test_A = target_A[0:14]
-    #     test_B = target_B[0:14]
-    #
-    # figure_A = numpy.stack([
-    #     test_A,
-    #     autoencoder_A.predict(test_A),
-    #     autoencoder_B.predict(test_A),
-    # ], axis=1)
-    #
-    # figure_B = numpy.stack([
-    #     test_B,
-    #     autoencoder_B.predict(test_B),
-    #     autoencoder_A.predict(test_B),
-    # ], axis=1)
-    #
-    # figure = numpy.concatenate([figure_A, figure_B], axis=0)
-    # figure = figure.reshape((4, 7) + figure.shape[1:])
-    # figure = stack_images(figure)
-    #
-    # figure = numpy.clip(figure * 255, 0, 255).astype('uint8')
-    #
-    # cv2.imshow("", figure)
-    # key = cv2.waitKey(1)
+    loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
+    loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
+    print(epoch, loss_A, loss_B)
+
+    if epoch % 100 == 0:
+        save_model_weights()
+        test_A = target_A[0:14]
+        test_B = target_B[0:14]
+
+    figure_A = numpy.stack([
+        test_A,
+        autoencoder_A.predict(test_A),
+        autoencoder_B.predict(test_A),
+    ], axis=1)
+
+    figure_B = numpy.stack([
+        test_B,
+        autoencoder_B.predict(test_B),
+        autoencoder_A.predict(test_B),
+    ], axis=1)
+
+    figure = numpy.concatenate([figure_A, figure_B], axis=0)
+    figure = figure.reshape((4, 7) + figure.shape[1:])
+    figure = stack_images(figure)
+
+    figure = numpy.clip(figure * 255, 0, 255).astype('uint8')
+
+    cv2.imshow("", figure)
+    key = cv2.waitKey(1)
