@@ -8,12 +8,12 @@ frontal_face_detector = dlib.get_frontal_face_detector()
 frontal_face_predictor = dlib.shape_predictor("/Users/bpawluczuk/Sites/python/encoder/detect/shape_predictor_68_face_landmarks.dat")
 
 # read the source face image and convert it to grayscale
-source_image = cv2.imread("/Users/bpawluczuk/Sites/python/encoder/dataset/test/bruce.jpg")
+source_image = cv2.imread("/Users/bpawluczuk/Sites/python/encoder/data/ryan/frame132.jpg")
 source_image_grayscale = cv2.cvtColor(source_image, cv2.COLOR_BGR2GRAY)
 cv2.imshow("source_image", source_image)
 
 # read the destination face image and convert it to grayscale
-destination_image = cv2.imread("/Users/bpawluczuk/Sites/python/encoder/dataset/test/jenifer.jpg")
+destination_image = cv2.imread("/Users/bpawluczuk/Sites/python/encoder/data/harrison/frame2839.jpg")
 destination_image_grayscale = cv2.cvtColor(destination_image, cv2.COLOR_BGR2GRAY)
 cv2.imshow("destination_image", destination_image)
 
