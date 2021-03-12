@@ -101,14 +101,13 @@ try:
     encoder.load_weights("models/128/encoder.h5")
     decoder_A.load_weights("models/128/decoder_A.h5")
     decoder_B.load_weights("models/128/decoder_B.h5")
-
     print("... load models")
 except:
     print("models does not exist")
 
 try:
-    images_A = get_image_paths("data/harrison")
-    images_B = get_image_paths("data/ryan")
+    images_A = get_image_paths("dataset/frames/harrison_512")
+    images_B = get_image_paths("dataset/frames/ryan_512")
     images_A = load_images(images_A) / 255.0
     images_B = load_images(images_B) / 255.0
 
