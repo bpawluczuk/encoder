@@ -100,20 +100,26 @@ images_B = get_image_paths("data/matt")
 
 def convert_one_image(autoencoder, image):
     assert image.shape == (256, 256, 3)
-    crop = slice(88, 168)
-    face = image[88:168, 88:168]
+    crop = slice(68, 188)
+    face = image[crop, crop]
+
+    cv2.imshow("one", image)
+    cv2.imshow("two", face)
 
     face = cv2.resize(face, (128, 128))
     face = numpy.expand_dims(face, 0)
 
     new_face = autoencoder.predict(face / 255.0)[0]
     new_face = numpy.clip(new_face * 255, 0, 255).astype(image.dtype)
-    new_face = cv2.resize(new_face, (80, 80))
+    new_face = cv2.resize(new_face, (120, 120))
     new_image = image.copy()
 
     cv2.imshow("four", new_face)
 
     new_image[crop, crop] = new_face
+
+    ret, thresh = cv2.threshold(cv2.cvtColor(new_image, cv2.COLOR_BGR2GRAY), 220, 255, cv2.THRESH_BINARY)
+    new_image[thresh == 255] = 255
 
     cv2.imshow("five", new_image)
 
@@ -123,9 +129,9 @@ def convert_one_image(autoencoder, image):
 output_dir = Path('output')
 output_dir.mkdir(parents=True, exist_ok=True)
 
-for fn in images_B:
+for fn in images_A:
     image = cv2.imread(fn)
-    new_image = convert_one_image(autoencoder_A, image)
+    new_image = convert_one_image(autoencoder_B, image)
     output_file = output_dir / Path(fn).name
     cv2.imwrite(str(output_file), new_image)
     # cv2.imshow("", new_image)

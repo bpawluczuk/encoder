@@ -3,7 +3,7 @@ import cv2
 dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/"
 
 
-vidcap = cv2.VideoCapture(dir + "samuel.mp4")
+vidcap = cv2.VideoCapture(dir + "Rowan.mp4")
 vidcap.read()
 success, image = vidcap.read()
 count = 0
@@ -13,5 +13,5 @@ while success:
     print
     'Read a new frame: ', success
     if image is not None:
-        cv2.imwrite(dir+"samuel/frame%d.jpg" % count, image)  # save frame as JPEG file
+        cv2.imwrite(dir+"rowan/frame%d.jpg" % count, image)  # save frame as JPEG file
         count += 1

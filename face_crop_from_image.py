@@ -5,8 +5,8 @@ import dlib
 frontal_face_detector = dlib.get_frontal_face_detector()
 frontal_face_predictor = dlib.shape_predictor("detect/shape_predictor_68_face_landmarks.dat")
 
-source_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/matt/"
-dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/matt_face_128/"
+source_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/rowan/"
+dest_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/rowan_512/"
 
 additional_size = 0
 
@@ -28,10 +28,10 @@ def getFace(source_image, file_name, size, rect):
     x0 = x + w // 2
     y0 = y + h // 2
 
-    x11 = x0 - 64
-    y11 = y0 - 64
-    x22 = x0 + 64
-    y22 = y0 + 64
+    x11 = x0 - 256
+    y11 = y0 - 256
+    x22 = x0 + 256
+    y22 = y0 + 256
 
     sub_face = source_image[y11:y22, x11:x22]
     if source_image is not None and sub_face.any():
@@ -47,4 +47,4 @@ for file_name in os.listdir(source_dir):
     if source_image is not None and source_image.any():
         faceRects = frontal_face_detector(source_image, 0)
         for faceRect in faceRects:
-            getFace(source_image, file_name, 128, faceRect)
+            getFace(source_image, file_name, 512, faceRect)

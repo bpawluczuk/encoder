@@ -8,10 +8,13 @@ frontal_face_predictor = dlib.shape_predictor(
     "/Users/bpawluczuk/Sites/python/encoder/detect/shape_predictor_68_face_landmarks.dat")
 
 name = "matt"
-source_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/" + name + "_256/"
-dest_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/" + name + "/"
-dest_dir_canvas = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/" + name + "_canvas/"
-dest_dir_face = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/" + name + "_face/"
+# source_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/" + name + "_256/"
+# dest_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/" + name + "/"
+# dest_dir_canvas = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/" + name + "_canvas/"
+# dest_dir_face = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/" + name + "_face/"
+
+source_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/matt/"
+dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/matt_face_128/"
 
 inc = 0
 for file in os.listdir(source_dir):
