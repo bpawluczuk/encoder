@@ -69,9 +69,9 @@ def Decoder():
     x = input_
     # x = upscale(1024)(x)
     # x = upscale(512)(x)
+    x = upscale(512)(x)
     x = upscale(256)(x)
     x = upscale(128)(x)
-    x = upscale(64)(x)
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
     return Model(input_, x)
 
