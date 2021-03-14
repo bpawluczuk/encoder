@@ -3,13 +3,10 @@ import numpy as np
 import dlib
 
 
-def seamless_images(source_image_path, destination_image_path):
+def seamless_images(source_image, destination_image):
     frontal_face_detector = dlib.get_frontal_face_detector()
     frontal_face_predictor = dlib.shape_predictor("detect/shape_predictor_68_face_landmarks.dat")
 
-    source_image = cv2.imread(source_image_path)
-
-    destination_image = cv2.imread(destination_image_path)
     destination_image_grayscale = cv2.cvtColor(destination_image, cv2.COLOR_BGR2GRAY)
 
     destination_faces = frontal_face_detector(destination_image_grayscale)
@@ -40,8 +37,5 @@ def seamless_images(source_image_path, destination_image_path):
         destination_face_center_point,
         cv2.NORMAL_CLONE
     )
-
-    output_file = "seamless/final_destination_face_mask.jpg"
-    cv2.imwrite(str(output_file), final_destination_face_mask)
 
     return seamlesscloned_face

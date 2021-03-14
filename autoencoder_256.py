@@ -1,18 +1,18 @@
 import numpy
 import cv2
 
-from tensorflow.keras import Input
-from tensorflow.keras.layers import Conv2D, LeakyReLU, Dense, Dropout, Flatten, Reshape, BatchNormalization
-
 from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Input, Dense, Flatten, Reshape, BatchNormalization, Dropout, LeakyReLU
 from tensorflow.keras.optimizers import Adam
 
-from utils import get_image_paths, load_images, stack_images
-from training_data import get_training_data
 from pixel_shuffler import PixelShuffler
+from training_data import get_training_data
+from utils import get_image_paths, load_images, stack_images
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
+
+# ********************************************************************
 
 config = ConfigProto()
 config.gpu_options.allow_growth = True
@@ -105,19 +105,17 @@ try:
 except:
     print("models does not exist")
 
-try:
-    images_A = get_image_paths("dataset/frames/harrison_512")
-    images_B = get_image_paths("dataset/frames/ryan_512")
-    images_A = load_images(images_A) / 255.0
-    images_B = load_images(images_B) / 255.0
 
-    images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
-    print("... load images")
-except:
-    print("load images failed")
+images_A = get_image_paths("dataset/frames/harrison_face")
+images_B = get_image_paths("dataset/frames/ryan_face")
+images_A = load_images(images_A) / 255.0
+images_B = load_images(images_B) / 255.0
+
+images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
+
 
 for epoch in range(100000):
-    batch_size = 16
+    batch_size = 32
     warped_A, target_A = get_training_data(images_A, batch_size)
     warped_B, target_B = get_training_data(images_B, batch_size)
 

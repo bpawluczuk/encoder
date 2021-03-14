@@ -1,16 +1,16 @@
+import os
 import cv2
 import numpy
 from pathlib import Path
 
-from utils import get_image_paths
-
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Flatten, Reshape, BatchNormalization, Dropout
-from tensorflow.keras.layers import LeakyReLU
-from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Conv2D, Input, Dense, Flatten, Reshape, BatchNormalization, Dropout, LeakyReLU
 from tensorflow.keras.optimizers import Adam
+
 from pixel_shuffler import PixelShuffler
 from seamless_image import seamless_images
+from utils import get_image_paths
+from util_face import getFaceAndCoordinates
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -22,10 +22,6 @@ session = InteractiveSession(config=config)
 # ******************************************************************************
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
-
-height = 128
-width = 128
-chanels = 1
 
 IMAGE_SHAPE = (128, 128, 3)
 ENCODER_DIM = 1024
@@ -63,15 +59,12 @@ def Encoder():
     x = Dense(8 * 8 * 1024)(x)
     x = Reshape((8, 8, 1024))(x)
     x = upscale(512)(x)
-    # x = upscale(1024)(x)
     return Model(input_, x)
 
 
 def Decoder():
     input_ = Input(shape=(16, 16, 512))
     x = input_
-    # x = upscale(1024)(x)
-    # x = upscale(512)(x)
     x = upscale(512)(x)
     x = upscale(256)(x)
     x = upscale(128)(x)
@@ -101,55 +94,72 @@ try:
 except:
     print("models does not exist")
 
-images_A = get_image_paths("data/harrison")
-images_B = get_image_paths("data/ryan")
+source_dir = "dataset/frames/harrison_512/"
+dest_dir = "dataset/frames/harrison_face/"
+
+images_A = get_image_paths("data/harrison/")
+images_B = get_image_paths("data/ryan/")
+# images_A = get_image_paths("dataset/frames/harrison_512/")
+# images_B = get_image_paths("dataset/frames/ryan_512/")
 
 
 def convert_one_image(autoencoder, source_image):
     assert source_image.shape == (512, 512, 3)
-    crop = slice(132, 388)
-    source_image_face = source_image[crop, crop]
 
-    color = (255, 0, 0)
-    source_image_rect = cv2.rectangle(source_image, (132, 132), (388, 388), color, 1)
-    cv2.imshow("source_image_rect", source_image_rect)
+    resultFace = getFaceAndCoordinates(source_image)
 
-    cv2.imshow("source_image", source_image)
-    cv2.imshow("source_image_face", source_image_face)
+    result = None
 
-    output_file = "seamless/image.jpg"
-    cv2.imwrite(str(output_file), image)
+    if resultFace is not None:
+        xmin, ymin, xmax, ymax, h, w, face = resultFace
 
-    source_image_face = cv2.resize(source_image_face, (128, 128))
-    source_image_face = numpy.expand_dims(source_image_face, 0)
+        source_image_face = cv2.resize(face, (int(128), int(128)))
+        source_image_face_expand_dims = numpy.expand_dims(source_image_face, 0)
+        predict_face = autoencoder.predict(source_image_face_expand_dims / 255.0)[0]
+        predict_face = numpy.clip(predict_face * 255, 0, 255).astype(image.dtype)
+        predict_face = cv2.resize(predict_face, (xmax - xmin, ymax - ymin))
+        destination_image = source_image.copy()
+        destination_image[ymin:ymin + h, xmin:xmin + w] = predict_face
+        seamless_destination_image = seamless_images(destination_image, source_image)
 
-    predict_face = autoencoder.predict(source_image_face / 255.0)[0]
-    predict_face = numpy.clip(predict_face * 255, 0, 255).astype(image.dtype)
-    predict_face = cv2.resize(predict_face, (256, 256))
-    destination_image = source_image.copy()
+        # cv2.imshow("source_image_face", source_image_face
+        # cv2.imshow("predict_face", predict_face)
+        # cv2.imshow("destination_image", destination_image)
 
-    cv2.imshow("predict_face", predict_face)
+        output_file = "output/seamless_new_image.jpg"
+        # cv2.imwrite(str(output_file), seamless_destination_image)
+        # cv2.imshow("seamless_destination_image", seamless_destination_image)
 
-    destination_image[crop, crop] = predict_face
-    output_file = "seamless/destination_image.jpg"
-    cv2.imwrite(str(output_file), destination_image)
-    cv2.imshow("destination_image", destination_image)
+        result = seamless_destination_image
 
-    seamless_destination_image = seamless_images("seamless/destination_image.jpg", "seamless/image.jpg")
-    output_file = "output/seamless_new_image.jpg"
-    cv2.imwrite(str(output_file), seamless_destination_image)
-    cv2.imshow("seamless_destination_image", seamless_destination_image)
-
-    return seamless_destination_image
+    return result
 
 
 output_dir = Path('output')
 output_dir.mkdir(parents=True, exist_ok=True)
 
+
+# for fn in images_A:
+
+    # image = cv2.imread(fn)
+    # xmin, ymin, xmax, ymax, h, w, face = getFaceAndCoordinates(image)
+    #
+    # if face is not None:
+    #     cv2.imwrite(dest_dir + Path(fn).name, cv2.resize(face, (int(128), int(128))))
+    # else:
+    #     if os.path.exists(source_dir + Path(fn).name):
+    #         os.remove(source_dir + Path(fn).name)
+    #         print(source_dir + Path(fn).name)
+    #     else:
+    #         print("The file does not exist")
+
 for fn in images_A:
+
     image = cv2.imread(fn)
     new_image = convert_one_image(autoencoder_B, image)
-    output_file = output_dir / Path(fn).name
-    # cv2.imwrite(str(output_file), new_image)
+
+    if new_image is not None:
+        output_file = output_dir / Path(fn).name
+        cv2.imwrite(str(output_file), new_image)
 
 key = cv2.waitKey(0)

@@ -18,9 +18,10 @@ def random_transform(image, rotation_range, zoom_range, shift_range, random_flip
     return result
 
 
-def random_warp(image, size, offset=0, scale=5, zoom=2):
+def random_warp(image, size, scale=5, zoom=2):
     assert image.shape == (size, size, 3)
-    range_ = numpy.linspace(offset//4, size - offset//4, 5)
+
+    range_ = numpy.linspace(0, size, 5)
 
     mapx = numpy.broadcast_to(range_, (5, 5))
     mapy = mapx.T

@@ -13,7 +13,7 @@ source_image_grayscale = cv2.cvtColor(source_image, cv2.COLOR_BGR2GRAY)
 cv2.imshow("source_image", source_image)
 
 # read the destination face image and convert it to grayscale
-destination_image = cv2.imread("/Users/bpawluczuk/Sites/python/encoder/data/harrison/frame2839.jpg")
+destination_image = cv2.imread("/Users/bpawluczuk/Sites/python/encoder/data/harrison/frame3579.jpg")
 destination_image_grayscale = cv2.cvtColor(destination_image, cv2.COLOR_BGR2GRAY)
 cv2.imshow("destination_image", destination_image)
 
