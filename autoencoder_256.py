@@ -88,6 +88,9 @@ encoder = Encoder()
 decoder_A = Decoder()
 decoder_B = Decoder()
 
+encoder.summary()
+decoder_A.summary()
+
 x = Input(shape=IMAGE_SHAPE)
 
 autoencoder_A = Model(x, decoder_A(encoder(x)))
@@ -115,7 +118,7 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 
 for epoch in range(100000):
-    batch_size = 32
+    batch_size = 16
     warped_A, target_A = get_training_data(images_A, batch_size)
     warped_B, target_B = get_training_data(images_B, batch_size)
 

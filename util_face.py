@@ -42,7 +42,7 @@ def getFaceAndCoordinates(source_image):
                 (255, 255, 255)
             )
 
-            cv2.imshow("Landmark points of source", source_image_landmarks)
+            cv2.imshow("Landmark points", source_image_landmarks)
 
             # wyznaczenie punktow skrajnych
 
@@ -61,7 +61,7 @@ def getFaceAndCoordinates(source_image):
 
         color = (255, 0, 0)
         source_image_landmarks_rect = cv2.rectangle(source_image_landmarks, (xmin, ymin), (xmax, ymax), color, 1)
-        cv2.imshow("Landmark points rect", source_image_landmarks_rect)
+        cv2.imshow("Landmark points - obrys", source_image_landmarks_rect)
 
         face = source_image[ymin:ymin + h, xmin:xmin + w]
         result = xmin, ymin, xmax, ymax, h, w, face
@@ -88,7 +88,7 @@ def getFaceAndCoordinates(source_image):
         source_image_landmarks_rect = cv2.rectangle(source_image_landmarks,
                                                     (minXcorrect, minYcorrect),
                                                     (maxXcorrect, maxYcorrect), color, 1)
-        cv2.imshow("Landmark points rect size", source_image_landmarks_rect)
+        cv2.imshow("Landmark points - korekta", source_image_landmarks_rect)
 
         result = minXcorrect, minYcorrect, maxXcorrect, maxYcorrect, h_correct, w_correct, face
 

@@ -99,6 +99,7 @@ dest_dir = "dataset/frames/harrison_face/"
 
 images_A = get_image_paths("data/harrison/")
 images_B = get_image_paths("data/ryan/")
+
 # images_A = get_image_paths("dataset/frames/harrison_512/")
 # images_B = get_image_paths("dataset/frames/ryan_512/")
 
@@ -122,36 +123,36 @@ def convert_one_image(autoencoder, source_image):
         destination_image[ymin:ymin + h, xmin:xmin + w] = predict_face
         seamless_destination_image = seamless_images(destination_image, source_image)
 
-        # cv2.imshow("source_image_face", source_image_face
-        # cv2.imshow("predict_face", predict_face)
-        # cv2.imshow("destination_image", destination_image)
+        cv2.imshow("source", source_image)
+        cv2.imshow("source_face", source_image_face)
+        cv2.imshow("predict_face", predict_face)
+        cv2.imshow("destination_image", destination_image)
 
         output_file = "output/seamless_new_image.jpg"
         # cv2.imwrite(str(output_file), seamless_destination_image)
-        # cv2.imshow("seamless_destination_image", seamless_destination_image)
+        cv2.imshow("seamless_destination_image", seamless_destination_image)
 
         result = seamless_destination_image
 
     return result
 
 
-output_dir = Path('output')
+output_dir = Path('output/ryan_harrison')
 output_dir.mkdir(parents=True, exist_ok=True)
-
 
 # for fn in images_A:
 
-    # image = cv2.imread(fn)
-    # xmin, ymin, xmax, ymax, h, w, face = getFaceAndCoordinates(image)
-    #
-    # if face is not None:
-    #     cv2.imwrite(dest_dir + Path(fn).name, cv2.resize(face, (int(128), int(128))))
-    # else:
-    #     if os.path.exists(source_dir + Path(fn).name):
-    #         os.remove(source_dir + Path(fn).name)
-    #         print(source_dir + Path(fn).name)
-    #     else:
-    #         print("The file does not exist")
+# image = cv2.imread(fn)
+# xmin, ymin, xmax, ymax, h, w, face = getFaceAndCoordinates(image)
+#
+# if face is not None:
+#     cv2.imwrite(dest_dir + Path(fn).name, cv2.resize(face, (int(128), int(128))))
+# else:
+#     if os.path.exists(source_dir + Path(fn).name):
+#         os.remove(source_dir + Path(fn).name)
+#         print(source_dir + Path(fn).name)
+#     else:
+#         print("The file does not exist")
 
 for fn in images_A:
 

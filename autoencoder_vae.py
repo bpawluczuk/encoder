@@ -1,9 +1,7 @@
-
 import cv2
 import numpy
 
 from tensorflow.keras.layers import *
-
 
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
@@ -12,7 +10,6 @@ from tensorflow.keras.metrics import binary_crossentropy
 from utils import get_image_paths, load_images, stack_images
 from training_data import get_training_data
 
-
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
 
@@ -20,19 +17,18 @@ config = ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
 
+from tensorflow.python.framework.ops import disable_eager_execution
+
+disable_eager_execution()
+
 # ********************************************************************
 
-height = 64
-width = 64
-
-IMAGE_SHAPE = (64, 64, 3)
+IMAGE_SHAPE = (128, 128, 3)
 ENCODER_DIM = 1024
 
 
-# ********************************************************************
-
 class VAE:
-    _image_shape = (64, 64, 3)
+    _image_shape = (128, 128, 3)
     _latent_dim = 2
 
     def _get_z(self):
@@ -101,55 +97,64 @@ class VAE:
         return K.mean(xent_loss + kl_loss)
 
     def _get_vae(self):
+
         input_img, z = self._get_z()
-        z_decoded = self._get_decoded_z(z)
 
-        vae = Model(input_img, z_decoded)
-        loss = self._vae_loss(input_img, z_decoded)
-        vae.add_loss(loss)
-        # Since we have the custom layer we don't specify an external loss at compile time which means also we don't
-        # pass target data during training
-        vae.compile(optimizer='rmsprop', loss=self._vae_loss, experimental_run_tf_function=False)
-        # vae.summary()
+        z_decoded_A = self._get_decoded_z(z)
+        vae_A = Model(input_img, z_decoded_A)
+        loss = self._vae_loss(input_img, z_decoded_A)
+        vae_A.add_loss(loss)
+        vae_A.compile(optimizer='rmsprop', loss=self._vae_loss, experimental_run_tf_function=False)
 
-        return vae
+        z_decoded_B = self._get_decoded_z(z)
+        vae_B = Model(input_img, z_decoded_B)
+        loss = self._vae_loss(input_img, z_decoded_B)
+        vae_B.add_loss(loss)
+        vae_B.compile(optimizer='rmsprop', loss=self._vae_loss, experimental_run_tf_function=False)
 
+        return vae_A, vae_A
 
 # ********************************************************************
 
-from tensorflow.python.framework.ops import disable_eager_execution
-
-disable_eager_execution()
-
-batch_size = 32
-images_A = get_image_paths("data/bruce")
-images_B = get_image_paths("dataset/frames/matt")
+images_A = get_image_paths("dataset/frames/harrison_face")
+images_B = get_image_paths("dataset/frames/ryan_face")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
-vae = VAE()._get_vae()
+autoencoder_A, autoencoder_B = VAE()._get_vae()
 
-for epoch in range(100000):
-    batch_size = 32
+# ********************************************************************
+
+# encoder.summary()
+# autoencoder_A.summary()
+# autoencoder_B.summary()
+
+# ********************************************************************
+
+for epoch in range(10000):
+    batch_size = 16
     warped_A, target_A = get_training_data(images_A, batch_size)
-    loss_A = vae.train_on_batch(warped_A, target_A)
-    print(epoch, loss_A)
+    warped_B, target_B = get_training_data(images_B, batch_size)
+
+    loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
+    loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
+    print(epoch, loss_A, loss_B)
 
     if epoch % 100 == 0:
         test_A = target_A[0:14]
-        # test_B = target_B[0:14]
+        test_B = target_B[0:14]
 
     figure_A = numpy.stack([
         test_A,
-        vae.predict(test_A),
-        vae.predict(test_A),
+        autoencoder_A.predict(test_A),
+        autoencoder_B.predict(test_A),
     ], axis=1)
 
-    # figure_B = numpy.stack([
-    #     test_B,
-    #     autoencoder_B.predict(test_B),
-    #     autoencoder_A.predict(test_B),
-    # ], axis=1)
+    figure_B = numpy.stack([
+        test_B,
+        autoencoder_B.predict(test_B),
+        autoencoder_A.predict(test_B),
+    ], axis=1)
 
     figure = numpy.concatenate([figure_A, figure_A], axis=0)
     figure = figure.reshape((4, 7) + figure.shape[1:])
