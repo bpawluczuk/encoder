@@ -29,7 +29,7 @@ ENCODER_DIM = 1024
 
 class VAE:
     _image_shape = (128, 128, 3)
-    _latent_dim = 2
+    _latent_dim = 4
 
     def _get_z(self):
         input_img = Input(shape=self._image_shape)
@@ -37,7 +37,9 @@ class VAE:
         x = Conv2D(32, 3, padding='same')(input_img)
         x = LeakyReLU(0.1)(x)
 
-        x = Conv2D(64, 3, padding='same', strides=(2, 2))(x)
+        print(K.int_shape(x))
+
+        x = Conv2D(64, 3, padding='same', strides=2)(x)
         x = LeakyReLU(0.1)(x)
 
         x = Conv2D(64, 3, padding='same')(x)
@@ -49,10 +51,11 @@ class VAE:
         x = Dropout(0.4)(x)
 
         self._shape_before_flattening = K.int_shape(x)
+        print(K.int_shape(x))
 
         x = Flatten()(x)
         print(K.int_shape(x))
-        x = Dense(32, activation='relu')(x)
+        x = Dense(64, activation='relu')(x)
 
         self.z_mean = Dense(self._latent_dim)(x)
         self.z_log_var = Dense(self._latent_dim)(x)
@@ -78,7 +81,7 @@ class VAE:
         x = Reshape(self._shape_before_flattening[1:])(x)
 
         # Apply reverse operation to the initial stack of Conv2D: a Conv2DTranspose
-        x = Conv2DTranspose(32, 3, padding='same', strides=(2, 2))(x)
+        x = Conv2DTranspose(32, 3, padding='same', strides=2)(x)
         x = LeakyReLU(0.1)(x)
 
         # We end up with a feature map of the same size as the original input
@@ -156,7 +159,7 @@ for epoch in range(10000):
         autoencoder_A.predict(test_B),
     ], axis=1)
 
-    figure = numpy.concatenate([figure_A, figure_A], axis=0)
+    figure = numpy.concatenate([figure_A, figure_B], axis=0)
     figure = figure.reshape((4, 7) + figure.shape[1:])
     figure = stack_images(figure)
 
