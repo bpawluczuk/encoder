@@ -131,22 +131,25 @@ class VAE:
 
 # ********************************************************************
 
-images_A = get_image_paths("dataset/frames/harrison_face")
-images_B = get_image_paths("dataset/frames/ryan_face")
-images_A = load_images(images_A) / 255.0
-images_B = load_images(images_B) / 255.0
-
 autoencoder_A, autoencoder_B = VAE()._get_vae()
 
 # ********************************************************************
 
 # encoder.summary()
-autoencoder_A.summary()
+# autoencoder_A.summary()
 # autoencoder_B.summary()
 
 # ********************************************************************
 
-for epoch in range(10000):
+images_A = get_image_paths("dataset/frames/harrison_face")
+images_B = get_image_paths("dataset/frames/ryan_face")
+images_A = load_images(images_A) / 255.0
+images_B = load_images(images_B) / 255.0
+
+images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
+
+
+for epoch in range(100000):
     batch_size = 16
     warped_A, target_A = get_training_data(images_A, batch_size)
     warped_B, target_B = get_training_data(images_B, batch_size)
@@ -156,6 +159,7 @@ for epoch in range(10000):
     print(epoch, loss_A, loss_B)
 
     if epoch % 100 == 0:
+        # save_model_weights()
         test_A = target_A[0:14]
         test_B = target_B[0:14]
 
