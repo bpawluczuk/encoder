@@ -35,7 +35,10 @@ img_height = 128
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
 _shape_before_flattening = 0
-_latent_dim = 128
+latent_dim = 128
+
+variational = 0
+batch_size = 16
 
 
 # ********************************************************************
@@ -60,48 +63,41 @@ def upscale(filters):
 
     return block
 
-class Sampling(Layer):
-    """Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
 
-    def call(self, inputs):
-        z_mean, z_log_var = inputs
-        batch = tf.shape(z_mean)[0]
-        dim = tf.shape(z_mean)[1]
-        epsilon = tf.keras.backend.random_normal(shape=(batch, dim))
-        return z_mean + tf.exp(0.5 * z_log_var) * epsilon
+def sampling(args):
+    z_mean, z_log_sigma = args
+    batch_size = tf.shape(z_mean)[0]
+    epsilon = K.random_normal(shape=(batch_size, latent_dim), mean=0., stddev=1.)
+    return z_mean + K.exp(z_log_sigma) * epsilon
 
 
-def kl_reconstruction_loss(true, pred):
-    # Reconstruction loss (binary crossentropy)
-    reconstruction_loss = binary_crossentropy(K.flatten(true), K.flatten(pred)) * img_width * img_height
-
-    # KL divergence loss
-    kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
-    kl_loss = K.sum(kl_loss, axis=-1)
-    kl_loss *= -0.5
-    # Total loss = 50% rec + 50% KL divergence loss
-    return K.mean(reconstruction_loss + kl_loss)
+def vae_loss(x, x_decoded_mean):
+    """Defines the VAE loss functions as a combination of MSE and KL-divergence loss."""
+    mse_loss = K.mean(keras.losses.mse(x, x_decoded_mean), axis=(1, 2)) * img_width * img_height
+    kl_loss = - 0.5 * K.mean(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma), axis=-1)
+    return mse_loss + kl_loss
 
 
 # Constructing encoder
 
 encoder_input = Input(shape=IMAGE_SHAPE)
+
 x = conv(128)(encoder_input)
 x = conv(256)(x)
 x = conv(512)(x)
 x = conv(1024)(x)
 encoder = Flatten()(x)
-x = Dense(ENCODER_DIM, activation='relu')(encoder)
-x = Dense(8 * 8 * 512, activation='relu')(x)
 
-z_mean = Dense(_latent_dim, name="z_mean")(x)
-z_log_var = Dense(_latent_dim, name="z_log_var")(x)
-
-latent_space = Sampling()([z_mean, z_log_var])
+if not variational:
+    latent_space = Dense(latent_dim)(encoder)
+else:
+    z_mean = Dense(latent_dim)(encoder)
+    z_log_sigma = Dense(latent_dim)(encoder)
+    latent_space = Lambda(sampling, output_shape=(latent_dim,))([z_mean, z_log_sigma])
 
 # Constructing decoder
 
-decoder_input = Input(shape=(_latent_dim,))
+decoder_input = Input(shape=(latent_dim,))
 print("decoder_input" + str(K.int_shape(decoder_input)))
 
 x = Dense(8 * 8 * 512, activation="relu")(decoder_input)
@@ -121,23 +117,31 @@ decoder_A = Model(decoder_input, decoder_conv)
 decoder_B = Model(decoder_input, decoder_conv)
 
 vae_A = Model(encoder_input, decoder_A(encoder(encoder_input)))
-vae_A.compile(optimizer=optimizer, loss=kl_reconstruction_loss)
+if not variational:
+    vae_A.compile(optimizer=optimizer, loss='mean_absolute_error')
+else:
+    vae_A.compile(optimizer=optimizer, loss=vae_loss)
 
 vae_B = Model(encoder_input, decoder_B(encoder(encoder_input)))
-vae_B.compile(optimizer=optimizer, loss=kl_reconstruction_loss)
+if not variational:
+    vae_B.compile(optimizer=optimizer, loss='mean_absolute_error')
+else:
+    vae_B.compile(optimizer=optimizer, loss=vae_loss)
 
 # ********************************************************************
 
 encoder.summary()
 vae_A.summary()
 
+
 # ********************************************************************
 
 def save_model_weights():
-    encoder.save_weights("models/128/encoder.h5")
-    decoder_A.save_weights("models/128/decoder_A.h5")
-    decoder_B.save_weights("models/128/decoder_B.h5")
+    # encoder.save_weights("models/128/encoder.h5")
+    # decoder_A.save_weights("models/128/decoder_A.h5")
+    # decoder_B.save_weights("models/128/decoder_B.h5")
     print("save model weights")
+
 
 # try:
 #     encoder.load_weights("models/128/encoder.h5")
