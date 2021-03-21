@@ -37,7 +37,7 @@ optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 _shape_before_flattening = 0
 latent_dim = 128
 
-variational = 0
+variational = 1
 batch_size = 16
 
 
@@ -86,25 +86,25 @@ x = conv(128)(encoder_input)
 x = conv(256)(x)
 x = conv(512)(x)
 x = conv(1024)(x)
-encoder = Flatten()(x)
+x = Flatten()(x)
 
 if not variational:
-    latent_space = Dense(latent_dim)(encoder)
+    latent_space = Dense(latent_dim)(x)
 else:
-    z_mean = Dense(latent_dim)(encoder)
-    z_log_sigma = Dense(latent_dim)(encoder)
+    z_mean = Dense(latent_dim)(x)
+    z_log_sigma = Dense(latent_dim)(x)
     latent_space = Lambda(sampling, output_shape=(latent_dim,))([z_mean, z_log_sigma])
+
+x = Dense(8 * 8 * 1024, activation="relu")(latent_space)
+x = Reshape((8, 8, 1024))(x)
+encoder_output = upscale(512)(x)
+encoder = encoder_output
 
 # Constructing decoder
 
-decoder_input = Input(shape=(latent_dim,))
-print("decoder_input" + str(K.int_shape(decoder_input)))
+decoder_input = Input(shape=(16, 16, 512))
 
-x = Dense(8 * 8 * 512, activation="relu")(decoder_input)
-x = Reshape((8, 8, 512))(x)
-
-x = upscale(512)(x)
-x = upscale(256)(x)
+x = upscale(512)(decoder_input)
 x = upscale(256)(x)
 x = upscale(128)(x)
 
@@ -112,7 +112,7 @@ decoder_conv = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
 
 # ********************************************************************
 
-encoder = Model(encoder_input, latent_space)
+encoder = Model(encoder_input, encoder_output)
 decoder_A = Model(decoder_input, decoder_conv)
 decoder_B = Model(decoder_input, decoder_conv)
 
@@ -132,7 +132,6 @@ else:
 
 encoder.summary()
 autoencoder_A.summary()
-
 
 # ********************************************************************
 
