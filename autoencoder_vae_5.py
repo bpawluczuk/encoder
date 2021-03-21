@@ -33,7 +33,7 @@ optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
 class VAE:
     _image_shape = (128, 128, 3)
-    _latent_dim = 64
+    _latent_dim = 256
     _batch_size = 16
     _variational = 1
 
@@ -66,8 +66,8 @@ class VAE:
 
         x = self._conv(128)(_input)
         x = self._conv(256)(x)
-        x = self._conv(256)(x)
-        x = self._conv(256)(x)
+        x = self._conv(512)(x)
+        x = self._conv(512)(x)
         x = Flatten()(x)
 
         if not self._variational:
@@ -78,16 +78,16 @@ class VAE:
 
             latent_space = Lambda(self._sampling)([self.z_mean, self.z_log_var])
 
-        x = Dense(8 * 8 * 256, activation="relu")(latent_space)
-        x = Reshape((8, 8, 256))(x)
-        encoder_output = self._upscale(256)(x)
+        x = Dense(8 * 8 * 512, activation="relu")(latent_space)
+        x = Reshape((8, 8, 512))(x)
+        encoder_output = self._upscale(512)(x)
         return Model(_input, encoder_output), self.z_mean, self.z_log_var
 
     def _decoder(self):
 
-        decoder_input = Input(shape=(16, 16, 256), name="decoder_input")
+        decoder_input = Input(shape=(16, 16, 512), name="decoder_input")
 
-        x = self._upscale(256)(decoder_input)
+        x = self._upscale(512)(decoder_input)
         x = self._upscale(256)(x)
         x = self._upscale(128)(x)
 
