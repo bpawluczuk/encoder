@@ -35,7 +35,7 @@ img_height = 128
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
 _shape_before_flattening = 0
-latent_dim = 128
+latent_dim = 1024
 
 variational = 1
 batch_size = 16
