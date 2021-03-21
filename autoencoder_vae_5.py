@@ -141,7 +141,7 @@ def _vae_loss(input_img, z_decoded):
     input_img = K.flatten(input_img)
     z_decoded = K.flatten(z_decoded)
     xent_loss = binary_crossentropy(input_img, z_decoded)
-    kl_loss = 0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+    kl_loss = - 0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
     return K.mean(xent_loss + kl_loss)
 
 
