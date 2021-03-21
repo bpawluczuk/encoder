@@ -35,7 +35,7 @@ class VAE:
     _image_shape = (128, 128, 3)
     _latent_dim = 1024
     _batch_size = 16
-    _variational = 0
+    _variational = 1
 
     def _conv(self, filters):
         def block(x):
@@ -81,7 +81,7 @@ class VAE:
         x = Dense(8 * 8 * 1024, activation="relu")(latent_space)
         x = Reshape((8, 8, 1024))(x)
         encoder_output = self._upscale(512)(x)
-        return Model(_input, encoder_output)
+        return Model(_input, encoder_output), self.z_mean, self.z_log_var
 
     def _decoder(self):
 
@@ -98,7 +98,7 @@ class VAE:
         input_img = K.flatten(input_img)
         z_decoded = K.flatten(z_decoded)
         xent_loss = binary_crossentropy(input_img, z_decoded)
-        kl_loss = 0.5 * K.mean(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+        kl_loss = - 0.5 * K.mean(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
         return K.mean(xent_loss + kl_loss)
 
     def _get_vae(self):
@@ -129,12 +129,32 @@ class VAE:
 
 # ********************************************************************
 
-encoder, autoencoder_A, autoencoder_B = VAE()._get_vae()
+# encoder, autoencoder_A, autoencoder_B = VAE()._get_vae()
+
+encoder_input = Input(shape=IMAGE_SHAPE, name="encoder_input")
+encoder, z_mean, z_log_var = VAE()._encoder(encoder_input)
+decoder_a = VAE()._decoder()
+decoder_b = VAE()._decoder()
+
+
+def _vae_loss(input_img, z_decoded):
+    input_img = K.flatten(input_img)
+    z_decoded = K.flatten(z_decoded)
+    xent_loss = binary_crossentropy(input_img, z_decoded)
+    kl_loss = 0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+    return K.mean(xent_loss + kl_loss)
+
+
+autoencoder_A = Model(encoder_input, decoder_a(encoder(encoder_input)))
+autoencoder_A.compile(optimizer=optimizer, loss=_vae_loss)
+
+autoencoder_B = Model(encoder_input, decoder_b(encoder(encoder_input)))
+autoencoder_B.compile(optimizer=optimizer, loss=_vae_loss)
 
 # ********************************************************************
 
 # encoder.summary()
-# autoencoder_A.summary()
+autoencoder_A.summary()
 # autoencoder_B.summary()
 
 # ********************************************************************
