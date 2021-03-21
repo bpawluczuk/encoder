@@ -34,8 +34,8 @@ optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 class VAE:
     _image_shape = (128, 128, 3)
     _latent_dim = 1024
-    batch_size = 16
-    variational = 1
+    _batch_size = 16
+    _variational = 1
 
     def _conv(self, filters):
         def block(x):
@@ -64,42 +64,19 @@ class VAE:
 
     def _encoder(self, _input):
 
-        # _input = Input(shape=self._image_shape, name="encoder_input")
-
-        # x = self._conv(128)(_input)
-        # x = self._conv(256)(x)
-        # x = self._conv(512)(x)
-        # x = self._conv(1024)(x)
-        # x = Flatten()(x)
-
-        x = Conv2D(128, 5, padding='same', strides=2)(_input)
-        x = LeakyReLU(0.1)(x)
-        print(K.int_shape(x))
-
-        x = Conv2D(256, 5, padding='same', strides=2)(x)
-        x = LeakyReLU(0.1)(x)
-        print(K.int_shape(x))
-
-        x = Conv2D(512, 5, padding='same', strides=2)(x)
-        x = LeakyReLU(0.1)(x)
-        print(K.int_shape(x))
-
-        x = Conv2D(1024, 5, padding='same', strides=2)(x)
-        x = BatchNormalization()(x)
-        x = LeakyReLU(0.1)(x)
-        x = Dropout(0.4)(x)
+        x = self._conv(128)(_input)
+        x = self._conv(256)(x)
+        x = self._conv(512)(x)
+        x = self._conv(1024)(x)
         x = Flatten()(x)
 
-        self.z_mean = Dense(self._latent_dim)(x)
-        self.z_log_var = Dense(self._latent_dim)(x)
+        if not self._variational:
+            latent_space = Dense(self._latent_dim)(x)
+        else:
+            self.z_mean = Dense(self._latent_dim)(x)
+            self.z_log_var = Dense(self._latent_dim)(x)
 
-        latent_space = Lambda(self._sampling)([self.z_mean, self.z_log_var])
-
-        # if not self.variational:
-        #     latent_space = Dense(self._latent_dim)(x)
-        # else:
-        #
-        #     latent_space = Lambda(self._sampling, output_shape=(self._latent_dim,))([self.z_mean, self.z_log_sigma])
+            latent_space = Lambda(self._sampling)([self.z_mean, self.z_log_var])
 
         x = Dense(8 * 8 * 1024, activation="relu")(latent_space)
         x = Reshape((8, 8, 1024))(x)
@@ -126,13 +103,13 @@ class VAE:
 
     def _get_vae(self):
 
-        encoder_input = Input(shape=self._image_shape, name="oooooooo")
+        encoder_input = Input(shape=self._image_shape, name="encoder_input")
         encoder = self._encoder(encoder_input)
         decoder_a = self._decoder()
         decoder_b = self._decoder()
 
         autoencoder_a = Model(encoder_input, decoder_a(encoder(encoder_input)))
-        if not self.variational:
+        if not self._variational:
             autoencoder_a.compile(optimizer=optimizer, loss='mean_absolute_error')
         else:
             loss = self._vae_loss(encoder_input, decoder_a(encoder(encoder_input)))
@@ -140,24 +117,24 @@ class VAE:
             autoencoder_a.compile(optimizer=optimizer, loss=self._vae_loss)
 
         autoencoder_b = Model(encoder_input, decoder_b(encoder(encoder_input)))
-        if not self.variational:
+        if not self._variational:
             autoencoder_b.compile(optimizer=optimizer, loss='mean_absolute_error')
         else:
             loss = self._vae_loss(encoder_input, decoder_b(encoder(encoder_input)))
             autoencoder_b.add_loss(loss)
             autoencoder_b.compile(optimizer=optimizer, loss=self._vae_loss)
 
-        return autoencoder_a, autoencoder_a
+        return encoder, autoencoder_a, autoencoder_a
 
 
 # ********************************************************************
 
-autoencoder_A, autoencoder_B = VAE()._get_vae()
+encoder, autoencoder_A, autoencoder_B = VAE()._get_vae()
 
 # ********************************************************************
 
 # encoder.summary()
-# autoencoder_A.summary()
+autoencoder_A.summary()
 # autoencoder_B.summary()
 
 # ********************************************************************
