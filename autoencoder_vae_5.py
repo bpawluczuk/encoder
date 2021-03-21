@@ -35,7 +35,7 @@ class VAE:
     _image_shape = (128, 128, 3)
     _latent_dim = 1024
     _batch_size = 16
-    _variational = 1
+    _variational = 0
 
     def _conv(self, filters):
         def block(x):
@@ -98,7 +98,7 @@ class VAE:
         input_img = K.flatten(input_img)
         z_decoded = K.flatten(z_decoded)
         xent_loss = binary_crossentropy(input_img, z_decoded)
-        kl_loss = -5e-4 * K.mean(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+        kl_loss = 0.5 * K.mean(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
         return K.mean(xent_loss + kl_loss)
 
     def _get_vae(self):
@@ -112,16 +112,16 @@ class VAE:
         if not self._variational:
             autoencoder_a.compile(optimizer=optimizer, loss='mean_absolute_error')
         else:
-            loss = self._vae_loss(encoder_input, decoder_a(encoder(encoder_input)))
-            autoencoder_a.add_loss(loss)
+            # loss = self._vae_loss(encoder_input, decoder_a(encoder(encoder_input)))
+            # autoencoder_a.add_loss(loss)
             autoencoder_a.compile(optimizer=optimizer, loss=self._vae_loss)
 
         autoencoder_b = Model(encoder_input, decoder_b(encoder(encoder_input)))
         if not self._variational:
             autoencoder_b.compile(optimizer=optimizer, loss='mean_absolute_error')
         else:
-            loss = self._vae_loss(encoder_input, decoder_b(encoder(encoder_input)))
-            autoencoder_b.add_loss(loss)
+            # loss = self._vae_loss(encoder_input, decoder_b(encoder(encoder_input)))
+            # autoencoder_b.add_loss(loss)
             autoencoder_b.compile(optimizer=optimizer, loss=self._vae_loss)
 
         return encoder, autoencoder_a, autoencoder_a
@@ -134,7 +134,7 @@ encoder, autoencoder_A, autoencoder_B = VAE()._get_vae()
 # ********************************************************************
 
 # encoder.summary()
-autoencoder_A.summary()
+# autoencoder_A.summary()
 # autoencoder_B.summary()
 
 # ********************************************************************

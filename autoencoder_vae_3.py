@@ -22,7 +22,6 @@ config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
 
 from tensorflow.python.framework.ops import disable_eager_execution
-
 disable_eager_execution()
 
 # ********************************************************************
@@ -35,9 +34,9 @@ img_height = 128
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
 _shape_before_flattening = 0
-latent_dim = 128
+latent_dim = 1024
 
-variational = 1
+variational = 0
 batch_size = 16
 
 

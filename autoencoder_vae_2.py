@@ -85,7 +85,7 @@ encoder_input = Input(shape=IMAGE_SHAPE)
 x = conv(128)(encoder_input)
 x = conv(256)(x)
 x = conv(512)(x)
-x = conv(1024)(x)
+x = conv(512)(x)
 encoder = Flatten()(x)
 
 if not variational:
@@ -143,13 +143,13 @@ def save_model_weights():
     print("save model weights")
 
 
-# try:
-#     encoder.load_weights("models/128/encoder.h5")
-#     decoder_A.load_weights("models/128/decoder_A.h5")
-#     decoder_B.load_weights("models/128/decoder_B.h5")
-#     print("... load models")
-# except:
-#     print("models does not exist")
+try:
+    encoder.load_weights("models/128/encoder.h5")
+    decoder_A.load_weights("models/128/decoder_A.h5")
+    decoder_B.load_weights("models/128/decoder_B.h5")
+    print("... load models")
+except:
+    print("models does not exist")
 
 # ********************************************************************
 

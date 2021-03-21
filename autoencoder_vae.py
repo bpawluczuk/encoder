@@ -25,13 +25,13 @@ disable_eager_execution()
 # ********************************************************************
 
 IMAGE_SHAPE = (128, 128, 3)
-ENCODER_DIM = 1024
+ENCODER_DIM = 512
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
 class VAE:
     _image_shape = (128, 128, 3)
-    _latent_dim = 1024
+    _latent_dim = 512
 
     def _sampling(self, args):
         z_mean, z_log_var = args
@@ -52,10 +52,6 @@ class VAE:
         print(K.int_shape(x))
 
         x = Conv2D(512, 5, padding='same', strides=2)(x)
-        x = LeakyReLU(0.1)(x)
-        print(K.int_shape(x))
-
-        x = Conv2D(1024, 5, padding='same', strides=2)(x)
         x = BatchNormalization()(x)
         x = LeakyReLU(0.1)(x)
         x = Dropout(0.4)(x)
@@ -63,7 +59,7 @@ class VAE:
         self._shape_before_flattening = K.int_shape(x)
 
         x = Dense(ENCODER_DIM, activation='relu')(Flatten()(x))
-        x = Dense(8 * 8 * 1024, activation='relu')(x)
+        x = Dense(8 * 8 * 512, activation='relu')(x)
 
         self.z_mean = Dense(self._latent_dim)(x)
         self.z_log_var = Dense(self._latent_dim)(x)
@@ -86,10 +82,6 @@ class VAE:
         print("decoder next" + str(K.int_shape(x)))
 
         x = Conv2DTranspose(256, 5, padding='same', strides=2)(x)
-        x = LeakyReLU(0.1)(x)
-        print("decoder next" + str(K.int_shape(x)))
-
-        x = Conv2DTranspose(128, 5, padding='same', strides=2)(x)
         x = LeakyReLU(0.1)(x)
         print("decoder next" + str(K.int_shape(x)))
 

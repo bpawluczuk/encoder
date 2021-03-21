@@ -35,7 +35,7 @@ img_height = 128
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
 latent_dim = 1024
-variational = 1
+variational = 0
 batch_size = 16
 
 
@@ -109,65 +109,21 @@ def Decoder():
 
 encoder_input = Input(shape=IMAGE_SHAPE)
 
-_input = Input(shape=IMAGE_SHAPE)
-
-x = conv(128)(_input)
-x = conv(256)(x)
-x = conv(512)(x)
-x = conv(1024)(x)
-x = Flatten()(x)
-
-if not variational:
-    latent_space = Dense(latent_dim)(x)
-else:
-    def sampling(args):
-        z_mean, z_log_sigma = args
-        epsilon = K.random_normal(shape=(batch_size, latent_dim), mean=0., stddev=1.)
-        return z_mean + K.exp(z_log_sigma) * epsilon
-
-
-    z_mean = Dense(latent_dim)(x)
-    z_log_sigma = Dense(latent_dim)(x)
-    latent_space = Lambda(sampling, output_shape=(latent_dim,))([z_mean, z_log_sigma])
-
-x = Dense(8 * 8 * 1024, activation="relu")(latent_space)
-x = Reshape((8, 8, 1024))(x)
-encoder_output = upscale(512)(x)
-encoder = Model(_input, encoder_output)
-
-# encoder = Encoder()
+encoder = Encoder()
 decoder_A = Decoder()
 decoder_B = Decoder()
-
-
-# def vae_loss(x, x_decoded_mean):
-#     mse_loss = K.mean(keras.losses.mse(x, x_decoded_mean), axis=(1, 2)) * img_width * img_height
-#     kl_loss = - 0.5 * K.mean(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma), axis=-1)
-#     return mse_loss + kl_loss
-
-
-def kl_reconstruction_loss(true, pred):
-    # Reconstruction loss (binary crossentropy)
-    reconstruction_loss = binary_crossentropy(K.flatten(true), K.flatten(pred)) * img_width * img_height
-
-    # KL divergence loss
-    kl_loss = 1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma)
-    kl_loss = K.sum(kl_loss, axis=-1)
-    kl_loss *= -0.5
-    # Total loss = 50% rec + 50% KL divergence loss
-    return K.mean(reconstruction_loss + kl_loss)
 
 autoencoder_A = Model(encoder_input, decoder_A(encoder(encoder_input)))
 if not variational:
     autoencoder_A.compile(optimizer=optimizer, loss='mean_absolute_error')
 else:
-    autoencoder_A.compile(optimizer=optimizer, loss=kl_reconstruction_loss)
+    autoencoder_A.compile(optimizer=optimizer, loss='mean_absolute_error')
 
 autoencoder_B = Model(encoder_input, decoder_B(encoder(encoder_input)))
 if not variational:
     autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error')
 else:
-    autoencoder_B.compile(optimizer=optimizer, loss=kl_reconstruction_loss)
+    autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error')
 
 # ********************************************************************
 
