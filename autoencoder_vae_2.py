@@ -12,6 +12,7 @@ from tensorflow.keras.metrics import binary_crossentropy
 
 from utils import get_image_paths, load_images, stack_images
 from training_data import get_training_data
+from pixel_shuffler import PixelShuffler
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -39,6 +40,26 @@ _latent_dim = 128
 
 # ********************************************************************
 
+def conv(filters):
+    def block(x):
+        x = Conv2D(filters, kernel_size=5, strides=2, padding='same')(x)
+        x = BatchNormalization()(x)
+        x = LeakyReLU(0.1)(x)
+        x = Dropout(0.4)(x)
+        return x
+
+    return block
+
+
+def upscale(filters):
+    def block(x):
+        x = Conv2D(filters * 4, kernel_size=3, padding='same')(x)
+        x = LeakyReLU(0.1)(x)
+        x = PixelShuffler()(x)
+        return x
+
+    return block
+
 class Sampling(Layer):
     """Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
 
@@ -65,27 +86,11 @@ def kl_reconstruction_loss(true, pred):
 # Constructing encoder
 
 encoder_input = Input(shape=IMAGE_SHAPE)
-print(K.int_shape(encoder_input))
-
-x = Conv2D(128, 5, padding='same', strides=2)(encoder_input)
-x = LeakyReLU(0.1)(x)
-print(K.int_shape(x))
-
-x = Conv2D(256, 5, padding='same', strides=2)(x)
-x = LeakyReLU(0.1)(x)
-print(K.int_shape(x))
-
-x = Conv2D(512, 5, padding='same', strides=2)(x)
-x = LeakyReLU(0.1)(x)
-print(K.int_shape(x))
-
-x = Conv2D(1024, 5, padding='same', strides=2)(x)
-x = BatchNormalization()(x)
-x = LeakyReLU(0.1)(x)
-x = Dropout(0.4)(x)
-
+x = conv(128)(encoder_input)
+x = conv(256)(x)
+x = conv(512)(x)
+x = conv(1024)(x)
 encoder = Flatten()(x)
-
 x = Dense(ENCODER_DIM, activation='relu')(encoder)
 x = Dense(8 * 8 * 512, activation='relu')(x)
 
@@ -102,20 +107,10 @@ print("decoder_input" + str(K.int_shape(decoder_input)))
 x = Dense(8 * 8 * 512, activation="relu")(decoder_input)
 x = Reshape((8, 8, 512))(x)
 
-x = Conv2DTranspose(512, 3, padding='same', strides=2)(x)
-x = LeakyReLU(0.1)(x)
-
-x = Conv2DTranspose(256, 3, padding='same', strides=2)(x)
-x = LeakyReLU(0.1)(x)
-print("decoder next" + str(K.int_shape(x)))
-
-x = Conv2DTranspose(256, 3, padding='same', strides=2)(x)
-x = LeakyReLU(0.1)(x)
-print("decoder next" + str(K.int_shape(x)))
-
-x = Conv2DTranspose(128, 3, padding='same', strides=2)(x)
-x = LeakyReLU(0.1)(x)
-print("decoder next" + str(K.int_shape(x)))
+x = upscale(512)(x)
+x = upscale(256)(x)
+x = upscale(256)(x)
+x = upscale(128)(x)
 
 decoder_conv = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
 
@@ -144,14 +139,14 @@ def save_model_weights():
     decoder_B.save_weights("models/128/decoder_B.h5")
     print("save model weights")
 
-try:
-    encoder.load_weights("models/128/encoder.h5")
-    decoder_A.load_weights("models/128/decoder_A.h5")
-    decoder_B.load_weights("models/128/decoder_B.h5")
-    print("... load models")
-except:
-    print("models does not exist")
-    
+# try:
+#     encoder.load_weights("models/128/encoder.h5")
+#     decoder_A.load_weights("models/128/decoder_A.h5")
+#     decoder_B.load_weights("models/128/decoder_B.h5")
+#     print("... load models")
+# except:
+#     print("models does not exist")
+
 # ********************************************************************
 
 images_A = get_image_paths("dataset/frames/harrison_face")
