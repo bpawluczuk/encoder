@@ -7,7 +7,6 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
-from tensorflow.keras.metrics import binary_crossentropy
 
 from utils import get_image_paths, load_images, stack_images
 from training_data import get_training_data
@@ -34,7 +33,7 @@ optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 _image_shape = (128, 128, 3)
 _latent_dim = 256
 _batch_size = 16
-_variational = 0
+_variational = 1
 width = 128
 height = 128
 
@@ -149,18 +148,18 @@ def save_model_weights():
     print("save model weights")
 
 
-# try:
-#     if not _variational:
-#         encoder.load_weights("models/AE/encoder.h5")
-#         decoder_a.load_weights("models/AE/decoder_A.h5")
-#         decoder_a.load_weights("models/AE/decoder_B.h5")
-#     else:
-#         encoder.load_weights("models/VAE/encoder.h5")
-#         decoder_a.load_weights("models/VAE/decoder_A.h5")
-#         decoder_a.load_weights("models/VAE/decoder_B.h5")
-#     print("... load models")
-# except:
-#     print("models does not exist")
+try:
+    if not _variational:
+        encoder.load_weights("models/AE/encoder.h5")
+        decoder_a.load_weights("models/AE/decoder_A.h5")
+        decoder_a.load_weights("models/AE/decoder_B.h5")
+    else:
+        encoder.load_weights("models/VAE/encoder.h5")
+        decoder_a.load_weights("models/VAE/decoder_A.h5")
+        decoder_a.load_weights("models/VAE/decoder_B.h5")
+    print("... load models")
+except:
+    print("models does not exist")
 
 # ********************************************************************
 
