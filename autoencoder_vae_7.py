@@ -33,7 +33,7 @@ optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 _image_shape = (128, 128, 3)
 _latent_dim = 256
 _batch_size = 16
-_variational = 0
+_variational = 1
 width = 128
 height = 128
 
@@ -81,8 +81,8 @@ def vae_loss(input, x_decoded_mean):
     return mse_loss + kl_loss
 
 
-def Encoder():
-    input_ = Input(shape=IMAGE_SHAPE)
+def Encoder(input_):
+
     x = conv(128)(input_)
     x = conv(256)(x)
     x = conv(512)(x)
@@ -117,11 +117,11 @@ def Decoder():
 
 # ********************************************************************
 
-encoder, z_log_sigma, z_mean = Encoder()
+x = Input(shape=IMAGE_SHAPE)
+
+encoder, z_log_sigma, z_mean = Encoder(x)
 decoder_A = Decoder()
 decoder_B = Decoder()
-
-x = Input(shape=IMAGE_SHAPE)
 
 autoencoder_A = Model(x, decoder_A(encoder(x)))
 if not _variational:
