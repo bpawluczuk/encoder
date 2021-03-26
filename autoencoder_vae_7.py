@@ -81,7 +81,7 @@ def vae_loss(input, x_decoded_mean):
     return mse_loss + kl_loss
 
 
-def encoder():
+def Encoder():
     input_ = Input(shape=IMAGE_SHAPE)
     x = conv(128)(input_)
     x = conv(256)(x)
@@ -99,36 +99,37 @@ def encoder():
 
     x = Dense(8 * 8 * 512, activation="relu")(latent_space)
     x = Reshape((8, 8, 512))(x)
-    encoder_output = upscale(512)(x)
+    x = upscale(512)(x)
 
-    return Model(input_, encoder_output), z_log_sigma, z_mean
+    return Model(input_, x), z_log_sigma, z_mean
 
 
-def decoder():
-    decoder_input = Input(shape=(16, 16, 512), name="decoder_input")
+def Decoder():
+    input_ = Input(shape=(16, 16, 512))
 
-    x = upscale(512)(decoder_input)
+    x = upscale(512)(input_)
     x = upscale(256)(x)
     x = upscale(128)(x)
 
-    decoder_output = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
-    return Model(decoder_input, decoder_output)
+    x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
+    return Model(input_, x)
 
 
 # ********************************************************************
 
-encoder_input = Input(shape=IMAGE_SHAPE, name="encoder_input")
-encoder, z_log_sigma, z_mean = encoder()
-decoder_a = decoder()
-decoder_b = decoder()
+encoder, z_log_sigma, z_mean = Encoder()
+decoder_A = Decoder()
+decoder_B = Decoder()
 
-autoencoder_A = Model(encoder_input, decoder_a(encoder(encoder_input)))
+x = Input(shape=IMAGE_SHAPE)
+
+autoencoder_A = Model(x, decoder_A(encoder(x)))
 if not _variational:
     autoencoder_A.compile(optimizer=optimizer, loss='mean_absolute_error')
 else:
     autoencoder_A.compile(optimizer=optimizer, loss=vae_loss)
 
-autoencoder_B = Model(encoder_input, decoder_b(encoder(encoder_input)))
+autoencoder_B = Model(x, decoder_B(encoder(x)))
 if not _variational:
     autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error')
 else:
@@ -139,12 +140,12 @@ else:
 try:
     if not _variational:
         encoder.load_weights("models/AE/encoder.h5")
-        decoder_a.load_weights("models/AE/decoder_a.h5")
-        decoder_a.load_weights("models/AE/decoder_b.h5")
+        decoder_A.load_weights("models/AE/decoder_a.h5")
+        decoder_B.load_weights("models/AE/decoder_b.h5")
     else:
         encoder.load_weights("models/VAE/encoder.h5")
-        decoder_a.load_weights("models/VAE/decoder_a.h5")
-        decoder_a.load_weights("models/VAE/decoder_b.h5")
+        decoder_A.load_weights("models/VAE/decoder_a.h5")
+        decoder_B.load_weights("models/VAE/decoder_b.h5")
     print("... load models")
 except:
     print("models does not exist")
@@ -153,12 +154,12 @@ except:
 def save_model_weights():
     if not _variational:
         encoder.save_weights("models/AE/encoder.h5")
-        decoder_a.save_weights("models/AE/decoder_a.h5")
-        decoder_b.save_weights("models/AE/decoder_b.h5")
+        decoder_A.save_weights("models/AE/decoder_a.h5")
+        decoder_B.save_weights("models/AE/decoder_b.h5")
     else:
         encoder.save_weights("models/VAE/encoder.h5")
-        decoder_a.save_weights("models/VAE/decoder_a.h5")
-        decoder_b.save_weights("models/VAE/decoder_b.h5")
+        decoder_A.save_weights("models/VAE/decoder_a.h5")
+        decoder_B.save_weights("models/VAE/decoder_b.h5")
 
     print("save model weights")
 
@@ -177,6 +178,7 @@ images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
+
 
 for epoch in range(100000):
     batch_size = 16
