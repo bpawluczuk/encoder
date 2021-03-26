@@ -33,7 +33,7 @@ optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 _image_shape = (128, 128, 3)
 _latent_dim = 256
 _batch_size = 16
-_variational = 1
+_variational = 0
 width = 128
 height = 128
 
@@ -75,55 +75,69 @@ def sampling(args):
     return z_mean + K.exp(z_log_var) * epsilon
 
 
-encoder_input = Input(shape=(128, 128, 3), name="encoder_input")
-x = conv(128)(encoder_input)
-x = conv(256)(x)
-x = conv(512)(x)
-x = convDropout(512)(x)
-x = Flatten()(x)
+def encoder(_input):
+    x = conv(128)(_input)
+    x = conv(256)(x)
+    x = conv(512)(x)
+    x = convDropout(512)(x)
+    x = Flatten()(x)
 
-z_mean = Dense(_latent_dim)(x)
-z_log_sigma = Dense(_latent_dim)(x)
+    z_mean = Dense(_latent_dim)(x)
+    z_log_sigma = Dense(_latent_dim)(x)
 
-if not _variational:
-    latent_space = Dense(_latent_dim)(x)
-else:
-    latent_space = Lambda(sampling)([z_mean, z_log_sigma])
+    if not _variational:
+        latent_space = Dense(_latent_dim)(x)
+    else:
+        latent_space = Lambda(sampling)([z_mean, z_log_sigma])
 
-x = Dense(8 * 8 * 512, activation="relu")(latent_space)
-x = Reshape((8, 8, 512))(x)
-encoder_output = upscale(512)(x)
+    x = Dense(8 * 8 * 512, activation="relu")(latent_space)
+    x = Reshape((8, 8, 512))(x)
+    encoder_output = upscale(512)(x)
 
-encoder = Model(encoder_input, encoder_output)
+    def vae_loss(input, x_decoded_mean):
+        mse_loss = K.mean(keras.losses.mse(input, x_decoded_mean), axis=(1, 2)) * height * width
+        kl_loss = - 0.5 * K.mean(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma), axis=-1)
+        return mse_loss + kl_loss
 
-
-# *****************
-
-def vae_loss(input, x_decoded_mean):
-    mse_loss = K.mean(keras.losses.mse(input, x_decoded_mean), axis=(1, 2)) * height * width
-    kl_loss = - 0.5 * K.mean(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma), axis=-1)
-    return mse_loss + kl_loss
+    return Model(_input, encoder_output)
 
 
-# *****************
+def decoder():
+    decoder_input = Input(shape=(16, 16, 512), name="decoder_input")
 
-decoder_input = Input(shape=(16, 16, 512), name="decoder_input")
-x = upscale(512)(decoder_input)
-x = upscale(256)(x)
-x = upscale(128)(x)
+    x = upscale(512)(decoder_input)
+    x = upscale(256)(x)
+    x = upscale(128)(x)
 
-decoder_output = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
+    decoder_output = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
+    return Model(decoder_input, decoder_output)
 
-# ********************************************************
+# ********************************************************************
 
-decoder_a = Model(decoder_input, decoder_output)
+encoder_input = Input(shape=IMAGE_SHAPE, name="encoder_input")
+encoder = encoder()
+decoder_a = decoder()
+decoder_b = decoder()
+
+try:
+    if not _variational:
+        encoder.load_weights("models/AE/encoder.h5")
+        decoder_a.load_weights("models/AE/decoder_a.h5")
+        decoder_a.load_weights("models/AE/decoder_b.h5")
+    else:
+        encoder.load_weights("models/VAE/encoder.h5")
+        decoder_a.load_weights("models/VAE/decoder_a.h5")
+        decoder_a.load_weights("models/VAE/decoder_b.h5")
+    print("... load models")
+except:
+    print("models does not exist")
+
 autoencoder_A = Model(encoder_input, decoder_a(encoder(encoder_input)))
 if not _variational:
     autoencoder_A.compile(optimizer=optimizer, loss='mean_absolute_error')
 else:
-    autoencoder_A.compile(optimizer=optimizer, loss=vae_loss)
+    autoencoder_A.compile(optimizer=optimizer, loss=encoder.val)
 
-decoder_b = Model(decoder_input, decoder_output)
 autoencoder_B = Model(encoder_input, decoder_b(encoder(encoder_input)))
 if not _variational:
     autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error')
@@ -136,35 +150,20 @@ else:
 def save_model_weights():
     if not _variational:
         encoder.save_weights("models/AE/encoder.h5")
-        decoder_a.save_weights("models/AE/decoder_A.h5")
-        decoder_b.save_weights("models/AE/decoder_B.h5")
+        decoder_a.save_weights("models/AE/decoder_a.h5")
+        decoder_b.save_weights("models/AE/decoder_b.h5")
     else:
         encoder.save_weights("models/VAE/encoder.h5")
-        decoder_a.save_weights("models/VAE/decoder_A.h5")
-        decoder_b.save_weights("models/VAE/decoder_B.h5")
+        decoder_a.save_weights("models/VAE/decoder_a.h5")
+        decoder_b.save_weights("models/VAE/decoder_b.h5")
 
     print("save model weights")
 
 # ********************************************************************
 
-try:
-    if not _variational:
-        encoder.load_weights("models/AE/encoder.h5")
-        decoder_a.load_weights("models/AE/decoder_A.h5")
-        decoder_a.load_weights("models/AE/decoder_B.h5")
-    else:
-        encoder.load_weights("models/VAE/encoder.h5")
-        decoder_a.load_weights("models/VAE/decoder_A.h5")
-        decoder_a.load_weights("models/VAE/decoder_B.h5")
-    print("... load models")
-except:
-    print("models does not exist")
-
-# ********************************************************************
-
-encoder.summary()
-autoencoder_A.summary()
-autoencoder_B.summary()
+# encoder.summary()
+# autoencoder_A.summary()
+# autoencoder_B.summary()
 
 # ********************************************************************
 
@@ -211,3 +210,4 @@ for epoch in range(100000):
     key = cv2.waitKey(1)
 
 # ********************************************************************
+

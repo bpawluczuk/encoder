@@ -33,7 +33,7 @@ optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 _image_shape = (128, 128, 3)
 _latent_dim = 256
 _batch_size = 16
-_variational = 1
+_variational = 0
 width = 128
 height = 128
 
@@ -120,6 +120,19 @@ encoder, z_mean, z_log_sigma = encoder(encoder_input)
 decoder_a = decoder()
 decoder_b = decoder()
 
+try:
+    if not _variational:
+        encoder.load_weights("models/AE/encoder.h5")
+        decoder_a.load_weights("models/AE/decoder_a.h5")
+        decoder_a.load_weights("models/AE/decoder_b.h5")
+    else:
+        encoder.load_weights("models/VAE/encoder.h5")
+        decoder_a.load_weights("models/VAE/decoder_a.h5")
+        decoder_a.load_weights("models/VAE/decoder_b.h5")
+    print("... load models")
+except:
+    print("models does not exist")
+
 autoencoder_A = Model(encoder_input, decoder_a(encoder(encoder_input)))
 if not _variational:
     autoencoder_A.compile(optimizer=optimizer, loss='mean_absolute_error')
@@ -138,34 +151,20 @@ else:
 def save_model_weights():
     if not _variational:
         encoder.save_weights("models/AE/encoder.h5")
-        decoder_a.save_weights("models/AE/decoder_A.h5")
-        decoder_b.save_weights("models/AE/decoder_B.h5")
+        decoder_a.save_weights("models/AE/decoder_a.h5")
+        decoder_b.save_weights("models/AE/decoder_b.h5")
     else:
         encoder.save_weights("models/VAE/encoder.h5")
-        decoder_a.save_weights("models/VAE/decoder_A.h5")
-        decoder_b.save_weights("models/VAE/decoder_B.h5")
+        decoder_a.save_weights("models/VAE/decoder_a.h5")
+        decoder_b.save_weights("models/VAE/decoder_b.h5")
 
     print("save model weights")
 
-
-try:
-    if not _variational:
-        encoder.load_weights("models/AE/encoder.h5")
-        decoder_a.load_weights("models/AE/decoder_A.h5")
-        decoder_a.load_weights("models/AE/decoder_B.h5")
-    else:
-        encoder.load_weights("models/VAE/encoder.h5")
-        decoder_a.load_weights("models/VAE/decoder_A.h5")
-        decoder_a.load_weights("models/VAE/decoder_B.h5")
-    print("... load models")
-except:
-    print("models does not exist")
-
 # ********************************************************************
 
-encoder.summary()
-autoencoder_A.summary()
-autoencoder_B.summary()
+# encoder.summary()
+# autoencoder_A.summary()
+# autoencoder_B.summary()
 
 # ********************************************************************
 
