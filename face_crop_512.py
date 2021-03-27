@@ -5,8 +5,8 @@ import dlib
 frontal_face_detector = dlib.get_frontal_face_detector()
 frontal_face_predictor = dlib.shape_predictor("detect/shape_predictor_68_face_landmarks.dat")
 
-source_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/rowan/"
-dest_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/rowan_512/"
+source_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/laura/"
+dest_dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/laura_512/"
 
 source_size = 512
 dest_size = 256
