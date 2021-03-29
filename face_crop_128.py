@@ -23,8 +23,8 @@ def convert_one_image(source_image):
     return result
 
 
-source_dir = Path('dataset/frames/oliwka_512')
-output_dir = Path('dataset/frames/oliwka_face')
+source_dir = Path('dataset/frames/laura_512')
+output_dir = Path('dataset/frames/laura_face')
 
 
 for fn in get_image_paths(source_dir):

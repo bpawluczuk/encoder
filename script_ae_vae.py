@@ -1,5 +1,6 @@
 import cv2
 import numpy
+from pathlib import Path
 
 from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import Adam
@@ -8,9 +9,10 @@ from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
 
-from utils import get_image_paths, load_images, stack_images
-from training_data import get_training_data
+from utils import get_image_paths
 from pixel_shuffler import PixelShuffler
+from util_face import getFaceAndCoordinates
+from seamless_image import seamless_images
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -23,12 +25,14 @@ from tensorflow.python.framework.ops import disable_eager_execution
 
 disable_eager_execution()
 
-# ********************************************************************
+
+# ******************************************************************************
+
+optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
 IMAGE_SHAPE = (128, 128, 3)
 ENCODER_DIM = 1024
 
-optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
 _image_shape = (128, 128, 3)
 _latent_dim = 256
@@ -150,69 +154,58 @@ try:
 except:
     print("models does not exist")
 
+images_A = get_image_paths("data/oliwka_512/")
+images_B = get_image_paths("data/laura_512/")
 
-def save_model_weights():
-    if not _variational:
-        encoder.save_weights("models/AE/encoder.h5")
-        decoder_A.save_weights("models/AE/decoder_a.h5")
-        decoder_B.save_weights("models/AE/decoder_b.h5")
-    else:
-        encoder.save_weights("models/VAE/encoder.h5")
-        decoder_A.save_weights("models/VAE/decoder_a.h5")
-        decoder_B.save_weights("models/VAE/decoder_b.h5")
-
-    print("save model weights")
+# images_A = get_image_paths("dataset/frames/harrison_512/")
+# images_B = get_image_paths("dataset/frames/ryan_512/")
 
 
-# ********************************************************************
+def convert_one_image(autoencoder, source_image):
+    assert source_image.shape == (512, 512, 3)
 
-# encoder.summary()
-# autoencoder_A.summary()
-# autoencoder_B.summary()
+    resultFace = getFaceAndCoordinates(source_image)
 
-# ********************************************************************
+    result = None
 
-images_A = get_image_paths("dataset/frames/harrison_face")
-images_B = get_image_paths("dataset/frames/ryan_face")
-images_A = load_images(images_A) / 255.0
-images_B = load_images(images_B) / 255.0
+    if resultFace is not None:
+        xmin, ymin, xmax, ymax, h, w, face = resultFace
 
-images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
+        source_image_face = cv2.resize(face, (int(128), int(128)))
+        source_image_face_expand_dims = numpy.expand_dims(source_image_face, 0)
+        predict_face = autoencoder.predict(source_image_face_expand_dims / 255.0)[0]
+        predict_face = numpy.clip(predict_face * 255, 0, 255).astype(image.dtype)
+        predict_face = cv2.resize(predict_face, (xmax - xmin, ymax - ymin))
+        destination_image = source_image.copy()
+        destination_image[ymin:ymin + h, xmin:xmin + w] = predict_face
+        seamless_destination_image = seamless_images(destination_image, source_image)
+
+        cv2.imshow("source", source_image)
+        cv2.imshow("source_face", source_image_face)
+        cv2.imshow("predict_face", predict_face)
+        cv2.imshow("destination_image", destination_image)
+
+        output_file = "output/seamless_new_image.jpg"
+        # cv2.imwrite(str(output_file), seamless_destination_image)
+        cv2.imshow("seamless_destination_image", seamless_destination_image)
+
+        result = seamless_destination_image
+
+    return result
 
 
-for epoch in range(100000):
-    batch_size = 16
-    warped_A, target_A = get_training_data(images_A, batch_size)
-    warped_B, target_B = get_training_data(images_B, batch_size)
+output_dir = Path('output/oliwka_laura')
+output_dir = Path('output/laura_oliwka')
+output_dir.mkdir(parents=True, exist_ok=True)
 
-    loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
-    loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
-    print(epoch, loss_A, loss_B)
 
-    if epoch % 100 == 0:
-        save_model_weights()
-        test_A = target_A[0:14]
-        test_B = target_B[0:14]
+for fn in images_B:
 
-    figure_A = numpy.stack([
-        test_A,
-        autoencoder_A.predict(test_A),
-        autoencoder_B.predict(test_A),
-    ], axis=1)
+    image = cv2.imread(fn)
+    new_image = convert_one_image(autoencoder_A, image)
 
-    figure_B = numpy.stack([
-        test_B,
-        autoencoder_B.predict(test_B),
-        autoencoder_A.predict(test_B),
-    ], axis=1)
+    if new_image is not None:
+        output_file = output_dir / Path(fn).name
+        cv2.imwrite(str(output_file), new_image)
 
-    figure = numpy.concatenate([figure_A, figure_B], axis=0)
-    figure = figure.reshape((4, 7) + figure.shape[1:])
-    figure = stack_images(figure)
-
-    figure = numpy.clip(figure * 255, 0, 255).astype('uint8')
-
-    cv2.imshow("", figure)
-    key = cv2.waitKey(1)
-
-# ********************************************************************
+key = cv2.waitKey(0)
