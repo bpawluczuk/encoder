@@ -32,20 +32,20 @@ optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
 
 def Generator(input_):
-    x = Dense(128 * 128 * 128)(input_)
+    x = Dense(128 * 128 * 64)(input_)
     x = LeakyReLU(0.1)(x)
-    x = Reshape((128, 128, 128))(x)
+    x = Reshape((128, 128, 64))(x)
 
-    x = Conv2D(256, 5, padding='same')(x)
+    x = Conv2D(128, 5, padding='same')(x)
     x = LeakyReLU(0.1)(x)
 
     # x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
     # x = LeakyReLU(0.1)(x)
 
-    x = Conv2D(256, 5, padding='same')(x)
+    x = Conv2D(128, 5, padding='same')(x)
     x = LeakyReLU(0.1)(x)
 
-    x = Conv2D(256, 5, padding='same')(x)
+    x = Conv2D(128, 5, padding='same')(x)
     x = LeakyReLU(0.1)(x)
 
     x = Conv2D(3, 7, activation='tanh', padding='same')(x)
@@ -114,11 +114,7 @@ gan = keras.models.Model(gan_input, gan_output)
 gan_optimizer = keras.optimizers.RMSprop(lr=0.0004, clipvalue=1.0, decay=1e-8)
 gan.compile(optimizer=gan_optimizer, loss='binary_crossentropy')
 
-# gan_output = Discriminator(autoencoder_A(gan_input))
-# gan = Model(gan_input, gan_output)
-#
-# gan.compile(optimizer=optimizer, loss='mean_absolute_error')
-# gan.summary()
+gan.summary()
 
 # ********************************************************************
 
@@ -129,6 +125,19 @@ fake = numpy.zeros((batch_size, 1))
 
 # ********************************************************************
 
+try:
+    gan.load_weights("models/GAN/gan.h5")
+    print("... load models")
+except:
+    print("models does not exist")
+
+
+def save_model_weights():
+    gan.save_weights("models/GAN/gan.h5")
+    print("save model weights")
+
+# ********************************************************************
+
 images_A = get_image_paths("data/laura")
 images_B = get_image_paths("data/oliwka")
 images_A = load_images(images_A) / 255.0
@@ -136,7 +145,6 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-start = 0
 for epoch in range(10):
     warped_A, target_A = get_training_data(images_A, batch_size)
 
@@ -158,14 +166,10 @@ for epoch in range(10):
     print('strata dyskryminatora w kroku %s: %s' % (epoch, d_loss))
     print('strata przeciwna: %s: %s' % (epoch, a_loss))
 
-    # img = image.array_to_img(generated_images[0] * 255., scale=False)
-    # img = image.array_to_img(target_A[0] * 255., scale=False)
+    # *************
 
-    # print(noise.shape)
-
-    # d_loss_real = discriminator.train_on_batch(target_A, valid)
-    # d_loss_fake = discriminator.train_on_batch(gen_imgs, fake)
-    # d_loss = 0.5 * numpy.add(d_loss_real, d_loss_fake)
+    if epoch % 100 == 0:
+        save_model_weights()
 
     figure_A = numpy.stack([
         generated_images,
