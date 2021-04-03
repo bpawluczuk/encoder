@@ -136,6 +136,7 @@ def save_model_weights():
     gan.save_weights("models/GAN/gan.h5")
     print("save model weights")
 
+
 # ********************************************************************
 
 images_A = get_image_paths("data/laura")
@@ -145,7 +146,7 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-for epoch in range(10):
+for epoch in range(10000000):
     warped_A, target_A = get_training_data(images_A, batch_size)
 
     random_latent_vectors = numpy.random.normal(size=(batch_size, latent_dim))
@@ -172,8 +173,8 @@ for epoch in range(10):
         save_model_weights()
 
     figure_A = numpy.stack([
+        target_A,
         generated_images,
-        target_A
     ], axis=1)
 
     figure = numpy.concatenate([figure_A], axis=0)
