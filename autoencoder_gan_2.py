@@ -195,10 +195,13 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 for epoch in range(10000000):
     warped_A, target_A = get_training_data(images_A, batch_size)
+    warped_B, target_B = get_training_data(images_B, batch_size)
 
     # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
     generated_images = generator.predict(warped_A)
-    generated_images_test = generator.predict(target_A)
+
+    generated_images_test_A = generator.predict(target_A)
+    generated_images_test_B = generator.predict(target_B)
 
     combined_images = numpy.concatenate([generated_images, target_A])
 
@@ -223,7 +226,8 @@ for epoch in range(10000000):
         warped_A,
         generated_images,
         target_A,
-        generated_images_test
+        generated_images_test_A,
+        generated_images_test_B
     ], axis=1)
 
     figure = numpy.concatenate([figure_A], axis=0)
