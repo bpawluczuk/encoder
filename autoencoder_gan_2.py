@@ -198,6 +198,7 @@ for epoch in range(10000000):
 
     # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
     generated_images = generator.predict(warped_A)
+    generated_images_test = generator.predict(target_A)
 
     combined_images = numpy.concatenate([generated_images, target_A])
 
@@ -220,8 +221,9 @@ for epoch in range(10000000):
 
     figure_A = numpy.stack([
         warped_A,
-        target_A,
         generated_images,
+        target_A,
+        generated_images_test
     ], axis=1)
 
     figure = numpy.concatenate([figure_A], axis=0)
