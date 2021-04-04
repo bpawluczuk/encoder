@@ -164,7 +164,7 @@ discriminator = Discriminator(discriminator_input)
 discriminator_optimizer = keras.optimizers.RMSprop(lr=0.0008, clipvalue=1.0, decay=1e-8)
 discriminator.compile(optimizer=discriminator_optimizer, loss='binary_crossentropy')
 
-discriminator.trainable = False
+# discriminator.trainable = False
 
 gan_input = keras.Input(shape=IMAGE_SHAPE)
 gan_output = discriminator(generator(gan_input))
@@ -213,14 +213,17 @@ for epoch in range(10000000):
 
     combined_images = numpy.concatenate([generated_images, target_A])
 
-    labels = numpy.concatenate([valid, fake])
+    labels = numpy.concatenate([fake, valid])
     labels += 0.05 * numpy.random.random(labels.shape)
 
+
+    discriminator.trainable = True
     d_loss = discriminator.train_on_batch(combined_images, labels)
 
     # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
-    misleading_targets = numpy.zeros((batch_size, 1))
+    misleading_targets = numpy.ones((batch_size, 1))
 
+    discriminator.trainable = False
     a_loss = gan.train_on_batch(warped_A, misleading_targets)
 
     print('strata dyskryminatora w kroku %s: %s' % (epoch, d_loss))
