@@ -226,9 +226,10 @@ for epoch in range(10000000):
     misleading_targets = numpy.zeros((batch_size, 1))
 
     # discriminator.trainable = False
-    a_loss = gan.train_on_batch(warped_A, misleading_targets)
+    g_loss = gan.train_on_batch(warped_A, misleading_targets)
 
-    print('strata dyskryminatora w kroku %s: %s %s' % (epoch, d_loss, a_loss))
+    # print('strata dyskryminatora w kroku %s: %s %s' % (epoch, d_loss, g_loss))
+    print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100 * d_loss[1], g_loss))
     # print('strata przeciwna: %s: %s' % (epoch, a_loss))
 
     # *************
