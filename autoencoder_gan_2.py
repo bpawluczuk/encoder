@@ -62,10 +62,10 @@ def upscale(filters):
 
     return block
 
+
 # ********************************************************************
 
 def Encoder(input_):
-
     x = conv(128)(input_)
     x = conv(256)(x)
     x = conv(512)(x)
@@ -73,7 +73,6 @@ def Encoder(input_):
     x = Flatten()(x)
 
     latent_space = Dense(latent_dim)(x)
-
 
     x = Dense(8 * 8 * 512, activation="relu")(latent_space)
     x = Reshape((8, 8, 512))(x)
@@ -92,11 +91,11 @@ def Decoder():
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
     return Model(input_, x)
 
+
 # ********************************************************************
 
 
 def Discriminator(input_):
-
     x = Conv2D(128, 3)(input_)
     x = LeakyReLU()(x)
 
@@ -178,8 +177,8 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 for epoch in range(10000000):
     warped_A, target_A = get_training_data(images_A, batch_size)
 
-    # random_latent_vectors = numpy.random.normal(size=(batch_size, IMAGE_SHAPE))
-    generated_images = generator.predict(warped_A)
+    random_latent_vectors = numpy.random.normal(size=(batch_size, 128, 128, 3))
+    generated_images = generator.predict(random_latent_vectors)
 
     combined_images = numpy.concatenate([generated_images, target_A])
 
@@ -188,7 +187,7 @@ for epoch in range(10000000):
 
     d_loss = discriminator.train_on_batch(combined_images, labels)
 
-    # random_latent_vectors = numpy.random.normal(size=(batch_size, latent_dim))
+    random_latent_vectors = numpy.random.normal(size=(batch_size, 128, 128, 3))
     misleading_targets = numpy.zeros((batch_size, 1))
 
     a_loss = gan.train_on_batch(warped_A, misleading_targets)
