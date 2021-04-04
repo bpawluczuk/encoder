@@ -99,11 +99,12 @@ def Decoder():
 
 
 def Generator(input_):
-    x = Dense(128 * 128 * 3)(input_)
-    x = LeakyReLU(0.1)(x)
-    x = Reshape((128, 128, 3))(x)
 
-    x = Conv2D(128, 5, padding='same')(x)
+    # x = Dense(128 * 128 * 3)(input_)
+    # x = LeakyReLU(0.1)(x)
+    # x = Reshape((128, 128, 3))(x)
+
+    x = Conv2D(128, 5, padding='same')(input_)
     x = LeakyReLU(0.1)(x)
 
     x = Conv2D(128, 5, padding='same')(x)
@@ -145,11 +146,16 @@ def Discriminator(input_):
 
 gan_input = keras.Input(shape=IMAGE_SHAPE)
 
-encoder = Encoder(gan_input)
-decoder = Decoder()
+# encoder = Encoder(gan_input)
+# decoder = Decoder()
+#
+# generator = Model(gan_input, decoder(encoder(gan_input)))
+# generator.summary()
 
-generator = Model(gan_input, decoder(encoder(gan_input)))
+
+generator = Generator(gan_input)
 generator.summary()
+
 
 discriminator_input = Input(shape=IMAGE_SHAPE)
 discriminator = Discriminator(discriminator_input)
@@ -202,8 +208,8 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 for epoch in range(10000000):
     warped_A, target_A = get_training_data(images_A, batch_size)
 
-    random_latent_vectors = numpy.random.normal(size=(batch_size, IMAGE_SHAPE))
-    generated_images = generator.predict(random_latent_vectors)
+    # random_latent_vectors = numpy.random.normal(size=(batch_size, IMAGE_SHAPE))
+    generated_images = generator.predict(warped_A)
 
     combined_images = numpy.concatenate([generated_images, target_A])
 
@@ -212,10 +218,10 @@ for epoch in range(10000000):
 
     d_loss = discriminator.train_on_batch(combined_images, labels)
 
-    random_latent_vectors = numpy.random.normal(size=(batch_size, IMAGE_SHAPE))
+    # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
     misleading_targets = numpy.zeros((batch_size, 1))
 
-    a_loss = gan.train_on_batch(random_latent_vectors, misleading_targets)
+    a_loss = gan.train_on_batch(warped_A, misleading_targets)
 
     print('strata dyskryminatora w kroku %s: %s' % (epoch, d_loss))
     print('strata przeciwna: %s: %s' % (epoch, a_loss))
