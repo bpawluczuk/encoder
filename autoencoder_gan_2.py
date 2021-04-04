@@ -100,10 +100,6 @@ def Decoder():
 
 def Generator(input_):
 
-    # x = Dense(128 * 128 * 3)(input_)
-    # x = LeakyReLU(0.1)(x)
-    # x = Reshape((128, 128, 49152))(x)
-
     x = Conv2D(128, 5, padding='same')(input_)
     x = LeakyReLU(0.1)(x)
 
@@ -168,7 +164,7 @@ discriminator = Discriminator(discriminator_input)
 # discriminator.summary()
 
 #discriminator_optimizer = keras.optimizers.RMSprop(lr=0.0008, clipvalue=1.0, decay=1e-8)
-discriminator.compile(optimizer=optimizer, loss='binary_crossentropy')
+discriminator.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
 
 discriminator.trainable = False
 
