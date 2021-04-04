@@ -101,18 +101,18 @@ def Decoder():
 def Generator(input_):
 
     x = Conv2D(128, 5, padding='same')(input_)
-    x = LeakyReLU(0.1)(x)
+    x = LeakyReLU(0.2)(x)
 
     x = Conv2D(256, 5, padding='same')(x)
-    x = LeakyReLU(0.1)(x)
+    x = LeakyReLU(0.2)(x)
 
     x = Conv2D(256, 5, padding='same')(x)
-    x = LeakyReLU(0.1)(x)
+    x = LeakyReLU(0.2)(x)
 
     x = Conv2D(128, 5, padding='same')(x)
-    # x = BatchNormalization()(x)
+    #x = BatchNormalization()(x)
     x = LeakyReLU(0.1)(x)
-    # x = Dropout(0.4)(x)
+    #x = Dropout(0.4)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='tanh')(x)
 
@@ -125,17 +125,17 @@ def Generator(input_):
 def Discriminator(input_):
 
     x = Conv2D(128, kernel_size=5, padding='same')(input_)
-    x = LeakyReLU()(x)
+    x = LeakyReLU(alpha=0.2)(x)
 
     x = Conv2D(256, kernel_size=5, padding='same', strides=2)(x)
-    x = LeakyReLU()(x)
+    x = LeakyReLU(alpha=0.2)(x)
 
     x = Conv2D(256, kernel_size=5, padding='same', strides=2)(x)
-    x = LeakyReLU()(x)
+    x = LeakyReLU(alpha=0.2)(x)
 
     x = Conv2D(256, kernel_size=5, padding='same', strides=2)(x)
-    # x = BatchNormalization()(x)
-    x = LeakyReLU()(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(alpha=0.2)(x)
     x = Flatten()(x)
 
     x = Dropout(0.4)(x)
@@ -146,36 +146,22 @@ def Discriminator(input_):
 
 # ********************************************************************
 
-gan_input = keras.Input(shape=IMAGE_SHAPE)
-
-# encoder = Encoder(gan_input)
-# decoder = Decoder()
-#
-# generator = Model(gan_input, decoder(encoder(gan_input)))
-# generator.summary()
-
-
+gan_input = Input(shape=IMAGE_SHAPE)
 generator = Generator(gan_input)
-generator.summary()
-
+generator.compile(optimizer=optimizer, loss='binary_crossentropy')
+# generator.summary()
 
 discriminator_input = Input(shape=IMAGE_SHAPE)
 discriminator = Discriminator(discriminator_input)
-# discriminator.summary()
-
-#discriminator_optimizer = keras.optimizers.RMSprop(lr=0.0008, clipvalue=1.0, decay=1e-8)
 discriminator.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+# discriminator.summary()
 
 discriminator.trainable = False
 
-gan_input = keras.Input(shape=IMAGE_SHAPE)
 gan_output = discriminator(generator(gan_input))
-gan = keras.models.Model(gan_input, gan_output)
-
-#gan_optimizer = keras.optimizers.RMSprop(lr=0.0004, clipvalue=1.0, decay=1e-8)
+gan = Model(gan_input, gan_output)
 gan.compile(optimizer=optimizer, loss='binary_crossentropy')
-
-# gan.summary()
+gan.summary()
 
 # ********************************************************************
 
@@ -210,7 +196,7 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 for epoch in range(10000000):
     warped_A, target_A = get_training_data(images_A, batch_size)
 
-    # random_latent_vectors = numpy.random.normal(size=(batch_size, IMAGE_SHAPE))
+    # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
     generated_images = generator.predict(warped_A)
 
     combined_images = numpy.concatenate([generated_images, target_A])
@@ -218,19 +204,14 @@ for epoch in range(10000000):
     labels = numpy.concatenate([valid, fake])
     labels += 0.05 * numpy.random.random(labels.shape)
 
-
-    # discriminator.trainable = True
     d_loss = discriminator.train_on_batch(combined_images, labels)
 
     # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
     misleading_targets = numpy.zeros((batch_size, 1))
 
-    # discriminator.trainable = False
     g_loss = gan.train_on_batch(warped_A, misleading_targets)
 
-    # print('strata dyskryminatora w kroku %s: %s %s' % (epoch, d_loss, g_loss))
     print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100 * d_loss[1], g_loss))
-    # print('strata przeciwna: %s: %s' % (epoch, a_loss))
 
     # *************
 
