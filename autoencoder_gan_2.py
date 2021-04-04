@@ -66,6 +66,11 @@ def upscale(filters):
 # ********************************************************************
 
 def Encoder(input_):
+
+    # x = Dense(128 * 128 * 3)(input_)
+    # x = LeakyReLU(0.1)(x)
+    # x = Reshape((128, 128, 3))(x)
+
     x = conv(128)(input_)
     x = conv(256)(x)
     x = conv(512)(x)
@@ -89,6 +94,26 @@ def Decoder():
     x = upscale(128)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
+
+    return Model(input_, x)
+
+
+def Generator(input_):
+    x = Dense(128 * 128 * 3)(input_)
+    x = LeakyReLU(0.1)(x)
+    x = Reshape((128, 128, 3))(x)
+
+    x = Conv2D(128, 5, padding='same')(x)
+    x = LeakyReLU(0.1)(x)
+
+    x = Conv2D(128, 5, padding='same')(x)
+    x = LeakyReLU(0.1)(x)
+
+    x = Conv2D(128, 5, padding='same')(x)
+    x = LeakyReLU(0.1)(x)
+
+    x = Conv2D(3, 7, activation='tanh', padding='same')(x)
+
     return Model(input_, x)
 
 
@@ -177,7 +202,7 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 for epoch in range(10000000):
     warped_A, target_A = get_training_data(images_A, batch_size)
 
-    random_latent_vectors = numpy.random.normal(size=(batch_size, 128, 128, 3))
+    random_latent_vectors = numpy.random.normal(size=(batch_size, IMAGE_SHAPE))
     generated_images = generator.predict(random_latent_vectors)
 
     combined_images = numpy.concatenate([generated_images, target_A])
@@ -187,10 +212,10 @@ for epoch in range(10000000):
 
     d_loss = discriminator.train_on_batch(combined_images, labels)
 
-    random_latent_vectors = numpy.random.normal(size=(batch_size, 128, 128, 3))
+    random_latent_vectors = numpy.random.normal(size=(batch_size, IMAGE_SHAPE))
     misleading_targets = numpy.zeros((batch_size, 1))
 
-    a_loss = gan.train_on_batch(warped_A, misleading_targets)
+    a_loss = gan.train_on_batch(random_latent_vectors, misleading_targets)
 
     print('strata dyskryminatora w kroku %s: %s' % (epoch, d_loss))
     print('strata przeciwna: %s: %s' % (epoch, a_loss))
@@ -207,7 +232,6 @@ for epoch in range(10000000):
     ], axis=1)
 
     figure = numpy.concatenate([figure_A], axis=0)
-    # figure = figure.reshape((4, 7) + figure.shape[1:])
     figure = stack_images(figure)
 
     figure = numpy.clip(figure * 255, 0, 255).astype('uint8')
