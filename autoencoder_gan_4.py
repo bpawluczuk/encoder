@@ -194,7 +194,7 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-noise = numpy.random.normal(0, 1, (batch_size, 16, 16, 512))
+noise = numpy.random.normal(0, 1, (batch_size, 128))
 
 for epoch in range(10000000):
     warped_A, target_A = get_training_data(images_A, batch_size)

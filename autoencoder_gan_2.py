@@ -1,5 +1,6 @@
 import cv2
 import numpy
+import os
 
 from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import Adam
@@ -18,6 +19,12 @@ from tensorflow.compat.v1 import InteractiveSession
 config = ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.95
+config.gpu_options.visible_device_list = "1"
+set_session(tf.Session(config=config))
 
 from tensorflow.python.framework.ops import disable_eager_execution
 
