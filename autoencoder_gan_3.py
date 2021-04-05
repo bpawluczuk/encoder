@@ -175,18 +175,25 @@ for epoch in range(10000000):
     generated_images_test_A = generator.predict(target_A)
 
     # combined_images = numpy.concatenate([generated_images, target_A])
-    #
+
+    half_batch = batch_size // 2
+    d_loss_real = discriminator.train_on_batch(target_A, numpy.ones((batch_size, 1)))
+    d_loss_fake = discriminator.train_on_batch(generated_images, numpy.zeros((batch_size, 1)))
+    d_loss = 0.5 * numpy.add(d_loss_real, d_loss_fake)
+
     # labels = numpy.concatenate([valid, fake])
     # labels += 0.05 * numpy.random.random(labels.shape)
     #
     # d_loss = discriminator.train_on_batch(combined_images, labels)
     #
     # misleading_targets = numpy.zeros((batch_size, 1))
-    #
-    # gan_loss = gan.train_on_batch(warped_A, misleading_targets)
-    d_loss = 0.0
-    gan_loss = 0.0
-    print("%d [G loss: %f] [D loss: %f] [G loss: %f]" % (epoch, g_loss, d_loss, gan_loss))
+
+    valid_y = (numpy.array([1] * batch_size)).reshape(batch_size, 1)
+    gan_loss = gan.train_on_batch(warped_A, valid_y)
+
+    # d_loss = 0.0
+    # gan_loss = 0.0
+    print("%d [G loss: %f] [D_real loss: %f] [D_fake loss: %f] [GAN loss: %f]" % (epoch, g_loss, d_loss[0], d_loss[1], gan_loss))
 
     # *************
 
