@@ -66,11 +66,6 @@ def upscale(filters):
 # ********************************************************************
 
 def Encoder(input_):
-
-    # x = Dense(128 * 128 * 3)(input_)
-    # x = LeakyReLU(0.1)(x)
-    # x = Reshape((128, 128, 3))(x)
-
     x = conv(128)(input_)
     x = conv(256)(x)
     x = conv(512)(x)
@@ -98,43 +93,48 @@ def Decoder():
     return Model(input_, x)
 
 
+# ********************************************************************
+
 def Generator(input_):
+    x = Conv2D(128, kernel_size=4, padding='same')(input_)
+    x = BatchNormalization(epsilon=1e-5)(x)
+    x = LeakyReLU(alpha=0.2)(x)
 
-    x = Conv2D(128, 5, padding='same')(input_)
-    x = LeakyReLU(0.2)(x)
+    x = Conv2D(256, kernel_size=4, padding='same')(x)
+    x = BatchNormalization(epsilon=1e-5)(x)
+    x = LeakyReLU(alpha=0.2)(x)
 
-    x = Conv2D(256, 5, padding='same')(x)
-    x = LeakyReLU(0.2)(x)
+    x = Conv2D(256, kernel_size=4, padding='same')(x)
+    x = BatchNormalization(epsilon=1e-5)(x)
+    x = LeakyReLU(alpha=0.2)(x)
 
-    x = Conv2D(256, 5, padding='same')(x)
-    x = LeakyReLU(0.2)(x)
+    x = Conv2D(128, kernel_size=4, padding='same')(x)
+    x = BatchNormalization(epsilon=1e-5)(x)
+    x = LeakyReLU(alpha=0.2)(x)
+    x = Dropout(0.4)(x)
 
-    x = Conv2D(128, 5, padding='same')(x)
-    #x = BatchNormalization()(x)
-    x = LeakyReLU(0.1)(x)
-    #x = Dropout(0.4)(x)
-
-    x = Conv2D(3, kernel_size=5, padding='same', activation='tanh')(x)
+    x = Conv2D(3, kernel_size=4, padding='same', activation='tanh')(x)
 
     return Model(input_, x)
 
 
 # ********************************************************************
 
-
 def Discriminator(input_):
-
-    x = Conv2D(128, kernel_size=5, padding='same')(input_)
+    x = Conv2D(128, kernel_size=4, padding='same')(input_)
+    x = BatchNormalization(epsilon=1e-5)(x)
     x = LeakyReLU(alpha=0.2)(x)
 
-    x = Conv2D(256, kernel_size=5, padding='same', strides=2)(x)
+    x = Conv2D(256, kernel_size=4, padding='same', strides=2)(x)
+    x = BatchNormalization(epsilon=1e-5)(x)
     x = LeakyReLU(alpha=0.2)(x)
 
-    x = Conv2D(256, kernel_size=5, padding='same', strides=2)(x)
+    x = Conv2D(256, kernel_size=4, padding='same', strides=2)(x)
+    x = BatchNormalization(epsilon=1e-5)(x)
     x = LeakyReLU(alpha=0.2)(x)
 
-    x = Conv2D(256, kernel_size=5, padding='same', strides=2)(x)
-    x = BatchNormalization()(x)
+    x = Conv2D(256, kernel_size=4, padding='same', strides=2)(x)
+    x = BatchNormalization(epsilon=1e-5)(x)
     x = LeakyReLU(alpha=0.2)(x)
     x = Flatten()(x)
 
@@ -148,20 +148,23 @@ def Discriminator(input_):
 
 gan_input = Input(shape=IMAGE_SHAPE)
 generator = Generator(gan_input)
-generator.compile(optimizer=optimizer, loss='binary_crossentropy')
-# generator.summary()
+generator.compile(optimizer=optimizer, loss='mean_absolute_error', metrics=['accuracy'])
 
 discriminator_input = Input(shape=IMAGE_SHAPE)
 discriminator = Discriminator(discriminator_input)
 discriminator.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
-# discriminator.summary()
 
 discriminator.trainable = False
 
 gan_output = discriminator(generator(gan_input))
 gan = Model(gan_input, gan_output)
-gan.compile(optimizer=optimizer, loss='binary_crossentropy')
-gan.summary()
+gan.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+
+# ********************************************************************
+
+# discriminator.summary()
+# generator.summary()
+# gan.summary()
 
 # ********************************************************************
 
@@ -188,22 +191,18 @@ def save_model_weights():
 
 images_A = get_image_paths("data/laura")
 images_B = get_image_paths("data/oliwka")
-images_A = load_images(images_A) / 255.0
+images_A = (load_images(images_A) - 127.5) / 127.5
 images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-noise = numpy.random.normal(0, 1, (batch_size, 128, 128, 3))
-
 for epoch in range(10000000):
     warped_A, target_A = get_training_data(images_A, batch_size)
-    warped_B, target_B = get_training_data(images_B, batch_size)
 
-    # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
+    noise = numpy.random.normal(0, 1, (batch_size, 128, 128, 3))
     generated_images = generator.predict(noise)
 
     generated_images_test_A = generator.predict(target_A)
-    generated_images_test_B = generator.predict(target_B)
 
     combined_images = numpy.concatenate([generated_images, target_A])
 
@@ -212,12 +211,13 @@ for epoch in range(10000000):
 
     d_loss = discriminator.train_on_batch(combined_images, labels)
 
-    # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
+    noise = numpy.random.normal(0, 1, (batch_size, 128, 128, 3))
     misleading_targets = numpy.zeros((batch_size, 1))
 
-    g_loss = gan.train_on_batch(warped_A, misleading_targets)
+    g_loss = gan.train_on_batch(noise, misleading_targets)
 
-    print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100 * d_loss[1], g_loss))
+    print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f, acc.: %.2f%%]" % (
+        epoch, d_loss[0], 100 * d_loss[1], g_loss[0], 100 * g_loss[1]))
 
     # *************
 
@@ -228,8 +228,7 @@ for epoch in range(10000000):
         noise,
         generated_images,
         target_A,
-        generated_images_test_A,
-        generated_images_test_B
+        generated_images_test_A
     ], axis=1)
 
     figure = numpy.concatenate([figure_A], axis=0)
