@@ -66,11 +66,6 @@ def upscale(filters):
 # ********************************************************************
 
 def Encoder(input_):
-
-    # x = Dense(128 * 128 * 3)(input_)
-    # x = LeakyReLU(0.1)(x)
-    # x = Reshape((128, 128, 3))(x)
-
     x = conv(128)(input_)
     x = conv(256)(x)
     x = conv(512)(x)
@@ -87,6 +82,7 @@ def Encoder(input_):
 
 
 def Decoder():
+
     input_ = Input(shape=(16, 16, 512))
 
     x = upscale(512)(input_)
@@ -99,7 +95,6 @@ def Decoder():
 
 
 def Generator(input_):
-
     x = Conv2D(128, 5, padding='same')(input_)
     x = LeakyReLU(0.2)(x)
 
@@ -110,9 +105,9 @@ def Generator(input_):
     x = LeakyReLU(0.2)(x)
 
     x = Conv2D(128, 5, padding='same')(x)
-    #x = BatchNormalization()(x)
+    # x = BatchNormalization()(x)
     x = LeakyReLU(0.1)(x)
-    #x = Dropout(0.4)(x)
+    # x = Dropout(0.4)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='tanh')(x)
 
@@ -123,7 +118,6 @@ def Generator(input_):
 
 
 def Discriminator(input_):
-
     x = Conv2D(128, kernel_size=5, padding='same')(input_)
     x = LeakyReLU(alpha=0.2)(x)
 
@@ -146,22 +140,29 @@ def Discriminator(input_):
 
 # ********************************************************************
 
-gan_input = Input(shape=IMAGE_SHAPE)
-generator = Generator(gan_input)
-generator.compile(optimizer=optimizer, loss='binary_crossentropy')
-# generator.summary()
+X = Input(shape=IMAGE_SHAPE)
 
-discriminator_input = Input(shape=IMAGE_SHAPE)
-discriminator = Discriminator(discriminator_input)
-discriminator.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
-# discriminator.summary()
+E = Encoder(X)
+E.compile(optimizer=optimizer, loss='mean_absolute_error')
 
-discriminator.trainable = False
+G = Decoder()
+G.compile(optimizer=optimizer, loss='mean_absolute_error')
 
-gan_output = discriminator(generator(gan_input))
-gan = Model(gan_input, gan_output)
-gan.compile(optimizer=optimizer, loss='binary_crossentropy')
-gan.summary()
+D_true = Discriminator(X)
+D_true.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+D_true.trainable = False
+
+D_fromGen = Discriminator(X)
+D_fromGen.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+D_fromGen.trainable = False
+
+D_fake = Discriminator(X)
+D_fake.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+D_fake.trainable = False
+
+
+AE = Model(X, G(E(X)))
+AE.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
 
 # ********************************************************************
 
@@ -172,16 +173,16 @@ fake = numpy.zeros((batch_size, 1))
 
 # ********************************************************************
 
-try:
-    gan.load_weights("models/GAN/gan.h5")
-    print("... load models")
-except:
-    print("models does not exist")
-
-
-def save_model_weights():
-    gan.save_weights("models/GAN/gan.h5")
-    print("save model weights")
+# try:
+#     gan.load_weights("models/GAN/gan.h5")
+#     print("... load models")
+# except:
+#     print("models does not exist")
+#
+#
+# def save_model_weights():
+#     gan.save_weights("models/GAN/gan.h5")
+#     print("save model weights")
 
 
 # ********************************************************************
@@ -193,43 +194,41 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-noise = numpy.random.normal(0, 1, (batch_size, 128, 128, 3))
+noise = numpy.random.normal(0, 1, (batch_size, 16, 16, 512))
 
 for epoch in range(10000000):
     warped_A, target_A = get_training_data(images_A, batch_size)
     warped_B, target_B = get_training_data(images_B, batch_size)
 
-    # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
-    generated_images = generator.predict(noise)
+    latent_vect = E.predict(target_A)
+    encImg = G.predict(latent_vect)
+    fakeImg = G.predict(noise)
 
-    generated_images_test_A = generator.predict(target_A)
-    generated_images_test_B = generator.predict(target_B)
 
-    combined_images = numpy.concatenate([generated_images, target_A])
+    DlossTrue = D_true.train_on_batch(target_A, numpy.ones((batch_size, 1)))
+    DlossEnc = D_fromGen.train_on_batch(encImg, numpy.ones((batch_size, 1)))
+    DlossFake = D_fake.train_on_batch(fakeImg, numpy.zeros((batch_size, 1)))
 
-    labels = numpy.concatenate([valid, fake])
-    labels += 0.05 * numpy.random.random(labels.shape)
+    # GlossEnc = G.train_on_batch(latent_vect, numpy.ones((batch_size, 1)))
+    # GlossGen = G.train_on_batch(noise, numpy.ones((batch_size, 1)))
 
-    d_loss = discriminator.train_on_batch(combined_images, labels)
+    Eloss = AE.train_on_batch(warped_A, target_A)
 
-    # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
-    misleading_targets = numpy.zeros((batch_size, 1))
+    # print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100 * d_loss[1], g_loss))
 
-    g_loss = gan.train_on_batch(warped_A, misleading_targets)
-
-    print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100 * d_loss[1], g_loss))
+    print("%d [D loss: %f]" % (epoch, DlossTrue[0]))
 
     # *************
 
-    if epoch % 100 == 0:
-        save_model_weights()
+    # if epoch % 100 == 0:
+    #     save_model_weights()
 
     figure_A = numpy.stack([
-        noise,
-        generated_images,
+        warped_A,
         target_A,
-        generated_images_test_A,
-        generated_images_test_B
+        encImg,
+        fakeImg
+
     ], axis=1)
 
     figure = numpy.concatenate([figure_A], axis=0)
