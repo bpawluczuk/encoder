@@ -66,7 +66,6 @@ def upscale(filters):
 # ********************************************************************
 
 def Encoder(input_):
-
     x = conv(128)(input_)
     x = conv(256)(x)
     x = conv(512)(x)
@@ -83,7 +82,6 @@ def Encoder(input_):
 
 
 def Decoder():
-
     input_ = Input(shape=(16, 16, 512))
 
     x = upscale(512)(input_)
@@ -95,32 +93,9 @@ def Decoder():
     return Model(input_, x)
 
 
-def Generator(input_):
-
-    x = Conv2D(128, 5, padding='same')(input_)
-    x = LeakyReLU(0.2)(x)
-
-    x = Conv2D(256, 5, padding='same')(x)
-    x = LeakyReLU(0.2)(x)
-
-    x = Conv2D(256, 5, padding='same')(x)
-    x = LeakyReLU(0.2)(x)
-
-    x = Conv2D(128, 5, padding='same')(x)
-    #x = BatchNormalization()(x)
-    x = LeakyReLU(0.1)(x)
-    #x = Dropout(0.4)(x)
-
-    x = Conv2D(3, kernel_size=5, padding='same', activation='tanh')(x)
-
-    return Model(input_, x)
-
-
 # ********************************************************************
 
-
 def Discriminator(input_):
-
     x = Conv2D(128, kernel_size=5, padding='same')(input_)
     x = LeakyReLU(alpha=0.2)(x)
 
@@ -147,16 +122,11 @@ gan_input = Input(shape=IMAGE_SHAPE)
 encoder = Encoder(gan_input)
 decoder = Decoder()
 generator = Model(gan_input, decoder(encoder(gan_input)))
-
-# gan_input = Input(shape=IMAGE_SHAPE)
-# generator = Generator(gan_input)
 generator.compile(optimizer=optimizer, loss='mean_absolute_error')
-# generator.summary()
 
 discriminator_input = Input(shape=IMAGE_SHAPE)
 discriminator = Discriminator(discriminator_input)
 discriminator.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
-# discriminator.summary()
 
 discriminator.trainable = False
 
@@ -196,28 +166,27 @@ images_B = load_images(images_B) / 255.0
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 for epoch in range(10000000):
-    warped_A, target_A = get_training_data(images_A, batch_size)
-    warped_B, target_B = get_training_data(images_B, batch_size)
 
-    # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
+    warped_A, target_A = get_training_data(images_A, batch_size)
+
+    g_loss = generator.train_on_batch(warped_A, target_A)
     generated_images = generator.predict(warped_A)
 
     generated_images_test_A = generator.predict(target_A)
-    generated_images_test_B = generator.predict(target_B)
 
-    combined_images = numpy.concatenate([generated_images, target_A])
-
-    labels = numpy.concatenate([valid, fake])
-    labels += 0.05 * numpy.random.random(labels.shape)
-
-    d_loss = discriminator.train_on_batch(combined_images, labels)
-
-    # random_latent_vectors = numpy.random.normal(size=(batch_size, 128))
-    misleading_targets = numpy.zeros((batch_size, 1))
-
-    g_loss = gan.train_on_batch(warped_A, misleading_targets)
-
-    print("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100 * d_loss[1], g_loss))
+    # combined_images = numpy.concatenate([generated_images, target_A])
+    #
+    # labels = numpy.concatenate([valid, fake])
+    # labels += 0.05 * numpy.random.random(labels.shape)
+    #
+    # d_loss = discriminator.train_on_batch(combined_images, labels)
+    #
+    # misleading_targets = numpy.zeros((batch_size, 1))
+    #
+    # gan_loss = gan.train_on_batch(warped_A, misleading_targets)
+    d_loss = 0.0
+    gan_loss = 0.0
+    print("%d [G loss: %f] [D loss: %f] [G loss: %f]" % (epoch, g_loss, d_loss, gan_loss))
 
     # *************
 
@@ -228,8 +197,7 @@ for epoch in range(10000000):
         warped_A,
         generated_images,
         target_A,
-        generated_images_test_A,
-        generated_images_test_B
+        generated_images_test_A
     ], axis=1)
 
     figure = numpy.concatenate([figure_A], axis=0)

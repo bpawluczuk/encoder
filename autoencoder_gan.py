@@ -40,8 +40,8 @@ def Generator(input_):
     x = Conv2D(128, 4, padding='same')(x)
     x = LeakyReLU(0.1)(x)
 
-    x = Conv2D(256, 4, padding='same')(x)
-    x = LeakyReLU(0.1)(x)
+    # x = Conv2D(256, 4, padding='same')(x)
+    # x = LeakyReLU(0.1)(x)
 
     x = Conv2D(128, 4, padding='same')(x)
     x = LeakyReLU(0.1)(x)
@@ -76,7 +76,7 @@ def Discriminator(input_):
 
 # ********************************************************************
 
-latent_dim = 256
+latent_dim = 128
 
 gan_input = keras.Input(shape=(latent_dim,))
 generator = Generator(gan_input)
