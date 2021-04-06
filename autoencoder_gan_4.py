@@ -146,7 +146,7 @@ if not os.path.isdir(RES_DIR):
 
 CONTROL_SIZE_SQRT = 6
 # control_vectors = np.random.normal(size=(CONTROL_SIZE_SQRT ** 2, LATENT_DIM)) / 2
-control_vectors = np.random.normal(0.0, 1.0, size=(batch_size, LATENT_DIM))
+control_vectors = np.random.uniform(-1, 1, size=(batch_size, LATENT_DIM))
 
 # ********************************************************************
 
@@ -177,7 +177,7 @@ for step in range(iters):
     warped_A, target_A = get_training_data(images_A, batch_size)
 
     start_time = time.time()
-    latent_vectors = np.random.normal(0.0, 1.0, size=(batch_size, LATENT_DIM))
+    latent_vectors = np.random.uniform(-1, 1, size=(batch_size, LATENT_DIM))
     generated = generator.predict(latent_vectors)
 
     real = images[start:start + batch_size]
@@ -189,7 +189,7 @@ for step in range(iters):
     d_loss = discriminator.train_on_batch(combined_images, labels)
     d_losses.append(d_loss)
 
-    latent_vectors = np.random.normal(0.0, 1.0, size=(batch_size, LATENT_DIM))
+    latent_vectors = np.random.uniform(-1, 1, size=(batch_size, LATENT_DIM))
     misleading_targets = np.zeros((batch_size, 1))
 
     a_loss = gan.train_on_batch(latent_vectors, misleading_targets)
@@ -197,18 +197,9 @@ for step in range(iters):
 
     print('%d/%d: d_loss: %.4f,  a_loss: %.4f.  (%.1f sec)' % (step + 1, iters, d_loss, a_loss, time.time() - start_time))
 
-    # control_image = np.zeros((WIDTH * CONTROL_SIZE_SQRT, HEIGHT * CONTROL_SIZE_SQRT, CHANNELS))
 
     control_generated = generator.predict(control_vectors)
 
-    # for i in range(CONTROL_SIZE_SQRT ** 2):
-    #     x_off = i % CONTROL_SIZE_SQRT
-    #     y_off = i // CONTROL_SIZE_SQRT
-    #     control_image[x_off * WIDTH:(x_off + 1) * WIDTH, y_off * HEIGHT:(y_off + 1) * HEIGHT, :] = control_generated[i,
-    #                                                                                                :, :, :]
-    # im = Image.fromarray(np.uint8(control_image * 255))
-    # im.save(FILE_PATH % (RES_DIR, images_saved))
-    # images_saved += 1
 
     if step % 100 == 0:
         save_model_weights()
@@ -221,7 +212,8 @@ for step in range(iters):
     figure = np.concatenate([figure_A], axis=0)
     figure = stack_images(figure)
 
-    figure = np.clip(figure * 255, 0, 255).astype('uint8')
+    # figure = np.clip(((figure * 127.5) + 127.5), 0, 255).astype('uint8')
+    figure = ((figure * 127.5) + 127.5).astype("uint8")
 
     cv2.imshow("", figure)
     key = cv2.waitKey(1)
