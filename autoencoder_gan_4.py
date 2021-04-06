@@ -110,19 +110,15 @@ def create_generator():
     x = LeakyReLU()(x)
 
     x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
-    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
-    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
-    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     x = Conv2D(256, 5, padding='same')(x)
-    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     x = Conv2D(256, 5, padding='same')(x)
@@ -142,6 +138,7 @@ def create_discriminator():
     x = LeakyReLU()(x)
 
     x = Conv2D(256, 4, strides=2)(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     x = Conv2D(256, 4, strides=2)(x)
@@ -219,7 +216,7 @@ def save_model_weights():
 
 # ********************************************************************
 
-images_A = get_image_paths("data/laura")
+images_A = get_image_paths("dataset/frames/laura_face")
 images_B = get_image_paths("data/oliwka")
 images_A = (load_images(images_A) - 127.5) / 127.5
 # images_A = (load_images(images_A)) / 255.0
