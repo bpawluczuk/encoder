@@ -32,8 +32,6 @@ disable_eager_execution()
 
 # ********************************************************************
 
-IMAGES_COUNT = 16
-
 LATENT_DIM = 128
 CHANNELS = 3
 
@@ -41,7 +39,7 @@ WIDTH = 128
 HEIGHT = 128
 
 iters = 150000
-batch_size = 16
+batch_size = 8
 
 start = 0
 d_losses = []
@@ -127,19 +125,19 @@ def create_generator():
     x = LeakyReLU()(x)
     x = Reshape((128, 128, 3))(x)
 
-    x = Conv2D(128, 24, padding='same')(x)
+    x = Conv2D(64, 24, padding='same')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
-    x = Conv2D(256, 12, padding='same')(x)
+    x = Conv2D(128, 12, padding='same')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
-    x = Conv2D(512, 6, padding='same')(x)
+    x = Conv2D(256, 6, padding='same')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
-    x = Conv2D(512, 6, padding='same')(x)
+    x = Conv2D(256, 6, padding='same')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
