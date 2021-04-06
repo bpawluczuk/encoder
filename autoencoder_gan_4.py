@@ -166,9 +166,9 @@ def save_model_weights():
 images_A = get_image_paths("data/laura")
 images_B = get_image_paths("data/oliwka")
 images_A = (load_images(images_A) - 127.5) / 127.5
-images_B = load_images(images_B) / 255.0
+# images_B = load_images(images_B) / 255.0
 
-images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
+# images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 # ********************************************************************
 start = 0
