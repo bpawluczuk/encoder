@@ -198,9 +198,9 @@ for epoch in range(10000000):
         save_model_weights()
 
     figure_A = numpy.stack([
-        warped_A,
-        generated_images,
+        # warped_A,
         target_A,
+        generated_images,
         generated_images_test_A
     ], axis=1)
 

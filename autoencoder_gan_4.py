@@ -47,10 +47,11 @@ for pic_file in tqdm(os.listdir(PIC_DIR)[:IMAGES_COUNT]):
     pic.thumbnail((WIDTH, HEIGHT), Image.ANTIALIAS)
     images.append(np.uint8(pic))
 
+
 # ********************************************************************
 
 def create_generator():
-    gen_input = Input(shape=(LATENT_DIM, ))
+    gen_input = Input(shape=(LATENT_DIM,))
 
     x = Dense(128 * 16 * 16)(gen_input)
     x = LeakyReLU()(x)
@@ -68,14 +69,15 @@ def create_generator():
     x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
     x = LeakyReLU()(x)
 
-    x = Conv2D(512, 5, padding='same')(x)
+    x = Conv2D(256, 5, padding='same')(x)
     x = LeakyReLU()(x)
-    x = Conv2D(512, 5, padding='same')(x)
+    x = Conv2D(256, 5, padding='same')(x)
     x = LeakyReLU()(x)
     x = Conv2D(CHANNELS, 7, activation='tanh', padding='same')(x)
 
     generator = Model(gen_input, x)
     return generator
+
 
 def create_discriminator():
     disc_input = Input(shape=(HEIGHT, WIDTH, CHANNELS))
@@ -93,6 +95,7 @@ def create_discriminator():
     x = LeakyReLU()(x)
 
     x = Conv2D(256, 4, strides=2)(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     x = Flatten()(x)
@@ -114,21 +117,21 @@ def create_discriminator():
 
     return discriminator
 
+
 generator = create_generator()
 discriminator = create_discriminator()
 discriminator.trainable = False
 
-gan_input = Input(shape=(LATENT_DIM, ))
+gan_input = Input(shape=(LATENT_DIM,))
 gan_output = discriminator(generator(gan_input))
 gan = Model(gan_input, gan_output)
 
 optimizer = RMSprop(lr=.0001, clipvalue=1.0, decay=1e-8)
 gan.compile(optimizer=optimizer, loss='binary_crossentropy')
 
-
 # ********************************************************************
 
-iters = 15000
+iters = 150000
 batch_size = 16
 
 start = 0
@@ -142,10 +145,23 @@ if not os.path.isdir(RES_DIR):
     os.mkdir(RES_DIR)
 
 CONTROL_SIZE_SQRT = 6
-control_vectors = np.random.normal(size=(CONTROL_SIZE_SQRT**2, LATENT_DIM)) / 2
+control_vectors = np.random.normal(size=(CONTROL_SIZE_SQRT ** 2, LATENT_DIM)) / 2
 
 # ********************************************************************
 
+try:
+    gan.load_weights("models/GAN/gan.h5")
+    print("... load models")
+except:
+    print("models does not exist")
+
+
+def save_model_weights():
+    gan.save_weights("models/GAN/gan.h5")
+    print("save model weights")
+
+# ********************************************************************
+start = 0
 for step in range(iters):
     start_time = time.time()
     latent_vectors = np.random.normal(size=(batch_size, LATENT_DIM))
@@ -170,20 +186,33 @@ for step in range(iters):
     # if start > images.shape[0] - batch_size:
     #     start = 0
 
-    if step % 50 == 49:
-        # gan.save_weights('./drive/My Drive/gan.h5')
+    print('%d/%d: d_loss: %.4f,  a_loss: %.4f.  (%.1f sec)' % (step + 1, iters, d_loss, a_loss, time.time() - start_time))
 
-        print('%d/%d: d_loss: %.4f,  a_loss: %.4f.  (%.1f sec)' % (step + 1, iters, d_loss, a_loss, time.time() - start_time))
+    control_image = np.zeros((WIDTH * CONTROL_SIZE_SQRT, HEIGHT * CONTROL_SIZE_SQRT, CHANNELS))
+    control_generated = generator.predict(control_vectors)
+    for i in range(CONTROL_SIZE_SQRT ** 2):
+        x_off = i % CONTROL_SIZE_SQRT
+        y_off = i // CONTROL_SIZE_SQRT
+        control_image[x_off * WIDTH:(x_off + 1) * WIDTH, y_off * HEIGHT:(y_off + 1) * HEIGHT, :] = control_generated[i,
+                                                                                                   :, :, :]
+    # im = Image.fromarray(np.uint8(control_image * 255))
+    # im.save(FILE_PATH % (RES_DIR, images_saved))
+    # images_saved += 1
 
-        control_image = np.zeros((WIDTH * CONTROL_SIZE_SQRT, HEIGHT * CONTROL_SIZE_SQRT, CHANNELS))
-        control_generated = generator.predict(control_vectors)
-        for i in range(CONTROL_SIZE_SQRT ** 2):
-            x_off = i % CONTROL_SIZE_SQRT
-            y_off = i // CONTROL_SIZE_SQRT
-            control_image[x_off * WIDTH:(x_off + 1) * WIDTH, y_off * HEIGHT:(y_off + 1) * HEIGHT, :] = control_generated[i, :, :, :]
-        # im = Image.fromarray(np.uint8(control_image * 255))
-        # im.save(FILE_PATH % (RES_DIR, images_saved))
-        # images_saved += 1
+    if step % 100 == 0:
+        save_model_weights()
+
+    figure_A = np.stack([
+        control_image
+    ], axis=1)
+
+    figure = np.concatenate([figure_A], axis=0)
+    figure = stack_images(figure)
+
+    figure = np.clip(figure * 255, 0, 255).astype('uint8')
+
+    cv2.imshow("", figure)
+    key = cv2.waitKey(1)
 
 plt.figure(1, figsize=(12, 8))
 plt.subplot(121)
