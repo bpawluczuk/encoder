@@ -58,21 +58,29 @@ def create_generator():
     x = Reshape((16, 16, 128))(x)
 
     x = Conv2D(256, 5, padding='same')(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
     x = Conv2D(256, 5, padding='same')(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
+
     x = Conv2D(256, 5, padding='same')(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU()(x)
+
     x = Conv2D(CHANNELS, 7, activation='tanh', padding='same')(x)
 
     generator = Model(gen_input, x)
@@ -166,6 +174,7 @@ def save_model_weights():
 images_A = get_image_paths("data/laura")
 images_B = get_image_paths("data/oliwka")
 images_A = (load_images(images_A) - 127.5) / 127.5
+# images_A = (load_images(images_A)) / 255.0
 # images_B = load_images(images_B) / 255.0
 
 # images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
