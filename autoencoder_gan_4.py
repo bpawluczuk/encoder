@@ -32,122 +32,146 @@ disable_eager_execution()
 
 # ********************************************************************
 
-PIC_DIR = 'data/laura/'
-
 IMAGES_COUNT = 16
 
-LATENT_DIM = 32
+LATENT_DIM = 128
 CHANNELS = 3
 
 WIDTH = 128
 HEIGHT = 128
 
-images = []
-for pic_file in tqdm(os.listdir(PIC_DIR)[:IMAGES_COUNT]):
-    pic = Image.open(PIC_DIR + pic_file)
-    pic.thumbnail((WIDTH, HEIGHT), Image.ANTIALIAS)
-    images.append(np.uint8(pic))
+iters = 150000
+batch_size = 16
+
+start = 0
+d_losses = []
+a_losses = []
+images_saved = 0
+
+optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
+
 
 # ********************************************************************
 
 def minimax_discriminator_loss(
-    discriminator_real_outputs,
-    discriminator_gen_outputs,
-    label_smoothing=0.25,
-    real_weights=1.0,
-    generated_weights=1.0,
-    scope=None,
-    loss_collection=tf.compat.v1.GraphKeys.LOSSES,
-    reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
-    add_summaries=False):
-
-  with tf.compat.v1.name_scope(
-      scope, 'discriminator_minimax_loss',
-      (discriminator_real_outputs, discriminator_gen_outputs, real_weights,
-       generated_weights, label_smoothing)) as scope:
-
-    # -log((1 - label_smoothing) - sigmoid(D(x)))
-    loss_on_real = tf.compat.v1.losses.sigmoid_cross_entropy(
-        tf.ones_like(discriminator_real_outputs),
         discriminator_real_outputs,
-        real_weights,
-        label_smoothing,
-        scope,
-        loss_collection=None,
-        reduction=reduction)
-    # -log(- sigmoid(D(G(x))))
-    loss_on_generated = tf.compat.v1.losses.sigmoid_cross_entropy(
-        tf.zeros_like(discriminator_gen_outputs),
         discriminator_gen_outputs,
-        generated_weights,
-        scope=scope,
-        loss_collection=None,
-        reduction=reduction)
+        label_smoothing=0.25,
+        real_weights=1.0,
+        generated_weights=1.0,
+        scope=None,
+        loss_collection=tf.compat.v1.GraphKeys.LOSSES,
+        reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
+        add_summaries=False):
+    with tf.compat.v1.name_scope(
+            scope, 'discriminator_minimax_loss',
+            (discriminator_real_outputs, discriminator_gen_outputs, real_weights,
+             generated_weights, label_smoothing)) as scope:
+        # -log((1 - label_smoothing) - sigmoid(D(x)))
+        loss_on_real = tf.compat.v1.losses.sigmoid_cross_entropy(
+            tf.ones_like(discriminator_real_outputs),
+            discriminator_real_outputs,
+            real_weights,
+            label_smoothing,
+            scope,
+            loss_collection=None,
+            reduction=reduction)
+        # -log(- sigmoid(D(G(x))))
+        loss_on_generated = tf.compat.v1.losses.sigmoid_cross_entropy(
+            tf.zeros_like(discriminator_gen_outputs),
+            discriminator_gen_outputs,
+            generated_weights,
+            scope=scope,
+            loss_collection=None,
+            reduction=reduction)
 
-    loss = loss_on_real + loss_on_generated
-    tf.compat.v1.losses.add_loss(loss, loss_collection)
+        loss = loss_on_real + loss_on_generated
+        tf.compat.v1.losses.add_loss(loss, loss_collection)
+
+        if add_summaries:
+            tf.compat.v1.summary.scalar('discriminator_gen_minimax_loss',
+                                        loss_on_generated)
+            tf.compat.v1.summary.scalar('discriminator_real_minimax_loss',
+                                        loss_on_real)
+            tf.compat.v1.summary.scalar('discriminator_minimax_loss', loss)
+
+    return loss
+
+
+def minimax_generator_loss(
+        discriminator_gen_outputs,
+        label_smoothing=0.0,
+        weights=1.0,
+        scope=None,
+        loss_collection=tf.compat.v1.GraphKeys.LOSSES,
+        reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
+        add_summaries=False):
+    with tf.compat.v1.name_scope(scope, 'generator_minimax_loss') as scope:
+        loss = - minimax_discriminator_loss(
+            tf.ones_like(discriminator_gen_outputs),
+            discriminator_gen_outputs, label_smoothing, weights, weights, scope,
+            loss_collection, reduction, add_summaries=False)
 
     if add_summaries:
-      tf.compat.v1.summary.scalar('discriminator_gen_minimax_loss',
-                                  loss_on_generated)
-      tf.compat.v1.summary.scalar('discriminator_real_minimax_loss',
-                                  loss_on_real)
-      tf.compat.v1.summary.scalar('discriminator_minimax_loss', loss)
+        tf.compat.v1.summary.scalar('generator_minimax_loss', loss)
 
-  return loss
+    return loss
+
 
 # ********************************************************************
 
 def create_generator():
     gen_input = Input(shape=(LATENT_DIM,))
 
-    x = Dense(128 * 16 * 16)(gen_input)
+    x = Dense(128 * 128 * 3)(gen_input)
     x = LeakyReLU()(x)
-    x = Reshape((16, 16, 128))(x)
+    x = Reshape((128, 128, 3))(x)
 
-    x = Conv2D(256, 5, padding='same')(x)
+    x = Conv2D(128, 24, padding='same')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
-    x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
-    x = LeakyReLU()(x)
-
-    x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
-    x = LeakyReLU()(x)
-
-    x = Conv2DTranspose(256, 4, strides=2, padding='same')(x)
-    x = LeakyReLU()(x)
-
-    x = Conv2D(256, 5, padding='same')(x)
-    x = LeakyReLU()(x)
-
-    x = Conv2D(256, 5, padding='same')(x)
+    x = Conv2D(256, 12, padding='same')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
-    x = Conv2D(CHANNELS, 7, activation='tanh', padding='same')(x)
+    x = Conv2D(512, 6, padding='same')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+    x = Conv2D(512, 6, padding='same')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+    x = Conv2D(CHANNELS, 6, activation='tanh', padding='same')(x)
 
     generator = Model(gen_input, x)
+
+    # generator.compile(
+    #     optimizer=optimizer,
+    #     loss=minimax_generator_loss
+    # )
+
     return generator
 
 
 def create_discriminator():
     disc_input = Input(shape=(HEIGHT, WIDTH, CHANNELS))
 
-    x = Conv2D(256, 3)(disc_input)
+    x = Conv2D(128, 24)(disc_input)
     x = LeakyReLU()(x)
 
-    x = Conv2D(256, 4, strides=2)(x)
+    x = Conv2D(256, 12, strides=2)(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
-    x = Conv2D(256, 4, strides=2)(x)
+    x = Conv2D(256, 6, strides=2)(x)
     x = LeakyReLU()(x)
 
     x = Conv2D(256, 4, strides=2)(x)
     x = LeakyReLU()(x)
 
-    x = Conv2D(256, 4, strides=2)(x)
+    x = Conv2D(256, 2, strides=2)(x)
     x = BatchNormalization()(x)
     x = LeakyReLU()(x)
 
@@ -155,13 +179,8 @@ def create_discriminator():
     x = Dropout(0.4)(x)
 
     x = Dense(1, activation='sigmoid')(x)
-    discriminator = Model(disc_input, x)
 
-    optimizer = RMSprop(
-        lr=.0001,
-        clipvalue=1.0,
-        decay=1e-8
-    )
+    discriminator = Model(disc_input, x)
 
     discriminator.compile(
         optimizer=optimizer,
@@ -179,26 +198,10 @@ gan_input = Input(shape=(LATENT_DIM,))
 gan_output = discriminator(generator(gan_input))
 gan = Model(gan_input, gan_output)
 
-optimizer = RMSprop(lr=.0001, clipvalue=1.0, decay=1e-8)
 gan.compile(optimizer=optimizer, loss='binary_crossentropy')
 
 # ********************************************************************
 
-iters = 150000
-batch_size = 16
-
-start = 0
-d_losses = []
-a_losses = []
-images_saved = 0
-
-RES_DIR = 'res2'
-FILE_PATH = '%s/generated_%d.png'
-if not os.path.isdir(RES_DIR):
-    os.mkdir(RES_DIR)
-
-CONTROL_SIZE_SQRT = 6
-# control_vectors = np.random.normal(size=(CONTROL_SIZE_SQRT ** 2, LATENT_DIM)) / 2
 control_vectors = np.random.uniform(-1, 1, size=(batch_size, LATENT_DIM))
 
 # ********************************************************************
@@ -214,18 +217,14 @@ def save_model_weights():
     gan.save_weights("models/GAN/gan.h5")
     print("save model weights")
 
+
 # ********************************************************************
 
 images_A = get_image_paths("dataset/frames/laura_face")
-images_B = get_image_paths("data/oliwka")
 images_A = (load_images(images_A) - 127.5) / 127.5
-# images_A = (load_images(images_A)) / 255.0
-# images_B = load_images(images_B) / 255.0
-
-# images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 # ********************************************************************
-start = 0
+
 for step in range(iters):
 
     warped_A, target_A = get_training_data(images_A, batch_size)
@@ -234,7 +233,6 @@ for step in range(iters):
     latent_vectors = np.random.uniform(-1, 1, size=(batch_size, LATENT_DIM))
     generated = generator.predict(latent_vectors)
 
-    real = images[start:start + batch_size]
     combined_images = np.concatenate([generated, target_A])
 
     labels = np.concatenate([np.ones((batch_size, 1)), np.zeros((batch_size, 1))])
@@ -249,11 +247,10 @@ for step in range(iters):
     a_loss = gan.train_on_batch(latent_vectors, misleading_targets)
     a_losses.append(a_loss)
 
-    print('%d/%d: d_loss: %.4f,  a_loss: %.4f.  (%.1f sec)' % (step + 1, iters, d_loss, a_loss, time.time() - start_time))
-
+    print(
+        '%d/%d: d_loss: %.4f,  a_loss: %.4f.  (%.1f sec)' % (step + 1, iters, d_loss, a_loss, time.time() - start_time))
 
     control_generated = generator.predict(control_vectors)
-
 
     if step % 100 == 0:
         save_model_weights()
@@ -266,19 +263,7 @@ for step in range(iters):
     figure = np.concatenate([figure_A], axis=0)
     figure = stack_images(figure)
 
-    # figure = np.clip(((figure * 127.5) + 127.5), 0, 255).astype('uint8')
     figure = ((figure * 127.5) + 127.5).astype("uint8")
 
     cv2.imshow("", figure)
     key = cv2.waitKey(1)
-
-plt.figure(1, figsize=(12, 8))
-plt.subplot(121)
-plt.plot(d_losses)
-plt.xlabel('epochs')
-plt.ylabel('discriminant losses')
-plt.subplot(122)
-plt.plot(a_losses)
-plt.xlabel('epochs')
-plt.ylabel('adversary losses')
-plt.show()
