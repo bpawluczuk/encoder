@@ -161,8 +161,8 @@ def save_model_weights():
 
 # ********************************************************************
 
-images_A = get_image_paths("data/laura")
-images_B = get_image_paths("data/oliwka")
+images_A = get_image_paths("dataset/frames/oliwka_face")
+images_B = get_image_paths("dataset/frames/laura_face")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
@@ -172,7 +172,6 @@ for epoch in range(10000000):
 
     # ********** G *************
     warped_AG, target_AG = get_training_data(images_A, batch_size)
-
     g_loss = generator.train_on_batch(warped_AG, target_AG)
 
     # ********** D *************
