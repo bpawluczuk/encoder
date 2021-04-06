@@ -135,7 +135,7 @@ discriminator.trainable = False
 
 gan_output = discriminator(generator(gan_input))
 gan = Model(gan_input, gan_output)
-gan.compile(optimizer=optimizer, loss='mean_absolute_error')
+gan.compile(optimizer=optimizer, loss='binary_crossentropy')
 gan.summary()
 
 # ********************************************************************
@@ -170,28 +170,34 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 for epoch in range(10000000):
 
-    warped_A, target_A = get_training_data(images_A, batch_size)
+    # ********** G *************
+    warped_AG, target_AG = get_training_data(images_A, batch_size)
 
-    g_loss = generator.train_on_batch(warped_A, target_A)
+    g_loss = generator.train_on_batch(warped_AG, target_AG)
 
-    random_latent_vectors = numpy.random.normal(size=(batch_size, latent_dim, latent_dim, 3))
+    # ********** D *************
+    # random_latent_vectors = numpy.random.normal(size=(batch_size, latent_dim, latent_dim, 3))
+
+    warped_AD, target_AD = get_training_data(images_A, batch_size)
+    random_latent_vectors = warped_AD
     generated_images = generator.predict(random_latent_vectors)
 
-    generated_images_test_A = generator.predict(target_A)
-
-    combined_images = numpy.concatenate([generated_images, target_A])
+    combined_images = numpy.concatenate([generated_images, target_AD])
 
     labels = numpy.concatenate([valid, fake])
     labels += 0.05 * numpy.random.random(labels.shape)
 
     d_loss = discriminator.train_on_batch(combined_images, labels)
 
+    # ******** GAN *************
     misleading_targets = numpy.zeros((batch_size, 1))
 
-    valid_y = (numpy.array([1] * batch_size)).reshape(batch_size, 1)
-    random_latent_vectors = numpy.random.normal(size=(batch_size, latent_dim, latent_dim, 3))
+    # valid_y = (numpy.array([1] * batch_size)).reshape(batch_size, 1)
+    # random_latent_vectors = numpy.random.normal(size=(batch_size, latent_dim, latent_dim, 3))
 
-    gan_loss = gan.train_on_batch(random_latent_vectors, valid_y)
+    warped_AGAN, target_AGAN = get_training_data(images_A, batch_size)
+    random_latent_vectors = warped_AGAN
+    gan_loss = gan.train_on_batch(random_latent_vectors, misleading_targets)
 
 
     print("%d [G loss: %f] [D_real loss: %f] [GAN loss: %f]" % (epoch, g_loss, d_loss, gan_loss))
@@ -201,19 +207,25 @@ for epoch in range(10000000):
     if epoch % 100 == 0:
         save_model_weights()
 
-    figure_A = numpy.stack([
-        warped_A,
-        target_A,
-        generated_images,
-        generated_images_test_A
-    ], axis=1)
+    if epoch % 10 == 0:
+        figure_A = numpy.stack([
+            warped_AG,
+            warped_AD,
+            warped_AGAN,
+            target_AG,
+            target_AD,
+            target_AGAN,
+            generated_images,
+            generator.predict(warped_AGAN)
+        ], axis=1)
 
-    figure = numpy.concatenate([figure_A], axis=0)
-    figure = stack_images(figure)
+        figure = numpy.concatenate([figure_A], axis=0)
+        figure = stack_images(figure)
 
-    figure = numpy.clip(figure * 255, 0, 255).astype('uint8')
+        figure = numpy.clip(figure * 255, 0, 255).astype('uint8')
 
-    cv2.imshow("", figure)
+        cv2.imshow("", figure)
+        
     key = cv2.waitKey(1)
 
 # ********************************************************************
