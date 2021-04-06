@@ -129,7 +129,7 @@ generator.compile(optimizer=optimizer, loss='mean_absolute_error')
 
 discriminator_input = Input(shape=IMAGE_SHAPE)
 discriminator = Discriminator(discriminator_input)
-discriminator.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+discriminator.compile(optimizer=optimizer, loss='binary_crossentropy')
 
 discriminator.trainable = False
 
@@ -173,6 +173,7 @@ for epoch in range(10000000):
     warped_A, target_A = get_training_data(images_A, batch_size)
 
     g_loss = generator.train_on_batch(warped_A, target_A)
+
     random_latent_vectors = numpy.random.normal(size=(batch_size, latent_dim, latent_dim, 3))
     generated_images = generator.predict(random_latent_vectors)
 
@@ -189,10 +190,11 @@ for epoch in range(10000000):
 
     valid_y = (numpy.array([1] * batch_size)).reshape(batch_size, 1)
     random_latent_vectors = numpy.random.normal(size=(batch_size, latent_dim, latent_dim, 3))
+
     gan_loss = gan.train_on_batch(random_latent_vectors, valid_y)
 
 
-    print("%d [G loss: %f] [D_real loss: %f] [D_fake loss: %f] [GAN loss: %f]" % (epoch, g_loss, d_loss[0], d_loss[1], gan_loss))
+    print("%d [G loss: %f] [D_real loss: %f] [GAN loss: %f]" % (epoch, g_loss, d_loss, gan_loss))
 
     # *************
 

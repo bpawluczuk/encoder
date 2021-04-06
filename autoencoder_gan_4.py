@@ -119,6 +119,7 @@ def minimax_generator_loss(
 # ********************************************************************
 
 def create_generator():
+
     gen_input = Input(shape=(LATENT_DIM,))
 
     x = Dense(128 * 128 * 3)(gen_input)
@@ -154,6 +155,7 @@ def create_generator():
 
 
 def create_discriminator():
+
     disc_input = Input(shape=(HEIGHT, WIDTH, CHANNELS))
 
     x = Conv2D(128, 24)(disc_input)
