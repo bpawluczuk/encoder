@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from matplotlib import pyplot as plt
 from tqdm import tqdm
+import tensorflow as tf
 
 from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import Adam
@@ -47,6 +48,53 @@ for pic_file in tqdm(os.listdir(PIC_DIR)[:IMAGES_COUNT]):
     pic.thumbnail((WIDTH, HEIGHT), Image.ANTIALIAS)
     images.append(np.uint8(pic))
 
+# ********************************************************************
+
+def minimax_discriminator_loss(
+    discriminator_real_outputs,
+    discriminator_gen_outputs,
+    label_smoothing=0.25,
+    real_weights=1.0,
+    generated_weights=1.0,
+    scope=None,
+    loss_collection=tf.compat.v1.GraphKeys.LOSSES,
+    reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
+    add_summaries=False):
+
+  with tf.compat.v1.name_scope(
+      scope, 'discriminator_minimax_loss',
+      (discriminator_real_outputs, discriminator_gen_outputs, real_weights,
+       generated_weights, label_smoothing)) as scope:
+
+    # -log((1 - label_smoothing) - sigmoid(D(x)))
+    loss_on_real = tf.compat.v1.losses.sigmoid_cross_entropy(
+        tf.ones_like(discriminator_real_outputs),
+        discriminator_real_outputs,
+        real_weights,
+        label_smoothing,
+        scope,
+        loss_collection=None,
+        reduction=reduction)
+    # -log(- sigmoid(D(G(x))))
+    loss_on_generated = tf.compat.v1.losses.sigmoid_cross_entropy(
+        tf.zeros_like(discriminator_gen_outputs),
+        discriminator_gen_outputs,
+        generated_weights,
+        scope=scope,
+        loss_collection=None,
+        reduction=reduction)
+
+    loss = loss_on_real + loss_on_generated
+    tf.compat.v1.losses.add_loss(loss, loss_collection)
+
+    if add_summaries:
+      tf.compat.v1.summary.scalar('discriminator_gen_minimax_loss',
+                                  loss_on_generated)
+      tf.compat.v1.summary.scalar('discriminator_real_minimax_loss',
+                                  loss_on_real)
+      tf.compat.v1.summary.scalar('discriminator_minimax_loss', loss)
+
+  return loss
 
 # ********************************************************************
 
@@ -120,7 +168,7 @@ def create_discriminator():
 
     discriminator.compile(
         optimizer=optimizer,
-        loss='binary_crossentropy'
+        loss=minimax_discriminator_loss
     )
 
     return discriminator
