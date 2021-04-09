@@ -147,14 +147,14 @@ fake = numpy.zeros((batch_size, 1))
 # ********************************************************************
 
 try:
-    gan.load_weights("models/GAN/gan.h5")
+    gan.load_weights("models/GAN/discriminator.h5")
     print("... load models")
 except:
     print("models does not exist")
 
 
 def save_model_weights():
-    gan.save_weights("models/GAN/gan.h5")
+    gan.save_weights("models/GAN/discriminator.h5")
     print("save model weights")
 
 
@@ -176,12 +176,12 @@ for epoch in range(10000000):
 
     combined_images = numpy.concatenate([warped_AG, target_AG])
 
-    labels = numpy.concatenate([valid, fake])
+    labels = numpy.concatenate([fake, valid])
     labels += 0.05 * numpy.random.random(labels.shape)
 
     d_loss = discriminator.train_on_batch(combined_images, labels)
 
-    print("%d [D_real loss: %f predict: %f]" % (epoch, d_loss, discriminator.predict(target_AG[0:1])))
+    print("%d [D_real loss: %f] [predict_fake: %f] [predict_target: %f]" % (epoch, d_loss, discriminator.predict(warped_AG[0:1]), discriminator.predict(target_AG[0:1])))
 
     # *************
 
@@ -190,8 +190,8 @@ for epoch in range(10000000):
 
     if epoch % 10 == 0:
         figure_A = numpy.stack([
-            warped_AG,
-            target_AG
+            warped_AG[0:1],
+            target_AG[0:1]
         ], axis=1)
 
         figure = numpy.concatenate([figure_A], axis=0)
