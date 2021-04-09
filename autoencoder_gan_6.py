@@ -96,6 +96,7 @@ def Decoder():
 # ********************************************************************
 
 def Discriminator(input_):
+
     x = Conv2D(128, kernel_size=5, padding='same')(input_)
     x = LeakyReLU(alpha=0.2)(x)
 
@@ -129,7 +130,7 @@ discriminator = Discriminator(discriminator_input)
 discriminator.compile(optimizer=optimizer, loss='binary_crossentropy')
 discriminator.summary()
 
-discriminator.trainable = False
+# discriminator.trainable = False
 
 gan_output = discriminator(generator(gan_input))
 gan = Model(gan_input, gan_output)
@@ -159,12 +160,12 @@ def save_model_weights():
 
 # ********************************************************************
 
-images_A = get_image_paths("data/laura")
-images_B = get_image_paths("data/oliwka")
+images_A = get_image_paths("dataset/frames/oliwka_face")
+images_B = get_image_paths("dataset/frames/laura_face")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
-images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
+# images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 for epoch in range(10000000):
 
@@ -180,7 +181,7 @@ for epoch in range(10000000):
 
     d_loss = discriminator.train_on_batch(combined_images, labels)
 
-    print("%d [D_real loss: %f predict: %f]" % (epoch, d_loss, discriminator.predict(target_AG[:1])))
+    print("%d [D_real loss: %f predict: %f]" % (epoch, d_loss, discriminator.predict(target_AG[0:1])))
 
     # *************
 
@@ -190,8 +191,7 @@ for epoch in range(10000000):
     if epoch % 10 == 0:
         figure_A = numpy.stack([
             warped_AG,
-            target_AG,
-            target_AG[:1]
+            target_AG
         ], axis=1)
 
         figure = numpy.concatenate([figure_A], axis=0)
