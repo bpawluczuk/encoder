@@ -64,6 +64,9 @@ dataset, _ = tfds.load("cycle_gan/horse2zebra", with_info=True, as_supervised=Tr
 train_horses, train_zebras = dataset["trainA"], dataset["trainB"]
 test_horses, test_zebras = dataset["testA"], dataset["testB"]
 
+# train_horses = get_image_paths("data/oliwka_256")
+# train_zebras = get_image_paths("data/laura_256")
+
 # Define the standard image size.
 orig_img_size = (286, 286)
 # Size of the random crops to be used during training.
@@ -134,6 +137,7 @@ test_zebras = (
         .batch(batch_size)
 )
 
+
 """
 ## Visualize some samples
 """
@@ -145,7 +149,6 @@ for i, samples in enumerate(zip(train_horses.take(4), train_zebras.take(4))):
     ax[i, 0].imshow(horse)
     ax[i, 1].imshow(zebra)
 plt.show()
-
 
 """
 ## Building blocks used in the CycleGAN generators and discriminators
@@ -304,13 +307,6 @@ def get_resnet_generator(
     return model
 
 
-"""
-## Build the discriminators
-The discriminators implement the following architecture:
-`C64->C128->C256->C512`
-"""
-
-
 def get_discriminator(
         filters=64, kernel_initializer=kernel_init, num_downsampling=3, name=None
 ):
@@ -359,12 +355,6 @@ gen_F = get_resnet_generator(name="generator_F")
 # Get the discriminators
 disc_X = get_discriminator(name="discriminator_X")
 disc_Y = get_discriminator(name="discriminator_Y")
-
-"""
-## Build the CycleGAN model
-We will override the `train_step()` method of the `Model` class
-for training via `fit()`.
-"""
 
 
 class CycleGan(keras.Model):
@@ -522,6 +512,7 @@ cycle_gan_model.compile(
     disc_loss_fn=discriminator_loss_fn,
 )
 
+
 class GANMonitor(keras.callbacks.Callback):
     """A callback to generate and save images after each epoch"""
 
@@ -549,11 +540,9 @@ class GANMonitor(keras.callbacks.Callback):
         plt.show()
         plt.close()
 
+
 plotter = GANMonitor()
 
-
-# Here we will train the model for just one epoch as each epoch takes around
-# 7 minutes on a single P100 backed machine.
 cycle_gan_model.fit(
     tf.data.Dataset.zip((train_horses, train_zebras)),
     epochs=1,
@@ -585,11 +574,12 @@ plt.show()
 # images_B = load_images(images_B) / 255.0
 #
 # images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
-
+#
 # for epoch in range(100000):
 #     batch_size = 8
 #
 #     warped_A, target_A = get_training_data(images_A, batch_size, 256, 4)
 #     warped_B, target_B = get_training_data(images_B, batch_size, 256, 4)
 #
-#     cycle_gan_model.train_on_batch(target_A, target_B)
+#     loss_A = cycle_gan_model.train_on_batch(target_A, target_B)
+#     print(epoch, loss_A)
