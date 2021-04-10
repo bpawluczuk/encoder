@@ -161,7 +161,6 @@ def save_model_weights():
     gan.save_weights("models/GAN/discriminator.h5")
     print("save model weights")
 
-
 # ********************************************************************
 
 images_A = get_image_paths("dataset/frames/ryan_face")
