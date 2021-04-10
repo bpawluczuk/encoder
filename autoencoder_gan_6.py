@@ -116,7 +116,7 @@ def Discriminator(input_):
     x = Flatten()(x)
 
     x = Dropout(0.4)(x)
-    x = Dense(1, activation="sigmoid")(x)
+    # x = Dense(1, activation="sigmoid")(x)
 
     return Model(input_, x)
 
