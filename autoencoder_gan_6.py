@@ -97,16 +97,20 @@ def Decoder():
 
 def Discriminator(input_):
 
-    x = Conv2D(128, kernel_size=5, padding='same')(input_)
+    x = Conv2D(128, kernel_size=7, padding='same')(input_)
     x = LeakyReLU(alpha=0.2)(x)
 
-    x = Conv2D(256, kernel_size=5, padding='same', strides=2)(x)
+    x = Conv2D(128, kernel_size=7, padding='same', strides=2)(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU(alpha=0.2)(x)
+    x = Dropout(0.4)(x)
 
-    x = Conv2D(256, kernel_size=5, padding='same', strides=2)(x)
+    x = Conv2D(128, kernel_size=7, padding='same', strides=2)(x)
+    x = BatchNormalization()(x)
     x = LeakyReLU(alpha=0.2)(x)
+    x = Dropout(0.4)(x)
 
-    x = Conv2D(256, kernel_size=5, padding='same', strides=2)(x)
+    x = Conv2D(128, kernel_size=7, padding='same', strides=2)(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha=0.2)(x)
     x = Flatten()(x)
@@ -127,7 +131,7 @@ generator.compile(optimizer=optimizer, loss='mean_absolute_error')
 
 discriminator_input = Input(shape=IMAGE_SHAPE)
 discriminator = Discriminator(discriminator_input)
-discriminator.compile(optimizer=optimizer, loss='binary_crossentropy')
+discriminator.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
 discriminator.summary()
 
 # discriminator.trainable = False
@@ -160,7 +164,7 @@ def save_model_weights():
 
 # ********************************************************************
 
-images_A = get_image_paths("dataset/frames/oliwka_face")
+images_A = get_image_paths("dataset/frames/ryan_face")
 images_B = get_image_paths("dataset/frames/laura_face")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
@@ -171,27 +175,27 @@ for epoch in range(10000000):
 
     # ********** G *************
     warped_AG, target_AG = get_training_data(images_A, batch_size)
-
+    warped_BG, target_BG = get_training_data(images_B, batch_size)
     # ********** D *************
 
-    combined_images = numpy.concatenate([warped_AG, target_AG])
+    combined_images = numpy.concatenate([target_AG, target_BG])
 
     labels = numpy.concatenate([fake, valid])
     labels += 0.05 * numpy.random.random(labels.shape)
 
     d_loss = discriminator.train_on_batch(combined_images, labels)
 
-    print("%d [D_real loss: %f] [predict_fake: %f] [predict_target: %f]" % (epoch, d_loss, discriminator.predict(warped_AG[0:1]), discriminator.predict(target_AG[0:1])))
+    print("%d [D loss: %f] [D accuracy: %.3f] [fake: %f] [target: %f]" % (epoch, d_loss[0], 100*d_loss[1], discriminator.predict(target_AG[0:1]), discriminator.predict(target_BG[0:1])))
 
     # *************
 
-    if epoch % 100 == 0:
-        save_model_weights()
+    # if epoch % 100 == 0:
+    #     save_model_weights()
 
     if epoch % 10 == 0:
         figure_A = numpy.stack([
-            warped_AG[0:1],
-            target_AG[0:1]
+            target_AG[0:1],
+            target_BG[0:1]
         ], axis=1)
 
         figure = numpy.concatenate([figure_A], axis=0)
