@@ -1,18 +1,20 @@
 import cv2
-import numpy
+import os
+import numpy as np
 import matplotlib.pyplot as plt
-
-from tensorflow.keras.layers import *
-from tensorflow.keras.optimizers import Adam
 
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.keras import layers
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
 
 from utils import get_image_paths, load_images, stack_images
 from training_data import get_training_data
 from pixel_shuffler import PixelShuffler
+
+import tensorflow_addons as tfa
+import tensorflow_datasets as tfds
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -21,92 +23,31 @@ config = ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
 
-# from tensorflow.python.framework.ops import disable_eager_execution
-#
-# disable_eager_execution()
-
-
 # ********************************************************************
 
-IMAGE_SHAPE = (128, 128, 3)
+IMAGE_SHAPE = (256, 256, 3)
 ENCODER_DIM = 1024
 
 latent_dim = 128
 
-# optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
+image_size = (256, 256)
+buffer_size = 4
+batch_size = 1
 
 # ********************************************************************
-
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
-
-import tensorflow_addons as tfa
-import tensorflow_datasets as tfds
 
 tfds.disable_progress_bar()
 autotune = tf.data.experimental.AUTOTUNE
 
-# disable_v2_behavior()
+# ********************************************************************************
 
-"""
-## Prepare the dataset
-In this example, we will be using the
-[horse to zebra](https://www.tensorflow.org/datasets/catalog/cycle_gan#cycle_ganhorse2zebra)
-dataset.
-"""
-
-# Load the horse-zebra dataset using tensorflow-datasets.
-dataset, _ = tfds.load("cycle_gan/horse2zebra", with_info=True, as_supervised=True)
-train_horses, train_zebras = dataset["trainA"], dataset["trainB"]
-test_horses, test_zebras = dataset["testA"], dataset["testB"]
-
-# train_horses = get_image_paths("data/oliwka_256")
-# train_zebras = get_image_paths("data/laura_256")
-
-# Define the standard image size.
-orig_img_size = (256, 256)
-# Size of the random crops to be used during training.
-input_img_size = (256, 256, 3)
 # Weights initializer for the layers.
 kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 # Gamma initializer for instance normalization.
 gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 
 
-def normalize_img(img):
-    img = tf.cast(img, dtype=tf.float32)
-    # Map values in the range [-1, 1]
-    return (img / 127.5) - 1.0
-
-
-def preprocess_train_image(img,label):
-    # Random flip
-    img = tf.image.random_flip_left_right(img)
-    # Resize to the original size first
-    img = tf.image.resize(img, [*orig_img_size])
-    # Random crop to 256X256
-    img = tf.image.random_crop(img, size=[*input_img_size])
-    # Normalize the pixel values in the range [-1, 1]
-    img = normalize_img(img)
-    return img
-
-
-def preprocess_test_image(img,label):
-    # Only resizing and normalization for the test images.
-    img = tf.image.resize(img, [input_img_size[0], input_img_size[1]])
-    img = normalize_img(img)
-    return img
-
-
-"""
-## Create `Dataset` objects
-"""
-
+# ********************************************************************************
 
 def process(img):
     img = tf.cast(img, dtype=tf.float32)
@@ -114,9 +55,7 @@ def process(img):
     return (img / 127.5) - 1.0
 
 
-image_size = (256, 256)
-buffer_size = 4
-batch_size = 1
+# ********************************************************************************
 
 train_oli = tf.keras.preprocessing.image_dataset_from_directory(
     "data/OL",
@@ -148,37 +87,7 @@ train_lu = (
     train_lu.map(process, num_parallel_calls=autotune)
 )
 
-# Apply the preprocessing operations to the training data
-train_horses = (
-    train_horses.map(preprocess_train_image, num_parallel_calls=autotune)
-        .cache()
-        .shuffle(buffer_size)
-        .batch(batch_size)
-)
-train_zebras = (
-    train_zebras.map(preprocess_train_image, num_parallel_calls=autotune)
-        .cache()
-        .shuffle(buffer_size)
-        .batch(batch_size)
-)
-
-# Apply the preprocessing operations to the test data
-test_horses = (
-    test_horses.map(preprocess_test_image, num_parallel_calls=autotune)
-        .cache()
-        .shuffle(buffer_size)
-        .batch(batch_size)
-)
-test_zebras = (
-    test_zebras.map(preprocess_test_image, num_parallel_calls=autotune)
-        .cache()
-        .shuffle(buffer_size)
-        .batch(batch_size)
-)
-
-"""
-## Visualize some samples
-"""
+# ********************************************************************************
 
 _, ax = plt.subplots(4, 2, figsize=(10, 15))
 # for i, samples in enumerate(zip(train_horses.take(4), train_zebras.take(4))):
@@ -189,10 +98,8 @@ for i, samples in enumerate(zip(train_oli.take(4), train_lu.take(4))):
     ax[i, 1].imshow(zebra)
 plt.show()
 
-"""
-## Building blocks used in the CycleGAN generators and discriminators
-"""
 
+# ********************************************************************************
 
 class ReflectionPadding2D(layers.Layer):
     """Implements Reflection Padding as a layer.
@@ -217,6 +124,8 @@ class ReflectionPadding2D(layers.Layer):
         ]
         return tf.pad(input_tensor, padding_tensor, mode="REFLECT")
 
+
+# ********************************************************************************
 
 def residual_block(
         x,
@@ -257,6 +166,8 @@ def residual_block(
     return x
 
 
+# ********************************************************************************
+
 def downsample(
         x,
         filters,
@@ -281,6 +192,8 @@ def downsample(
         x = activation(x)
     return x
 
+
+# ********************************************************************************
 
 def upsample(
         x,
@@ -307,6 +220,8 @@ def upsample(
     return x
 
 
+# ********************************************************************************
+
 def get_resnet_generator(
         filters=64,
         num_downsampling_blocks=2,
@@ -315,11 +230,9 @@ def get_resnet_generator(
         gamma_initializer=gamma_init,
         name=None,
 ):
-    img_input = layers.Input(shape=input_img_size, name=name + "_img_input")
+    img_input = layers.Input(shape=IMAGE_SHAPE, name=name + "_img_input")
     x = ReflectionPadding2D(padding=(3, 3))(img_input)
-    x = layers.Conv2D(filters, (7, 7), kernel_initializer=kernel_init, use_bias=False)(
-        x
-    )
+    x = layers.Conv2D(filters, (7, 7), kernel_initializer=kernel_init, use_bias=False)(x)
     x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_initializer)(x)
     x = layers.Activation("relu")(x)
 
@@ -346,10 +259,10 @@ def get_resnet_generator(
     return model
 
 
-def get_discriminator(
-        filters=64, kernel_initializer=kernel_init, num_downsampling=3, name=None
-):
-    img_input = layers.Input(shape=input_img_size, name=name + "_img_input")
+# ********************************************************************************
+
+def get_discriminator(filters=64, kernel_initializer=kernel_init, num_downsampling=3, name=None):
+    img_input = layers.Input(shape=IMAGE_SHAPE, name=name + "_img_input")
     x = layers.Conv2D(
         filters,
         (4, 4),
@@ -387,6 +300,8 @@ def get_discriminator(
     return model
 
 
+# ********************************************************************************
+
 # Get the generators
 gen_G = get_resnet_generator(name="generator_G")
 gen_F = get_resnet_generator(name="generator_F")
@@ -395,6 +310,8 @@ gen_F = get_resnet_generator(name="generator_F")
 disc_X = get_discriminator(name="discriminator_X")
 disc_Y = get_discriminator(name="discriminator_Y")
 
+
+# ********************************************************************************
 
 class CycleGan(keras.Model):
     def __init__(
@@ -519,6 +436,8 @@ class CycleGan(keras.Model):
         }
 
 
+# ********************************************************************************
+
 # Loss function for evaluating adversarial loss
 adv_loss_fn = keras.losses.MeanSquaredError()
 
@@ -536,6 +455,8 @@ def discriminator_loss_fn(real, fake):
     return (real_loss + fake_loss) * 0.5
 
 
+# ********************************************************************************
+
 # Create cycle gan model
 cycle_gan_model = CycleGan(
     generator_G=gen_G, generator_F=gen_F, discriminator_X=disc_X, discriminator_Y=disc_Y
@@ -552,15 +473,31 @@ cycle_gan_model.compile(
 )
 
 
+# ********************************************************************************
+
 class GANMonitor(keras.callbacks.Callback):
     """A callback to generate and save images after each epoch"""
 
     def __init__(self, num_img=4):
         self.num_img = num_img
 
+    def on_batch_begin(self, batch, logs=None):
+
+        for i, img in enumerate(train_lu.take(self.num_img)):
+            prediction = self.model.gen_G(img)[0].numpy()
+            prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
+            img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
+
+            prediction = keras.preprocessing.image.array_to_img(prediction)
+
+            figure = np.stack((img, prediction))
+            figure = np.concatenate(figure, axis=1)
+
+            cv2.imshow("", figure)
+            cv2.waitKey(1)
+
     def on_epoch_end(self, epoch, logs=None):
         _, ax = plt.subplots(4, 2, figsize=(12, 12))
-        # for i, img in enumerate(test_horses.take(self.num_img)):
         for i, img in enumerate(train_lu.take(self.num_img)):
             prediction = self.model.gen_G(img)[0].numpy()
             prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
@@ -581,8 +518,11 @@ class GANMonitor(keras.callbacks.Callback):
         plt.close()
 
 
+# ********************************************************************************
+
 plotter = GANMonitor()
 
+# ********************************************************************************
 
 try:
     cycle_gan_model.built = True
@@ -591,13 +531,19 @@ try:
 except:
     print("models does not exist")
 
+# ********************************************************************************
+
 cycle_gan_model.fit(
     tf.data.Dataset.zip((train_oli, train_lu)),
     epochs=1,
     callbacks=[plotter],
 )
 
+# ********************************************************************************
+
 cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
+
+# ********************************************************************************
 
 _, ax = plt.subplots(4, 2, figsize=(10, 15))
 # for i, img in enumerate(test_horses.take(4)):
