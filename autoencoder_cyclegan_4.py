@@ -25,12 +25,10 @@ session = InteractiveSession(config=config)
 
 # ********************************************************************
 
-IMAGE_SHAPE = (256, 256, 3)
+IMAGE_SHAPE = (512, 512, 3)
 ENCODER_DIM = 1024
 
-latent_dim = 128
-
-image_size = (256, 256)
+image_size = (512, 512)
 buffer_size = 4
 batch_size = 1
 
@@ -58,7 +56,7 @@ def process(img):
 # ********************************************************************************
 
 train_oli = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/OL",
+    "data/oliwka_512",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -73,7 +71,7 @@ train_oli = (
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/LU",
+    "data/laura_512",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -90,7 +88,6 @@ train_lu = (
 # ********************************************************************************
 
 _, ax = plt.subplots(4, 2, figsize=(10, 15))
-# for i, samples in enumerate(zip(train_horses.take(4), train_zebras.take(4))):
 for i, samples in enumerate(zip(train_oli.take(4), train_lu.take(4))):
     horse = (((samples[0][0] * 127.5) + 127.5).numpy()).astype(np.uint8)
     zebra = (((samples[1][0] * 127.5) + 127.5).numpy()).astype(np.uint8)
@@ -102,13 +99,6 @@ plt.show()
 # ********************************************************************************
 
 class ReflectionPadding2D(layers.Layer):
-    """Implements Reflection Padding as a layer.
-    Args:
-        padding(tuple): Amount of padding for the
-        spatial dimensions.
-    Returns:
-        A padded tensor with the same type as the input tensor.
-    """
 
     def __init__(self, padding=(1, 1), **kwargs):
         self.padding = tuple(padding)
@@ -482,23 +472,25 @@ class GANMonitor(keras.callbacks.Callback):
         self.num_img = num_img
 
     def on_batch_begin(self, batch, logs=None):
-
-        for i, img in enumerate(train_lu.take(self.num_img)):
+        _, ax = plt.subplots(4, 2, figsize=(12, 12))
+        for i, img in enumerate(train_oli.take(self.num_img)):
             prediction = self.model.gen_G(img)[0].numpy()
-            prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
-            img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
+            prediction = ((prediction * 127.5) + 127.5).astype(np.uint8)
+            img = ((img[0] * 127.5) + 127.5).numpy().astype(np.uint8)
 
-            prediction = keras.preprocessing.image.array_to_img(prediction)
+            ax[i, 0].imshow(img)
+            ax[i, 1].imshow(prediction)
+            ax[i, 0].set_title("Input image")
+            ax[i, 1].set_title("Translated image")
+            ax[i, 0].axis("off")
+            ax[i, 1].axis("off")
 
-            figure = np.stack((img, prediction))
-            figure = np.concatenate(figure, axis=1)
-
-            cv2.imshow("", figure)
-            cv2.waitKey(1)
+        plt.show()
+        plt.close()
 
     def on_epoch_end(self, epoch, logs=None):
         _, ax = plt.subplots(4, 2, figsize=(12, 12))
-        for i, img in enumerate(train_lu.take(self.num_img)):
+        for i, img in enumerate(train_oli.take(self.num_img)):
             prediction = self.model.gen_G(img)[0].numpy()
             prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
             img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
@@ -511,9 +503,9 @@ class GANMonitor(keras.callbacks.Callback):
             ax[i, 1].axis("off")
 
             prediction = keras.preprocessing.image.array_to_img(prediction)
-            # prediction.save(
-            #     "generated_img_{i}_{epoch}.png".format(i=i, epoch=epoch + 1)
-            # )
+            prediction.save(
+                "output/generated_img_{i}_{epoch}.png".format(i=i, epoch=epoch + 1)
+            )
         plt.show()
         plt.close()
 
@@ -546,8 +538,7 @@ cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
 # ********************************************************************************
 
 _, ax = plt.subplots(4, 2, figsize=(10, 15))
-# for i, img in enumerate(test_horses.take(4)):
-for i, img in enumerate(train_lu.take(4)):
+for i, img in enumerate(train_oli.take(4)):
     prediction = cycle_gan_model.gen_G(img, training=False)[0].numpy()
     prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
     img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
@@ -561,6 +552,27 @@ for i, img in enumerate(train_lu.take(4)):
     ax[i, 1].axis("off")
 
     prediction = keras.preprocessing.image.array_to_img(prediction)
-    # prediction.save("predicted_img_{i}.png".format(i=i))
+    prediction.save("output/predicted_train_oli_gen_G_img_{i}.png".format(i=i))
+plt.tight_layout()
+plt.show()
+
+# ********************************************************************************
+
+_, ax = plt.subplots(4, 2, figsize=(10, 15))
+for i, img in enumerate(train_lu.take(4)):
+    prediction = cycle_gan_model.gen_F(img, training=False)[0].numpy()
+    prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
+    img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
+
+    ax[i, 0].imshow(img)
+    ax[i, 1].imshow(prediction)
+    ax[i, 0].set_title("Input image")
+    ax[i, 0].set_title("Input image")
+    ax[i, 1].set_title("Translated image")
+    ax[i, 0].axis("off")
+    ax[i, 1].axis("off")
+
+    prediction = keras.preprocessing.image.array_to_img(prediction)
+    prediction.save("output/predicted_train_lu_gen_F_img_{i}.png".format(i=i))
 plt.tight_layout()
 plt.show()
