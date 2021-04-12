@@ -574,21 +574,30 @@ class GANMonitor(keras.callbacks.Callback):
             ax[i, 1].axis("off")
 
             prediction = keras.preprocessing.image.array_to_img(prediction)
-            prediction.save(
-                "generated_img_{i}_{epoch}.png".format(i=i, epoch=epoch + 1)
-            )
+            # prediction.save(
+            #     "generated_img_{i}_{epoch}.png".format(i=i, epoch=epoch + 1)
+            # )
         plt.show()
         plt.close()
 
 
 plotter = GANMonitor()
 
+
+try:
+    cycle_gan_model.built = True
+    cycle_gan_model.load_weights("models/CycleGAN/cycleGan.h5")
+    print("... load models")
+except:
+    print("models does not exist")
+
 cycle_gan_model.fit(
     tf.data.Dataset.zip((train_oli, train_lu)),
-    # tf.data.Dataset.zip((train_horses, train_zebras)),
     epochs=1,
     callbacks=[plotter],
 )
+
+cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
 
 _, ax = plt.subplots(4, 2, figsize=(10, 15))
 # for i, img in enumerate(test_horses.take(4)):
@@ -606,6 +615,6 @@ for i, img in enumerate(train_lu.take(4)):
     ax[i, 1].axis("off")
 
     prediction = keras.preprocessing.image.array_to_img(prediction)
-    prediction.save("predicted_img_{i}.png".format(i=i))
+    # prediction.save("predicted_img_{i}.png".format(i=i))
 plt.tight_layout()
 plt.show()
