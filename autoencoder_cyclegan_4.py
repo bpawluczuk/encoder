@@ -98,7 +98,7 @@ buffer_size = 4
 batch_size = 1
 
 train_oli = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/OL/trainOL",
+    "data/OL",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -113,7 +113,7 @@ train_oli = (
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/OL/trainOL",
+    "data/LU",
     validation_split=0.2,
     subset="training",
     seed=1,
