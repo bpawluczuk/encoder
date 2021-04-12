@@ -85,7 +85,7 @@ dataB2 = load_images(path + 'OL/testOL/')
 dataB = vstack((dataB1, dataB2))
 print('Loaded dataB: ', dataB.shape)
 # save as compressed numpy array
-filename = 'horse2zebra_256.npz'
+filename = 'models/CycleGAN2/oliTolu_256.npz'
 savez_compressed(filename, dataA, dataB)
 print('Saved dataset: ', filename)
 
@@ -243,10 +243,10 @@ def generate_fake_samples(g_model, dataset, patch_shape):
 # save the generator models to file
 def save_models(step, g_model_AtoB, g_model_BtoA):
     # save the first generator model
-    filename1 = 'g_model_AtoB_%06d.h5' % (step + 1)
+    filename1 = 'models/CycleGAN2/g_model_AtoB_%06d.h5' % (step + 1)
     g_model_AtoB.save(filename1)
     # save the second generator model
-    filename2 = 'g_model_BtoA_%06d.h5' % (step + 1)
+    filename2 = 'models/CycleGAN2/g_model_BtoA_%06d.h5' % (step + 1)
     g_model_BtoA.save(filename2)
     print('>Saved: %s and %s' % (filename1, filename2))
 
@@ -271,7 +271,7 @@ def summarize_performance(step, g_model, trainX, name, n_samples=5):
         pyplot.axis('off')
         pyplot.imshow(X_out[i])
     # save plot to file
-    filename1 = '%s_generated_plot_%06d.png' % (name, (step + 1))
+    filename1 = 'output/GAN2/%s_generated_plot_%06d.png' % (name, (step + 1))
     pyplot.savefig(filename1)
     pyplot.close()
 
@@ -345,7 +345,7 @@ def train(d_model_A, d_model_B, g_model_AtoB, g_model_BtoA, c_model_AtoB, c_mode
 
 
 # load image data
-dataset = load_real_samples('horse2zebra_256.npz')
+dataset = load_real_samples('models/CycleGAN2/oliTolu_256.npz')
 print('Loaded', dataset[0].shape, dataset[1].shape)
 # define input shape based on the loaded dataset
 image_shape = dataset[0].shape[1:]

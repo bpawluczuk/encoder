@@ -98,7 +98,7 @@ buffer_size = 4
 batch_size = 1
 
 train_oli = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/OL",
+    "data/OL/trainOL",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -113,7 +113,7 @@ train_oli = (
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/LU",
+    "data/OL/trainOL",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -577,9 +577,9 @@ class GANMonitor(keras.callbacks.Callback):
             ax[i, 1].axis("off")
 
             prediction = keras.preprocessing.image.array_to_img(prediction)
-            prediction.save(
-                "output/generated_img_{i}_{epoch}.png".format(i=i, epoch=epoch + 1)
-            )
+            # prediction.save(
+            #     "output/generated_img_{i}_{epoch}.png".format(i=i, epoch=epoch + 1)
+            # )
         plt.show()
         plt.close()
 
@@ -630,6 +630,6 @@ for i, img in enumerate(train_oli.take(4)):
     ax[i, 1].axis("off")
 
     prediction = keras.preprocessing.image.array_to_img(prediction)
-    prediction.save("output/predicted_img_{i}.png".format(i=i))
+    prediction.save("output/GAN/predicted_img_{i}.png".format(i=i))
 plt.tight_layout()
 plt.show()
