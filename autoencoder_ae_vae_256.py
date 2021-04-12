@@ -175,8 +175,8 @@ def save_model_weights():
 
 # ********************************************************************
 
-images_A = get_image_paths("data/oliwka_128")
-images_B = get_image_paths("data/laura_128")
+images_A = get_image_paths("dataset/frames/oliwka_128")
+images_B = get_image_paths("dataset/frames/laura_128")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 

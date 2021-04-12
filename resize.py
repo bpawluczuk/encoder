@@ -3,7 +3,7 @@ import cv2
 
 name = "laura"
 source_dir = "dataset/frames/laura_512/"
-dest_dir = "dataset/frames/laura_128/"
+dest_dir = "data/laura_128/laura_128/"
 size = 128
 
 inc = 0
