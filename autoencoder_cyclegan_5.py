@@ -38,7 +38,6 @@ from keras.layers import Conv2DTranspose
 from keras.layers import LeakyReLU
 from keras.layers import Activation
 from keras.layers import Concatenate
-# from keras_contrib.layers.normalization.instancenormalization import InstanceNormalization
 from matplotlib import pyplot
 import tensorflow_addons as tfa
 import tensorflow_datasets as tfds
@@ -75,21 +74,21 @@ def load_images(path, size=(256, 256)):
     return asarray(data_list)
 
 # dataset path
-path = 'data/'
+# path = 'data/'
 # load dataset A
-dataA1 = load_images(path + 'LU/trainLU/')
-dataAB = load_images(path + 'LU/testLU/')
-dataA = vstack((dataA1, dataAB))
-print('Loaded dataA: ', dataA.shape)
-# load dataset B
-dataB1 = load_images(path + 'OL/trainOL/')
-dataB2 = load_images(path + 'OL/testOL/')
-dataB = vstack((dataB1, dataB2))
-print('Loaded dataB: ', dataB.shape)
-# save as compressed numpy array
-filename = 'models/CycleGAN2/oliTolu_256.npz'
-savez_compressed(filename, dataA, dataB)
-print('Saved dataset: ', filename)
+# dataA1 = load_images(path + 'LU/trainLU/')
+# dataAB = load_images(path + 'LU/testLU/')
+# dataA = vstack((dataA1, dataAB))
+# print('Loaded dataA: ', dataA.shape)
+# # load dataset B
+# dataB1 = load_images(path + 'OL/trainOL/')
+# dataB2 = load_images(path + 'OL/testOL/')
+# dataB = vstack((dataB1, dataB2))
+# print('Loaded dataB: ', dataB.shape)
+# # save as compressed numpy array
+# filename = 'models/CycleGAN2/oliTolu_256.npz'
+# savez_compressed(filename, dataA, dataB)
+# print('Saved dataset: ', filename)
 
 # ********************************************************************
 
