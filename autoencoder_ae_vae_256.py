@@ -7,6 +7,8 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
+import tensorflow_addons as tfa
+
 
 from utils import get_image_paths, load_images, stack_images
 from training_data import get_training_data
@@ -37,11 +39,15 @@ ENCODER_DIM = 1024
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
+kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
+gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
+
 # ********************************************************************
 
 def conv(filters):
     def block(x):
-        x = Conv2D(filters, kernel_size=4, strides=2, padding='same')(x)
+        x = Conv2D(filters, kernel_size=4, strides=2, padding='same', kernel_initializer=kernel_init)(x)
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         x = LeakyReLU(0.1)(x)
         return x
 
@@ -50,8 +56,9 @@ def conv(filters):
 
 def convDropout(filters):
     def block(x):
-        x = Conv2D(filters, kernel_size=4, strides=2, padding='same')(x)
-        x = BatchNormalization()(x)
+        x = Conv2D(filters, kernel_size=4, strides=2, padding='same', kernel_initializer=kernel_init)(x)
+        # x = BatchNormalization()(x)
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         x = LeakyReLU(0.1)(x)
         x = Dropout(0.4)(x)
         return x
@@ -61,7 +68,7 @@ def convDropout(filters):
 
 def upscale(filters):
     def block(x):
-        x = Conv2D(filters * 4, kernel_size=3, padding='same')(x)
+        x = Conv2D(filters * 4, kernel_size=3, padding='same', kernel_initializer=kernel_init)(x)
         x = LeakyReLU(0.1)(x)
         x = PixelShuffler()(x)
         return x
@@ -175,8 +182,8 @@ def save_model_weights():
 
 # ********************************************************************
 
-images_A = get_image_paths("dataset/frames/oliwka_128")
-images_B = get_image_paths("dataset/frames/laura_128")
+images_A = get_image_paths("data/oliwka_128")
+images_B = get_image_paths("data/laura_128")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
