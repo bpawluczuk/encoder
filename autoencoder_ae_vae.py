@@ -7,6 +7,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
+import tensorflow_addons as tfa
 
 from utils import get_image_paths, load_images, stack_images
 from training_data import get_training_data
@@ -25,22 +26,35 @@ disable_eager_execution()
 
 # ********************************************************************
 
-IMAGE_SHAPE = (128, 128, 3)
+size = 256
+zoom = 4  # 64*zoom
+width = 256
+height = 256
+_latent_dim = 256
+_variational = 1
+chanels = 3
+
+IMAGE_SHAPE = (size, size, chanels)
 ENCODER_DIM = 1024
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
-_image_shape = (128, 128, 3)
-_latent_dim = 256
-_batch_size = 16
-_variational = 1
-width = 128
-height = 128
+kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
+gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 
+
+# ********************************************************************
 
 def conv(filters):
     def block(x):
-        x = Conv2D(filters, kernel_size=5, strides=2, padding='same')(x)
+        x = Conv2D(
+            filters,
+            kernel_size=4,
+            strides=2,
+            padding='same',
+            kernel_initializer=kernel_init
+        )(x)
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         x = LeakyReLU(0.1)(x)
         return x
 
@@ -49,8 +63,14 @@ def conv(filters):
 
 def convDropout(filters):
     def block(x):
-        x = Conv2D(filters, kernel_size=5, strides=2, padding='same')(x)
-        x = BatchNormalization()(x)
+        x = Conv2D(
+            filters,
+            kernel_size=4,
+            strides=2,
+            padding='same',
+            kernel_initializer=kernel_init
+        )(x)
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         x = LeakyReLU(0.1)(x)
         x = Dropout(0.4)(x)
         return x
@@ -60,7 +80,12 @@ def convDropout(filters):
 
 def upscale(filters):
     def block(x):
-        x = Conv2D(filters * 4, kernel_size=3, padding='same')(x)
+        x = Conv2D(
+            filters * 4,
+            kernel_size=3,
+            padding='same',
+            kernel_initializer=kernel_init
+        )(x)
         x = LeakyReLU(0.1)(x)
         x = PixelShuffler()(x)
         return x
@@ -82,8 +107,8 @@ def vae_loss(input, x_decoded_mean):
 
 
 def Encoder(input_):
-
     x = conv(128)(input_)
+    x = conv(256)(x)
     x = conv(256)(x)
     x = conv(512)(x)
     x = convDropout(512)(x)
@@ -109,6 +134,7 @@ def Decoder():
 
     x = upscale(512)(input_)
     x = upscale(256)(x)
+    x = upscale(128)(x)
     x = upscale(128)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
@@ -172,18 +198,17 @@ def save_model_weights():
 
 # ********************************************************************
 
-images_A = get_image_paths("dataset/frames/oliwka_face")
-images_B = get_image_paths("dataset/frames/laura_face")
+images_A = get_image_paths("data/oliwka_256/oliwka_256")
+images_B = get_image_paths("data/laura_256/laura_256")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-
 for epoch in range(100000):
-    batch_size = 16
-    warped_A, target_A = get_training_data(images_A, batch_size)
-    warped_B, target_B = get_training_data(images_B, batch_size)
+    batch_size = 8
+    warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
+    warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)
 
     loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
     loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
@@ -191,23 +216,19 @@ for epoch in range(100000):
 
     if epoch % 100 == 0:
         save_model_weights()
-        test_A = target_A[0:14]
-        test_B = target_B[0:14]
+        test_A = target_A[0:7]
+        test_B = target_B[0:7]
 
-    figure_A = numpy.stack([
+    figure = numpy.stack([
         test_A,
         autoencoder_A.predict(test_A),
         autoencoder_B.predict(test_A),
-    ], axis=1)
-
-    figure_B = numpy.stack([
         test_B,
         autoencoder_B.predict(test_B),
         autoencoder_A.predict(test_B),
     ], axis=1)
 
-    figure = numpy.concatenate([figure_A, figure_B], axis=0)
-    figure = figure.reshape((4, 7) + figure.shape[1:])
+    figure = numpy.concatenate([figure], axis=0)
     figure = stack_images(figure)
 
     figure = numpy.clip(figure * 255, 0, 255).astype('uint8')
