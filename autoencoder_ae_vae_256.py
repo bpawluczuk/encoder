@@ -9,7 +9,6 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
 import tensorflow_addons as tfa
 
-
 from utils import get_image_paths, load_images, stack_images
 from training_data import get_training_data
 from pixel_shuffler import PixelShuffler
@@ -27,7 +26,8 @@ disable_eager_execution()
 
 # ********************************************************************
 
-size = 128
+size = 256
+zoom = 4  # 64*zoom
 width = 256
 height = 256
 _latent_dim = 256
@@ -41,6 +41,7 @@ optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
 kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
+
 
 # ********************************************************************
 
@@ -92,7 +93,7 @@ def vae_loss(input, x_decoded_mean):
 def Encoder(input_):
     x = conv(128)(input_)
     x = conv(256)(x)
-    # x = conv(256)(x)
+    x = conv(256)(x)
     x = conv(512)(x)
     x = convDropout(512)(x)
     x = Flatten()(x)
@@ -117,7 +118,7 @@ def Decoder():
 
     x = upscale(512)(input_)
     x = upscale(256)(x)
-    # x = upscale(128)(x)
+    x = upscale(128)(x)
     x = upscale(128)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
@@ -143,7 +144,6 @@ if not _variational:
     autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error')
 else:
     autoencoder_B.compile(optimizer=optimizer, loss=vae_loss)
-
 
 # ********************************************************************
 
@@ -182,8 +182,8 @@ def save_model_weights():
 
 # ********************************************************************
 
-images_A = get_image_paths("data/oliwka_128")
-images_B = get_image_paths("data/laura_128")
+images_A = get_image_paths("data/oliwka_256/oliwka_256")
+images_B = get_image_paths("data/laura_256/laura_256")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
@@ -191,8 +191,8 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 for epoch in range(100000):
     batch_size = 8
-    warped_A, target_A = get_training_data(images_A, batch_size, 128, 2)
-    warped_B, target_B = get_training_data(images_B, batch_size, 128, 2)
+    warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
+    warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)
 
     loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
     loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
