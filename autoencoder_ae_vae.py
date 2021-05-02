@@ -231,7 +231,7 @@ for epoch in range(100000):
     figure = numpy.concatenate([figure], axis=0)
     figure = stack_images(figure)
 
-    figure = numpy.clip(figure * 255, 0, 255).astype('uint8')
+    figure = numpy.clip(figure * 255, 0, 255).astype(numpy.uint8)
 
     cv2.imshow("", figure)
     key = cv2.waitKey(1)

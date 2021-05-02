@@ -7,7 +7,7 @@ frontal_face_predictor = dlib.shape_predictor("detect/shape_predictor_68_face_la
 
 # Rozmiar nie jest określony, po pobraniu trzeba użyc funkcji resize
 
-def getFaceAndCoordinates(source_image):
+def getFaceAndCoordinates(source_image, output_dir, inc):
 
     source_image_grayscale = cv2.cvtColor(source_image, cv2.COLOR_BGR2GRAY)
     source_faces = frontal_face_detector(source_image_grayscale)
@@ -42,7 +42,8 @@ def getFaceAndCoordinates(source_image):
                 (255, 255, 255)
             )
 
-            cv2.imshow("Landmark points", source_image_landmarks)
+            # cv2.imshow("Landmark points", source_image_landmarks)
+            # cv2.imwrite(str(output_dir) + "/" + str(inc) + "_landmarks.jpg", source_image_landmarks)
 
             # wyznaczenie punktow skrajnych
 
@@ -56,12 +57,15 @@ def getFaceAndCoordinates(source_image):
                 xmax = x_point
 
         # wyznaczenie szerokosci i wysokosci na podstawie punktow skrajnych
+
         h = ymax - ymin
         w = xmax - xmin
 
         color = (255, 0, 0)
         source_image_landmarks_rect = cv2.rectangle(source_image_landmarks, (xmin, ymin), (xmax, ymax), color, 1)
-        cv2.imshow("Landmark points - obrys", source_image_landmarks_rect)
+
+        # cv2.imshow("Landmark points - obrys", source_image_landmarks_rect)
+        # cv2.imwrite(str(output_dir) + "/" + str(inc) + "_landmarks_rect.jpg", source_image_landmarks_rect)
 
         face = source_image[ymin:ymin + h, xmin:xmin + w]
         result = xmin, ymin, xmax, ymax, h, w, face
@@ -88,7 +92,8 @@ def getFaceAndCoordinates(source_image):
         source_image_landmarks_rect = cv2.rectangle(source_image_landmarks,
                                                     (minXcorrect, minYcorrect),
                                                     (maxXcorrect, maxYcorrect), color, 1)
-        cv2.imshow("Landmark points - korekta", source_image_landmarks_rect)
+
+        # cv2.imshow("Landmark points - korekta", source_image_landmarks_rect)
 
         result = minXcorrect, minYcorrect, maxXcorrect, maxYcorrect, h_correct, w_correct, face
 

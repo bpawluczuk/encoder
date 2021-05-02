@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import cv2
 import numpy
-from pathlib import Path
 
 from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import Adam
@@ -8,6 +9,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
+import tensorflow_addons as tfa
 
 from utils import get_image_paths
 from pixel_shuffler import PixelShuffler
@@ -25,26 +27,37 @@ from tensorflow.python.framework.ops import disable_eager_execution
 
 disable_eager_execution()
 
+# ********************************************************************
 
-# ******************************************************************************
+size = 256
+zoom = 4  # 64*zoom
+width = 256
+height = 256
+_latent_dim = 256
+_variational = 1
+chanels = 3
+
+IMAGE_SHAPE = (size, size, chanels)
+ENCODER_DIM = 1024
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.999)
 
-IMAGE_SHAPE = (128, 128, 3)
-ENCODER_DIM = 1024
+kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
+gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 
 
-_image_shape = (128, 128, 3)
-_latent_dim = 256
-_batch_size = 16
-_variational = 1
-width = 128
-height = 128
-
+# ********************************************************************
 
 def conv(filters):
     def block(x):
-        x = Conv2D(filters, kernel_size=5, strides=2, padding='same')(x)
+        x = Conv2D(
+            filters,
+            kernel_size=4,
+            strides=2,
+            padding='same',
+            kernel_initializer=kernel_init
+        )(x)
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         x = LeakyReLU(0.1)(x)
         return x
 
@@ -53,8 +66,14 @@ def conv(filters):
 
 def convDropout(filters):
     def block(x):
-        x = Conv2D(filters, kernel_size=5, strides=2, padding='same')(x)
-        x = BatchNormalization()(x)
+        x = Conv2D(
+            filters,
+            kernel_size=4,
+            strides=2,
+            padding='same',
+            kernel_initializer=kernel_init
+        )(x)
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         x = LeakyReLU(0.1)(x)
         x = Dropout(0.4)(x)
         return x
@@ -64,7 +83,12 @@ def convDropout(filters):
 
 def upscale(filters):
     def block(x):
-        x = Conv2D(filters * 4, kernel_size=3, padding='same')(x)
+        x = Conv2D(
+            filters * 4,
+            kernel_size=3,
+            padding='same',
+            kernel_initializer=kernel_init
+        )(x)
         x = LeakyReLU(0.1)(x)
         x = PixelShuffler()(x)
         return x
@@ -86,8 +110,8 @@ def vae_loss(input, x_decoded_mean):
 
 
 def Encoder(input_):
-
     x = conv(128)(input_)
+    x = conv(256)(x)
     x = conv(256)(x)
     x = conv(512)(x)
     x = convDropout(512)(x)
@@ -113,6 +137,7 @@ def Decoder():
 
     x = upscale(512)(input_)
     x = upscale(256)(x)
+    x = upscale(128)(x)
     x = upscale(128)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
@@ -154,58 +179,69 @@ try:
 except:
     print("models does not exist")
 
-images_A = get_image_paths("data/oliwka_512/")
-images_B = get_image_paths("data/laura_512/")
+# ********************************************************************
 
-# images_A = get_image_paths("dataset/frames/harrison_512/")
-# images_B = get_image_paths("dataset/frames/ryan_512/")
-
-
-def convert_one_image(autoencoder, source_image):
-    assert source_image.shape == (512, 512, 3)
-
-    resultFace = getFaceAndCoordinates(source_image)
+def convert_one_image(autoencoder, source_image, output_dir, inc):
+    assert source_image.shape == (256, 256, 3)
 
     result = None
 
-    if resultFace is not None:
-        xmin, ymin, xmax, ymax, h, w, face = resultFace
+    sourceImageFace = getFaceAndCoordinates(source_image, output_dir, inc)
+
+    source_image_tensor = numpy.expand_dims(image, 0)
+    predict_image = autoencoder.predict(source_image_tensor)[0]
+    predict_image = numpy.clip(predict_image * 255, 0, 255).astype(numpy.uint8)
+
+    cv2.imwrite(str(output_dir) + "/" + str(inc) + "_source_image.jpg", source_image)
+    cv2.imwrite(str(output_dir) + "/" + str(inc) + "_predict_image.jpg", predict_image)
+
+    if sourceImageFace is not None:
+        xmin, ymin, xmax, ymax, h, w, face = sourceImageFace
 
         source_image_face = cv2.resize(face, (int(128), int(128)))
-        source_image_face_expand_dims = numpy.expand_dims(source_image_face, 0)
-        predict_face = autoencoder.predict(source_image_face_expand_dims / 255.0)[0]
-        predict_face = numpy.clip(predict_face * 255, 0, 255).astype(image.dtype)
-        predict_face = cv2.resize(predict_face, (xmax - xmin, ymax - ymin))
+
+        # cv2.imshow("Source face", source_image_face)
+        # cv2.imwrite(str(output_dir) + "/" + str(inc) + "_source_image_face.jpg", source_image_face)
+
         destination_image = source_image.copy()
-        destination_image[ymin:ymin + h, xmin:xmin + w] = predict_face
+        destination_image[ymin:ymin + h, xmin:xmin + w] = predict_image[ymin:ymin + h, xmin:xmin + w]
+
+        # cv2.imshow("Dest image", destination_image)
+        # cv2.imwrite(str(output_dir) + "/" + str(inc) + "_dest_image.jpg", destination_image)
+
         seamless_destination_image = seamless_images(destination_image, source_image)
 
-        cv2.imshow("source", source_image)
-        cv2.imshow("source_face", source_image_face)
-        cv2.imshow("predict_face", predict_face)
-        cv2.imshow("destination_image", destination_image)
+        # cv2.imshow("Dest image seamless", seamless_destination_image)
+        cv2.imwrite(str(output_dir) + "/" + str(inc) + "_dest_image_seamless.jpg", seamless_destination_image)
 
-        output_file = "output/seamless_new_image.jpg"
-        # cv2.imwrite(str(output_file), seamless_destination_image)
-        cv2.imshow("seamless_destination_image", seamless_destination_image)
+        # cv2.imshow("#1", source_image_tensor[0])
+        # cv2.imshow("#2", predict_image)
 
         result = seamless_destination_image
+
 
     return result
 
 
-output_dir = Path('output/oliwka_laura')
-output_dir = Path('output/laura_oliwka')
+# *******************************************************************
+
+images_A = get_image_paths("data/oliwka_256/oliwka_256")
+images_B = get_image_paths("data/laura_256/laura_256")
+
+# output_dir = Path('output/VAE/oliwka_laura')
+# output_dir.mkdir(parents=True, exist_ok=True)
+# inc = 0
+# for fn in images_B:
+#     inc = inc + 1
+#     image = cv2.imread(fn)
+#     convert_one_image(autoencoder_A, image, output_dir, inc)
+
+output_dir = Path('output/VAE/laura_oliwka')
 output_dir.mkdir(parents=True, exist_ok=True)
-
-
-for fn in images_B:
-
+inc = 0
+for fn in images_A:
+    inc = inc + 1
     image = cv2.imread(fn)
-    new_image = convert_one_image(autoencoder_A, image)
+    convert_one_image(autoencoder_B, image, output_dir, inc)
 
-    if new_image is not None:
-        output_file = output_dir / Path(fn).name
-        cv2.imwrite(str(output_file), new_image)
-
-key = cv2.waitKey(0)
+# key = cv2.waitKey(0)

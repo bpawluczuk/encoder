@@ -27,7 +27,7 @@ def seamless_images(source_image, destination_image):
     final_destination_canvas = np.zeros_like(destination_image_grayscale)
     final_destination_face_mask = cv2.fillConvexPoly(final_destination_canvas, destination_face_convexhull, 255)
 
-    cv2.imshow("maska", final_destination_canvas)
+    # cv2.imshow("maska", final_destination_canvas)
 
     (x, y, w, h) = cv2.boundingRect(destination_face_convexhull)
     destination_face_center_point = (int((x + x + w) / 2), int((y + y + h) / 2))
