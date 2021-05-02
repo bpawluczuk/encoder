@@ -1,9 +1,9 @@
 import cv2
 
-dir = "/Users/bpawluczuk/Sites/python/encoder/dataset/frames/"
+dir = "/Users/bpawluczuk/Sites/python/dataset/frames/"
 
 
-vidcap = cv2.VideoCapture(dir + "laura.mp4")
+vidcap = cv2.VideoCapture(dir + "laura_2.mp4")
 vidcap.read()
 success, image = vidcap.read()
 count = 0
