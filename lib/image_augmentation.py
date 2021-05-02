@@ -1,7 +1,7 @@
 import cv2
 import numpy
 
-from umeyama import umeyama
+from lib.umeyama import umeyama
 
 
 def random_transform(image, rotation_range, zoom_range, shift_range, random_flip):

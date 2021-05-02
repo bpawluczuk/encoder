@@ -2,8 +2,8 @@
 import cv2
 from pathlib import Path
 
-from util_face import getFaceAndCoordinates
-from utils import get_image_paths
+from lib.util_face import getFaceAndCoordinates
+from lib.utils import get_image_paths
 
 
 def convert_one_image(source_image):

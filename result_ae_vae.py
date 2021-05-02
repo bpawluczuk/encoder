@@ -11,10 +11,10 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
 import tensorflow_addons as tfa
 
-from utils import get_image_paths
-from pixel_shuffler import PixelShuffler
-from util_face import getFaceAndCoordinates
-from seamless_image import seamless_images
+from lib.utils import get_image_paths
+from lib.pixel_shuffler import PixelShuffler
+from lib.util_face import getFaceAndCoordinates
+from lib.seamless_image import seamless_images
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -225,8 +225,8 @@ def convert_one_image(autoencoder, source_image, output_dir, inc):
 
 # *******************************************************************
 
-images_A = get_image_paths("data/oliwka_256/oliwka_256")
-images_B = get_image_paths("data/laura_256/laura_256")
+images_A = get_image_paths("data/OL/trainOL")
+images_B = get_image_paths("data/LU/trainLU")
 
 # output_dir = Path('output/VAE/oliwka_laura')
 # output_dir.mkdir(parents=True, exist_ok=True)

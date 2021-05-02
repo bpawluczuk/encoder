@@ -9,9 +9,9 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
 import tensorflow_addons as tfa
 
-from utils import get_image_paths, load_images, stack_images
-from training_data import get_training_data
-from pixel_shuffler import PixelShuffler
+from lib.utils import get_image_paths, load_images, stack_images
+from lib.training_data import get_training_data
+from lib.pixel_shuffler import PixelShuffler
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -198,8 +198,8 @@ def save_model_weights():
 
 # ********************************************************************
 
-images_A = get_image_paths("data/oliwka_256/oliwka_256")
-images_B = get_image_paths("data/laura_256/laura_256")
+images_A = get_image_paths("data/OL/trainOL")
+images_B = get_image_paths("data/LU/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
