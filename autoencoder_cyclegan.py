@@ -495,7 +495,6 @@ class GANMonitor(keras.callbacks.Callback):
         self.num_img = num_img
 
     def on_batch_begin(self, batch, logs=None):
-        # _, ax = plt.subplots(4, 2, figsize=(12, 12))
         for i, img in enumerate(train_ol.take(self.num_img)):
             prediction = self.model.gen_G(img)[0].numpy()
             prediction = ((prediction * 127.5) + 127.5).astype(np.uint8)
@@ -504,8 +503,20 @@ class GANMonitor(keras.callbacks.Callback):
             figure = np.stack((img, prediction))
             figure = np.concatenate(figure, axis=1)
 
-            cv2.imshow("", figure)
-            cv2.waitKey(1)
+            cv2.imshow("olTolu", figure)
+
+
+        for i, img in enumerate(train_lu.take(self.num_img)):
+            prediction = self.model.gen_F(img)[0].numpy()
+            prediction = ((prediction * 127.5) + 127.5).astype(np.uint8)
+            img = ((img[0] * 127.5) + 127.5).numpy().astype(np.uint8)
+
+            figure = np.stack((img, prediction))
+            figure = np.concatenate(figure, axis=1)
+
+            cv2.imshow("luTool", figure)
+
+        cv2.waitKey(1)
 
     def on_epoch_end(self, epoch, logs=None):
         _, ax = plt.subplots(4, 2, figsize=(12, 12))
@@ -521,14 +532,10 @@ class GANMonitor(keras.callbacks.Callback):
             ax[i, 0].axis("off")
             ax[i, 1].axis("off")
 
-            prediction = keras.preprocessing.image.array_to_img(prediction)
-            # prediction.save(
-            #     "output/generated_img_{i}_{epoch}.png".format(i=i, epoch=epoch + 1)
-            # )
         plt.show()
         plt.close()
 
-        # cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
+        cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
 
 
 # ********************************************************************************
