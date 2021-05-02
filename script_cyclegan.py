@@ -78,7 +78,7 @@ def process(img):
 
 # ********************************************************************
 
-train_oli = tf.keras.preprocessing.image_dataset_from_directory(
+train_ol = tf.keras.preprocessing.image_dataset_from_directory(
     "data/OL",
     validation_split=0.2,
     subset="training",
@@ -89,8 +89,8 @@ train_oli = tf.keras.preprocessing.image_dataset_from_directory(
     batch_size=batch_size,
 )
 
-train_oli = (
-    train_oli.map(process, num_parallel_calls=autotune).cache().shuffle(buffer_size)
+train_ol = (
+    train_ol.map(process, num_parallel_calls=autotune).cache().shuffle(buffer_size)
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
@@ -503,7 +503,7 @@ for i, img in enumerate(train_lu.take(100)):
     prediction = keras.preprocessing.image.array_to_img(prediction)
     prediction.save("output/GAN/laura_oliwka/predicted_img_{i}.jpg".format(i=i))
 
-# for i, img in enumerate(train_oli.take(100)):
+# for i, img in enumerate(train_ol.take(100)):
 #
 #     prediction = cycle_gan_model.gen_G(img, training=False)[0].numpy()
 #     prediction = (prediction * 127.5 + 127.5).astype(np.uint8)

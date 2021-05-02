@@ -73,7 +73,7 @@ def process(img):
 
 # ********************************************************************
 
-train_oli = tf.keras.preprocessing.image_dataset_from_directory(
+train_ol = tf.keras.preprocessing.image_dataset_from_directory(
     "data/OL",
     validation_split=0.2,
     subset="training",
@@ -84,8 +84,8 @@ train_oli = tf.keras.preprocessing.image_dataset_from_directory(
     batch_size=batch_size,
 )
 
-train_oli = (
-    train_oli.map(process, num_parallel_calls=autotune).cache().shuffle(buffer_size)
+train_ol = (
+    train_ol.map(process, num_parallel_calls=autotune).cache().shuffle(buffer_size)
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
@@ -106,7 +106,7 @@ train_lu = (
 # ********************************************************************
 
 _, ax = plt.subplots(4, 2, figsize=(10, 15))
-for i, samples in enumerate(zip(train_oli.take(4), train_lu.take(4))):
+for i, samples in enumerate(zip(train_ol.take(4), train_lu.take(4))):
     horse = (((samples[0][0] * 127.5) + 127.5).numpy()).astype(np.uint8)
     zebra = (((samples[1][0] * 127.5) + 127.5).numpy()).astype(np.uint8)
     ax[i, 0].imshow(horse)
@@ -496,7 +496,7 @@ class GANMonitor(keras.callbacks.Callback):
 
     def on_batch_begin(self, batch, logs=None):
         # _, ax = plt.subplots(4, 2, figsize=(12, 12))
-        for i, img in enumerate(train_oli.take(self.num_img)):
+        for i, img in enumerate(train_ol.take(self.num_img)):
             prediction = self.model.gen_G(img)[0].numpy()
             prediction = ((prediction * 127.5) + 127.5).astype(np.uint8)
             img = ((img[0] * 127.5) + 127.5).numpy().astype(np.uint8)
@@ -509,7 +509,7 @@ class GANMonitor(keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         _, ax = plt.subplots(4, 2, figsize=(12, 12))
-        for i, img in enumerate(train_oli.take(self.num_img)):
+        for i, img in enumerate(train_ol.take(self.num_img)):
             prediction = self.model.gen_G(img)[0].numpy()
             prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
             img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
@@ -547,7 +547,7 @@ except:
 # ********************************************************************************
 
 cycle_gan_model.fit(
-    tf.data.Dataset.zip((train_oli, train_lu)),
+    tf.data.Dataset.zip((train_ol, train_lu)),
     epochs=1,
     callbacks=[plotter],
 )
@@ -559,7 +559,7 @@ cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
 # ********************************************************************************
 
 _, ax = plt.subplots(4, 2, figsize=(10, 15))
-for i, img in enumerate(train_oli.take(4)):
+for i, img in enumerate(train_ol.take(4)):
     prediction = cycle_gan_model.gen_G(img, training=False)[0].numpy()
     prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
     img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
@@ -572,7 +572,7 @@ for i, img in enumerate(train_oli.take(4)):
     ax[i, 0].axis("off")
     ax[i, 1].axis("off")
 
-    prediction = keras.preprocessing.image.array_to_img(prediction)
-    prediction.save("output/GAN/predicted_img_{i}.png".format(i=i))
+    # prediction = keras.preprocessing.image.array_to_img(prediction)
+    # prediction.save("output/GAN/predicted_img_{i}.png".format(i=i))
 plt.tight_layout()
 plt.show()
