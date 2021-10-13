@@ -206,7 +206,7 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-for epoch in range(100000):
+for epoch in range(10000):
 
     warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
     warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)
