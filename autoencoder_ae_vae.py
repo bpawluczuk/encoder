@@ -1,6 +1,7 @@
 import cv2
 import numpy
 
+import matplotlib.pyplot as plt
 from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import Adam
 
@@ -30,15 +31,15 @@ size = 256
 zoom = 4  # 64*zoom
 width = 256
 height = 256
-_latent_dim = 256
+_latent_dim = 256  # 128
 _variational = 0
 chanels = 3
-batch_size = 4
+batch_size = 1
 
 IMAGE_SHAPE = (size, size, chanels)
 ENCODER_DIM = 1024
 
-optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.9)
+optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.95)
 
 kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
@@ -46,12 +47,12 @@ gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 
 # ********************************************************************
 
-def conv(filters):
+def conv(filters, kernel_size=4, strides=2):
     def block(x):
         x = Conv2D(
             filters,
-            kernel_size=4,
-            strides=2,
+            kernel_size=kernel_size,
+            strides=strides,
             padding='same',
             kernel_initializer=kernel_init
         )(x)
@@ -62,28 +63,28 @@ def conv(filters):
     return block
 
 
-def convDropout(filters):
+def convDropout(filters, kernel_size=4, strides=2):
     def block(x):
         x = Conv2D(
             filters,
-            kernel_size=4,
-            strides=2,
+            kernel_size=kernel_size,
+            strides=strides,
             padding='same',
             kernel_initializer=kernel_init
         )(x)
         x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         x = LeakyReLU(0.1)(x)
-        x = Dropout(0.4)(x)
+        # x = Dropout(0.4)(x)
         return x
 
     return block
 
 
-def upscale(filters):
+def upscale(filters, kernel_size=4, strides=4):
     def block(x):
         x = Conv2D(
-            filters * 4,
-            kernel_size=3,
+            filters * strides,
+            kernel_size=kernel_size,
             padding='same',
             kernel_initializer=kernel_init
         )(x)
@@ -108,10 +109,9 @@ def vae_loss(input, x_decoded_mean):
 
 
 def Encoder(input_):
-    x = conv(128)(input_)
+    x = conv(64)(input_)
+    x = conv(128)(x)
     x = conv(256)(x)
-    x = conv(256)(x)
-    x = conv(512)(x)
     x = convDropout(512)(x)
     x = Flatten()(x)
 
@@ -123,19 +123,17 @@ def Encoder(input_):
     else:
         latent_space = Lambda(sampling)([z_mean, z_log_sigma])
 
-    x = Dense(8 * 8 * 512, activation="relu")(latent_space)
-    x = Reshape((8, 8, 512))(x)
+    x = Dense(16 * 16 * 128, activation="relu")(latent_space)
+    x = Reshape((16, 16, 128))(x)
     x = upscale(512)(x)
 
     return Model(input_, x), z_log_sigma, z_mean
 
 
 def Decoder():
-    input_ = Input(shape=(16, 16, 512))
-
+    input_ = Input(shape=(32, 32, 512))
     x = upscale(512)(input_)
     x = upscale(256)(x)
-    x = upscale(128)(x)
     x = upscale(128)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
@@ -169,13 +167,18 @@ try:
         encoder.load_weights("models/AE/encoder.h5")
         decoder_A.load_weights("models/AE/decoder_a.h5")
         decoder_B.load_weights("models/AE/decoder_b.h5")
+        history_lost_a_file = 'history/AE/lost_a.txt'
+        history_lost_b_file = 'history/AE/lost_b.txt'
     else:
         encoder.load_weights("models/VAE/encoder.h5")
         decoder_A.load_weights("models/VAE/decoder_a.h5")
         decoder_B.load_weights("models/VAE/decoder_b.h5")
-    print("... load models")
+        history_lost_a_file = 'history/VAE/lost_a.txt'
+        history_lost_b_file = 'history/VAE/lost_b.txt'
+
+    print("... load models test")
 except:
-    print("models does not exist")
+    print("models test does not exist")
 
 
 def save_model_weights():
@@ -188,12 +191,12 @@ def save_model_weights():
         decoder_A.save_weights("models/VAE/decoder_a.h5")
         decoder_B.save_weights("models/VAE/decoder_b.h5")
 
-    print("save model weights")
+    print("save model test weights")
 
 
 # ********************************************************************
 
-# encoder.summary()
+encoder.summary()
 # autoencoder_A.summary()
 # autoencoder_B.summary()
 
@@ -206,7 +209,10 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-for epoch in range(10000):
+loss_A_array = []
+loss_B_array = []
+
+for epoch in range(100000):
 
     warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
     warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)
@@ -219,6 +225,12 @@ for epoch in range(10000):
         save_model_weights()
         test_A = target_A[0:7]
         test_B = target_B[0:7]
+        with open(history_lost_a_file, "a+") as f:
+            f.write(str(loss_A + "\n"))
+            f.close()
+        with open(history_lost_b_file, "a+") as f:
+            f.write(str(loss_B + "\n"))
+            f.close()
 
     figure = numpy.stack([
         test_A,
