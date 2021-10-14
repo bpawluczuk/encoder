@@ -8,11 +8,16 @@ from lib.seamless_image import seamless_images
 face_landmarks = FaceLandmarks()
 faceModule = mediapipe.solutions.face_mesh
 
-oryginal_image_path = "output/GAN/laura_oliwka/img_5.jpg"
-predicted_image_path = "output/GAN/laura_oliwka/predicted_img_5.jpg"
+oryginal_image_path = "output/AE/laura_oliwka/img_5.jpg"
+predicted_image_path = "output/AE/laura_oliwka/predicted_img_5.jpg"
+
+# oryginal_image_path = "output/VAE/laura_oliwka/img_5.jpg"
+# predicted_image_path = "output/VAE/laura_oliwka/predicted_img_5.jpg"
+#
+# oryginal_image_path = "output/GAN/laura_oliwka/img_5.jpg"
+# predicted_image_path = "output/GAN/laura_oliwka/predicted_img_5.jpg"
 
 with faceModule.FaceMesh(static_image_mode=True) as face:
-
     image = cv2.imread(predicted_image_path)
     height, width, _ = image.shape
     image_copy = image.copy()
@@ -40,7 +45,6 @@ with faceModule.FaceMesh(static_image_mode=True) as face:
 ##########################################################
 
 with faceModule.FaceMesh(static_image_mode=True) as face:
-
     image = cv2.imread(oryginal_image_path)
     height, width, _ = image.shape
     frame_copy = image.copy()
@@ -49,6 +53,7 @@ with faceModule.FaceMesh(static_image_mode=True) as face:
 
     landmarks = []
     if results.multi_face_landmarks != None:
+
         landmarks = face_landmarks.get_facial_landmarks(image)
 
         convexhull = cv2.convexHull(landmarks)

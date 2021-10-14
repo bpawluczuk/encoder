@@ -74,7 +74,7 @@ def process(img):
 # ********************************************************************
 
 train_ol = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/OL",
+    "data_test/OL",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -89,7 +89,7 @@ train_ol = (
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/LU",
+    "data_test/LU",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -487,20 +487,8 @@ except:
 # ********************************************************************************
 
 
-for i, img in enumerate(train_lu.take(100)):
-    prediction = cycle_gan_model.gen_F(img, training=False)[0].numpy()
-    prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
-    img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
-
-    img = keras.preprocessing.image.array_to_img(img)
-    img.save("output/GAN/laura_oliwka/img_{i}.jpg".format(i=i))
-
-    prediction = keras.preprocessing.image.array_to_img(prediction)
-    prediction.save("output/GAN/laura_oliwka/predicted_img_{i}.jpg".format(i=i))
-
-# for i, img in enumerate(train_ol.take(100)):
-#
-#     prediction = cycle_gan_model.gen_G(img, training=False)[0].numpy()
+# for i, img in enumerate(train_lu.take(10)):
+#     prediction = cycle_gan_model.gen_F(img, training=False)[0].numpy()
 #     prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
 #     img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
 #
@@ -509,3 +497,15 @@ for i, img in enumerate(train_lu.take(100)):
 #
 #     prediction = keras.preprocessing.image.array_to_img(prediction)
 #     prediction.save("output/GAN/oliwka_laura/predicted_img_{i}.jpg".format(i=i))
+
+for i, img in enumerate(train_ol.take(10)):
+
+    prediction = cycle_gan_model.gen_G(img, training=False)[0].numpy()
+    prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
+    img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
+
+    img = keras.preprocessing.image.array_to_img(img)
+    img.save("output/GAN/laura_oliwka/img_{i}.jpg".format(i=i))
+
+    prediction = keras.preprocessing.image.array_to_img(prediction)
+    prediction.save("output/GAN/laura_oliwka/predicted_img_{i}.jpg".format(i=i))

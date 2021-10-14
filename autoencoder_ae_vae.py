@@ -176,14 +176,10 @@ try:
         encoder.load_weights("models/AE/encoder.h5")
         decoder_A.load_weights("models/AE/decoder_a.h5")
         decoder_B.load_weights("models/AE/decoder_b.h5")
-        history_lost_a_file = 'history/AE/lost_a.txt'
-        history_lost_b_file = 'history/AE/lost_b.txt'
     else:
         encoder.load_weights("models/VAE/encoder.h5")
         decoder_A.load_weights("models/VAE/decoder_a.h5")
         decoder_B.load_weights("models/VAE/decoder_b.h5")
-        history_lost_a_file = 'history/VAE/lost_a.txt'
-        history_lost_b_file = 'history/VAE/lost_b.txt'
 
     print("... load models")
 except:
