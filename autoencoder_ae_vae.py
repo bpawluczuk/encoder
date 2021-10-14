@@ -32,7 +32,7 @@ zoom = 4  # 64*zoom
 width = 256
 height = 256
 _latent_dim = 256  # 128
-_variational = 0
+_variational = 1
 chanels = 3
 batch_size = 1
 
@@ -162,6 +162,15 @@ else:
 
 # ********************************************************************
 
+if not _variational:
+    history_lost_a_file = 'history/AE/lost_a.txt'
+    history_lost_b_file = 'history/AE/lost_b.txt'
+else:
+    history_lost_a_file = 'history/VAE/lost_a.txt'
+    history_lost_b_file = 'history/VAE/lost_b.txt'
+
+# ********************************************************************
+
 try:
     if not _variational:
         encoder.load_weights("models/AE/encoder.h5")
@@ -176,9 +185,9 @@ try:
         history_lost_a_file = 'history/VAE/lost_a.txt'
         history_lost_b_file = 'history/VAE/lost_b.txt'
 
-    print("... load models test")
+    print("... load models")
 except:
-    print("models test does not exist")
+    print("models does not exist")
 
 
 def save_model_weights():
@@ -191,7 +200,7 @@ def save_model_weights():
         decoder_A.save_weights("models/VAE/decoder_a.h5")
         decoder_B.save_weights("models/VAE/decoder_b.h5")
 
-    print("save model test weights")
+    print("save model weights")
 
 
 # ********************************************************************
@@ -226,10 +235,10 @@ for epoch in range(100000):
         test_A = target_A[0:7]
         test_B = target_B[0:7]
         with open(history_lost_a_file, "a+") as f:
-            f.write(str(loss_A + "\n"))
+            f.write(str(loss_A) + "\n")
             f.close()
         with open(history_lost_b_file, "a+") as f:
-            f.write(str(loss_B + "\n"))
+            f.write(str(loss_B) + "\n")
             f.close()
 
     figure = numpy.stack([
