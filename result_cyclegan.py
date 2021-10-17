@@ -479,8 +479,8 @@ cycle_gan_model.compile(
 
 try:
     cycle_gan_model.built = True
-    # cycle_gan_model.load_weights("models/CycleGAN/cycleGan.h5")
-    cycle_gan_model.gen_G.load_weights("models/CycleGAN/gen_G.h5")
+    cycle_gan_model.load_weights("models/CycleGAN/cycleGan.h5")
+    # cycle_gan_model.gen_G.load_weights("models/CycleGAN/gen_G.h5")
     print("... load models")
 except:
     print("models does not exist")
@@ -499,7 +499,7 @@ except:
 #     prediction = keras.preprocessing.image.array_to_img(prediction)
 #     prediction.save("output/GAN/oliwka_laura/predicted_img_{i}.jpg".format(i=i))
 
-for i, img in enumerate(train_lu.take(10)):
+for i, img in enumerate(train_ol.take(10)):
 
     prediction = cycle_gan_model.gen_G(img, training=False)[0].numpy()
     prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
