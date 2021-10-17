@@ -32,7 +32,7 @@ zoom = 4  # 64*zoom
 width = 256
 height = 256
 _latent_dim = 256  # 128
-_variational = 1
+_variational = 0
 chanels = 3
 batch_size = 1
 
@@ -74,7 +74,7 @@ def convDropout(filters, kernel_size=4, strides=2):
         )(x)
         x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         x = LeakyReLU(0.1)(x)
-        # x = Dropout(0.4)(x)
+        x = Dropout(0.2)(x)
         return x
 
     return block
@@ -111,6 +111,8 @@ def vae_loss(input, x_decoded_mean):
 def Encoder(input_):
     x = conv(64)(input_)
     x = conv(128)(x)
+    x = conv(128)(x)
+    x = conv(256)(x)
     x = conv(256)(x)
     x = convDropout(512)(x)
     x = Flatten()(x)
@@ -207,8 +209,8 @@ encoder.summary()
 
 # ********************************************************************
 
-images_A = get_image_paths("data/OL/trainOL")
-images_B = get_image_paths("data/LU/trainLU")
+images_A = get_image_paths("data/OL_NEW/trainOL")
+images_B = get_image_paths("data/LU_NEW/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
