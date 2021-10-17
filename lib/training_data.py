@@ -32,4 +32,7 @@ def get_training_data(images, batch_size, size=128, zoom=2):
         target_images[i] = target_img
 
     # key = cv2.waitKey(0)
+    # print(len(warped_images))
+    # print(len(target_images))
+    # print("*********")
     return warped_images.astype('float32'), target_images.astype('float32')
