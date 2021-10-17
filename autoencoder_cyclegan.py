@@ -75,7 +75,7 @@ def process(img):
 # ********************************************************************
 
 train_ol = tf.keras.preprocessing.image_dataset_from_directory(
-    "data_train/OL_GAN",
+    "data_test/OL",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -90,7 +90,7 @@ train_ol = (
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
-    "data_train/LU_GAN",
+    "data_test/LU",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -520,8 +520,8 @@ class GANMonitor(keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         _, ax = plt.subplots(4, 2, figsize=(12, 12))
-        for i, img in enumerate(train_ol.take(self.num_img)):
-            prediction = self.model.gen_G(img)[0].numpy()
+        for i, img in enumerate(train_lu.take(self.num_img)):
+            prediction = self.model.gen_F(img)[0].numpy()
             prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
             img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
 
@@ -534,9 +534,6 @@ class GANMonitor(keras.callbacks.Callback):
 
         plt.show()
         plt.close()
-
-        cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
-
 
 # ********************************************************************************
 
@@ -562,12 +559,14 @@ cycle_gan_model.fit(
 # ********************************************************************************
 
 cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
+cycle_gan_model.gen_G.save_weights(("models/CycleGAN/gen_G.h5"))
+cycle_gan_model.gen_F.save_weights(("models/CycleGAN/gen_F.h5"))
 
 # ********************************************************************************
 
 _, ax = plt.subplots(4, 2, figsize=(10, 15))
-for i, img in enumerate(train_ol.take(4)):
-    prediction = cycle_gan_model.gen_G(img, training=False)[0].numpy()
+for i, img in enumerate(train_lu.take(4)):
+    prediction = cycle_gan_model.gen_F(img, training=False)[0].numpy()
     prediction = (prediction * 127.5 + 127.5).astype(np.uint8)
     img = (img[0] * 127.5 + 127.5).numpy().astype(np.uint8)
 

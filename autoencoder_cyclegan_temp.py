@@ -24,7 +24,7 @@ ENCODER_DIM = 1024
 image_size = (256, 256)
 
 buffer_size = 4
-batch_size = 1
+batch_size = 2
 
 # ********************************************************************
 
@@ -74,7 +74,7 @@ def process(img):
 # ********************************************************************
 
 train_ol = tf.keras.preprocessing.image_dataset_from_directory(
-    "data_test/OL",
+    "data_train/OL_GAN",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -89,7 +89,7 @@ train_ol = (
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
-    "data_test/LU",
+    "data_train/LU_GAN",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -310,18 +310,6 @@ def get_discriminator(
     model = keras.models.Model(inputs=img_input, outputs=x, name=name)
     return model
 
-
-# ********************************************************************************
-
-# Get the generators
-gen_G = get_resnet_generator(name="generator_G")
-gen_F = get_resnet_generator(name="generator_F")
-
-# Get the discriminators
-disc_X = get_discriminator(name="discriminator_X")
-disc_Y = get_discriminator(name="discriminator_Y")
-
-
 # ********************************************************************************
 
 class CycleGan(keras.Model):
@@ -472,7 +460,10 @@ def discriminator_loss_fn(real, fake):
 
 # Create cycle gan model
 cycle_gan_model = CycleGan(
-    generator_G=gen_G, generator_F=gen_F, discriminator_X=disc_X, discriminator_Y=disc_Y
+    generator_G=get_resnet_generator(name="generator_G"),
+    generator_F=get_resnet_generator(name="generator_F"),
+    discriminator_X=get_discriminator(name="discriminator_X"),
+    discriminator_Y=get_discriminator(name="discriminator_Y")
 )
 
 # Compile the model
@@ -535,7 +526,7 @@ class GANMonitor(keras.callbacks.Callback):
         plt.show()
         plt.close()
 
-        # cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
+        cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
 
 
 # ********************************************************************************
@@ -561,7 +552,7 @@ cycle_gan_model.fit(
 
 # ********************************************************************************
 
-# cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
+cycle_gan_model.save_weights(("models/CycleGAN/cycleGan.h5"))
 
 # ********************************************************************************
 
