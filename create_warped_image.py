@@ -10,8 +10,8 @@ zoom = 4  # 64*zoom
 
 # ********************************************************************
 
-images_A = get_image_paths("data_test/OL/trainOL")
-images_B = get_image_paths("data_test/LU/trainLU")
+images_A = get_image_paths("data/OL/trainOL")
+images_B = get_image_paths("data/LU/trainLU")
 
 
 random_transform_args = {
