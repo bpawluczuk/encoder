@@ -38,6 +38,7 @@ kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 # Gamma initializer for instance normalization.
 gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 
+
 # ********************************************************************
 
 def normalize_img(img):
@@ -74,7 +75,7 @@ def process(img):
 # ********************************************************************
 
 train_ol = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/OL",
+    "data_train/OL_GAN",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -89,7 +90,7 @@ train_ol = (
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/LU",
+    "data_train/LU_GAN",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -267,6 +268,7 @@ def get_resnet_generator(
 
     model = keras.models.Model(img_input, x, name=name)
     return model
+
 
 # ********************************************************************************
 
@@ -489,7 +491,6 @@ cycle_gan_model.compile(
 # ********************************************************************************
 
 class GANMonitor(keras.callbacks.Callback):
-    """A callback to generate and save images after each epoch"""
 
     def __init__(self, num_img=4):
         self.num_img = num_img
@@ -504,7 +505,6 @@ class GANMonitor(keras.callbacks.Callback):
             figure = np.concatenate(figure, axis=1)
 
             cv2.imshow("olTolu", figure)
-
 
         for i, img in enumerate(train_lu.take(self.num_img)):
             prediction = self.model.gen_F(img)[0].numpy()
