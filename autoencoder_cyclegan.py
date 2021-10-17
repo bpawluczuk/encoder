@@ -74,7 +74,7 @@ def process(img):
 # ********************************************************************
 
 train_ol = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/OL",
+    "data_train/OL_GAN",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -89,7 +89,7 @@ train_ol = (
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
-    "data/LU",
+    "data_train/LU_GAN",
     validation_split=0.2,
     subset="training",
     seed=1,
