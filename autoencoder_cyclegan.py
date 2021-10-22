@@ -36,6 +36,7 @@ autotune = tf.data.experimental.AUTOTUNE
 kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 
+
 # ********************************************************************
 
 def normalize_img(img):
@@ -55,6 +56,7 @@ def preprocess_test_image(img):
     img = tf.image.resize(img, [IMAGE_SHAPE[0], IMAGE_SHAPE[1]])
     img = normalize_img(img)
     return img
+
 
 # ********************************************************************
 
@@ -299,17 +301,6 @@ def get_discriminator(
 
 # ********************************************************************************
 
-# Get the generators
-gen_G = get_resnet_generator(name="generator_G")
-gen_F = get_resnet_generator(name="generator_F")
-
-# Get the discriminators
-disc_X = get_discriminator(name="discriminator_X")
-disc_Y = get_discriminator(name="discriminator_Y")
-
-
-# ********************************************************************************
-
 class CycleGan(keras.Model):
     def __init__(
             self,
@@ -453,6 +444,16 @@ def discriminator_loss_fn(real, fake):
     fake_loss = adv_loss_fn(tf.zeros_like(fake), fake)
     return (real_loss + fake_loss) * 0.5
 
+
+# ********************************************************************************
+
+# Get the generators
+gen_G = get_resnet_generator(name="generator_G")
+gen_F = get_resnet_generator(name="generator_F")
+
+# Get the discriminators
+disc_X = get_discriminator(name="discriminator_X")
+disc_Y = get_discriminator(name="discriminator_Y")
 
 # ********************************************************************************
 
