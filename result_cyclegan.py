@@ -480,7 +480,6 @@ cycle_gan_model.compile(
 try:
     cycle_gan_model.built = True
     cycle_gan_model.load_weights("models/CycleGAN/cycleGan.h5")
-    # cycle_gan_model.gen_G.load_weights("models/CycleGAN/gen_G.h5")
     print("... load models")
 except:
     print("models does not exist")

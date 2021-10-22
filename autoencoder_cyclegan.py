@@ -59,7 +59,7 @@ def preprocess_test_image(img):
 # ********************************************************************
 
 train_ol = tf.keras.preprocessing.image_dataset_from_directory(
-    "data_train/OL_GAN",
+    "data_train/OL_NEW",
     validation_split=0.2,
     subset="training",
     seed=1,
@@ -74,7 +74,7 @@ train_ol = (
 )
 
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
-    "data_train/LU_GAN",
+    "data_train/LU_NEW",
     validation_split=0.2,
     subset="training",
     seed=1,
