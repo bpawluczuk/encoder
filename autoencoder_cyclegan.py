@@ -259,7 +259,7 @@ def get_resnet_generator(
 # ********************************************************************************
 
 def get_discriminator(
-        filters=64, kernel_initializer=kernel_init, num_downsampling=3, name=None
+        filters=64, kernel_initializer=kernel_init, name=None
 ):
     img_input = layers.Input(shape=IMAGE_SHAPE, name=name + "_img_input")
     x = layers.Conv2D(
@@ -291,9 +291,7 @@ def get_discriminator(
                 strides=(1, 1),
             )
 
-    x = layers.Conv2D(
-        1, (4, 4), strides=(1, 1), padding="same", kernel_initializer=kernel_initializer
-    )(x)
+    x = layers.Conv2D(1, (4, 4), strides=(1, 1), padding="same", kernel_initializer=kernel_initializer)(x)
 
     model = keras.models.Model(inputs=img_input, outputs=x, name=name)
     return model
