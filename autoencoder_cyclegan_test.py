@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow.keras import backend as K
 
 import tensorflow_addons as tfa
 import tensorflow_datasets as tfds
@@ -23,7 +24,7 @@ try:
 except:
     pass
 
-run_opts = tf.compat.v1.RunOptions(report_tensor_allocations_upon_oom=True)
+K.clear_session()
 
 # *******************************************************************
 
@@ -525,7 +526,7 @@ except:
 
 cycle_gan_model.fit(
     tf.data.Dataset.zip((train_ol, train_lu)),
-    epochs=1,
+    epochs=100,
     callbacks=[plotter],
 )
 
