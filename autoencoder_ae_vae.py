@@ -2,6 +2,7 @@ import cv2
 import numpy
 
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import Adam
 
@@ -14,16 +15,19 @@ from lib.utils import get_image_paths, load_images, stack_images
 from lib.training_data import get_training_data
 from lib.pixel_shuffler import PixelShuffler
 
-from tensorflow.compat.v1 import ConfigProto
-from tensorflow.compat.v1 import InteractiveSession
-
-config = ConfigProto()
+config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
-session = InteractiveSession(config=config)
+session = tf.compat.v1.Session(config=config)
 
-from tensorflow.python.framework.ops import disable_eager_execution
+devices = session.list_devices()
+for d in devices:
+    print(d.name)
 
-disable_eager_execution()
+physical_devices = tf.config.list_physical_devices('GPU')
+try:
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+except:
+    pass
 
 # ********************************************************************
 
