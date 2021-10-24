@@ -36,7 +36,7 @@ zoom = 4  # 64*zoom
 width = 256
 height = 256
 _latent_dim = 256  # 128
-_variational = 0
+_variational = 1
 chanels = 3
 batch_size = 1
 
@@ -51,7 +51,7 @@ gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 
 # ********************************************************************
 
-def conv(filters, kernel_size=4, strides=2):
+def conv(filters, kernel_size=3, strides=2):
     def block(x):
         x = Conv2D(
             filters,
@@ -67,7 +67,7 @@ def conv(filters, kernel_size=4, strides=2):
     return block
 
 
-def convDropout(filters, kernel_size=4, strides=2):
+def convDropout(filters, kernel_size=3, strides=2):
     def block(x):
         x = Conv2D(
             filters,
@@ -84,10 +84,10 @@ def convDropout(filters, kernel_size=4, strides=2):
     return block
 
 
-def upscale(filters, kernel_size=4, strides=4):
+def upscale(filters, kernel_size=3, filter_times=2):
     def block(x):
         x = Conv2D(
-            filters * strides,
+            filters * filter_times,
             kernel_size=kernel_size,
             padding='same',
             kernel_initializer=kernel_init
@@ -113,12 +113,12 @@ def vae_loss(input, x_decoded_mean):
 
 
 def Encoder(input_):
-    x = conv(64)(input_)
-    x = conv(128)(x)
-    x = conv(128)(x)
-    x = conv(256)(x)
-    x = conv(256)(x)
-    x = convDropout(512)(x)
+    x = conv(64, strides=2, kernel_size=5)(input_)
+    x = conv(128, strides=2)(x)
+    x = conv(128, strides=1)(x)
+    x = conv(256, strides=2)(x)
+    x = conv(256, strides=1)(x)
+    x = convDropout(512, strides=2)(x)
     x = Flatten()(x)
 
     z_mean = Dense(_latent_dim)(x)
@@ -131,16 +131,16 @@ def Encoder(input_):
 
     x = Dense(16 * 16 * 128, activation="relu")(latent_space)
     x = Reshape((16, 16, 128))(x)
-    x = upscale(512)(x)
+    x = upscale(512, filter_times=4)(x)
 
     return Model(input_, x), z_log_sigma, z_mean
 
 
 def Decoder():
     input_ = Input(shape=(32, 32, 512))
-    x = upscale(512)(input_)
-    x = upscale(256)(x)
-    x = upscale(128)(x)
+    x = upscale(256, filter_times=2)(input_)
+    x = upscale(128, filter_times=2)(x)
+    x = upscale(64, filter_times=4)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
     return Model(input_, x)
@@ -223,7 +223,7 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 loss_A_array = []
 loss_B_array = []
 
-for epoch in range(100000):
+for epoch in range(10):
 
     warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
     warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)
