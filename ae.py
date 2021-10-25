@@ -36,8 +36,6 @@ except:
 
 # disable_eager_execution()
 
-buffer_size = 4
-
 # ********************************************************************
 
 size = 256
@@ -47,6 +45,7 @@ height = 256
 _latent_dim = 256  # 128
 _variational = 0
 chanels = 3
+buffer_size = 4
 batch_size = 1
 
 IMAGE_SHAPE = (size, size, chanels)
@@ -240,7 +239,7 @@ class Monitor(keras.callbacks.Callback):
     def on_batch_begin(self, batch, logs=None):
 
         for i, img in enumerate(train_ol.take(self.num_img)):
-            prediction = self.model.auto_encoder_A(img)[0].numpy()
+            prediction = self.model.auto_encoder_A(img, training=False)[0].numpy()
 
             prediction = ((prediction * 127.5) + 127.5).astype(numpy.uint8)
             img = ((img[0] * 127.5) + 127.5).numpy().astype(numpy.uint8)
@@ -251,7 +250,7 @@ class Monitor(keras.callbacks.Callback):
             cv2.imshow("olTolu", figure)
 
         for i, img in enumerate(train_lu.take(self.num_img)):
-            prediction = self.model.auto_encoder_B(img)[0].numpy()
+            prediction = self.model.auto_encoder_B(img, training=False)[0].numpy()
 
             prediction = ((prediction * 127.5) + 127.5).astype(numpy.uint8)
             img = ((img[0] * 127.5) + 127.5).numpy().astype(numpy.uint8)
@@ -263,8 +262,22 @@ class Monitor(keras.callbacks.Callback):
 
         cv2.waitKey(1)
 
-    # def on_epoch_end(self, epoch, logs=None):
-    #     auto_encoder_A.save_weights(("models/AE/ae.h5"))
+    def on_epoch_end(self, epoch, logs=None):
+        _, ax = plt.subplots(4, 2, figsize=(12, 12))
+        for i, img in enumerate(train_ol.take(self.num_img)):
+            prediction = self.model.auto_encoder_B(img, training=False)[0].numpy()
+            prediction = (prediction * 127.5 + 127.5).astype(numpy.uint8)
+            img = (img[0] * 127.5 + 127.5).numpy().astype(numpy.uint8)
+
+            ax[i, 0].imshow(img)
+            ax[i, 1].imshow(prediction)
+            ax[i, 0].set_title("Input image")
+            ax[i, 1].set_title("Translated image")
+            ax[i, 0].axis("off")
+            ax[i, 1].axis("off")
+
+        plt.show()
+        plt.close()
 
 
 # *********************************************************************
@@ -300,7 +313,7 @@ auto_encoder_A = get_model()
 
 auto_encoder_A.fit(
     tf.data.Dataset.zip((train_ol, train_lu)),
-    validation_data=tf.data.Dataset.zip((train_ol, train_lu)),
-    epochs=1,
+    # validation_data=tf.data.Dataset.zip((train_ol, train_lu)),
+    epochs=2,
     callbacks=[plotter]
 )
