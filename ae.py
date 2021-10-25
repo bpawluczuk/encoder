@@ -12,6 +12,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
 import tensorflow_addons as tfa
 from tensorflow.python.framework.ops import disable_eager_execution
+from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
 from lib.utils import get_image_paths, load_images, stack_images
 from lib.training_data import get_training_data
@@ -74,8 +75,6 @@ def normalize_img(img):
 
 train_ol = tf.keras.preprocessing.image_dataset_from_directory(
     "data_train/OL_NEW",
-    validation_split=0.2,
-    subset="training",
     seed=1,
     label_mode=None,
     shuffle=buffer_size,
@@ -87,10 +86,44 @@ train_ol = (
     train_ol.map(normalize_img, num_parallel_calls=autotune).cache().shuffle(buffer_size)
 )
 
+plt.figure(figsize=(10, 10))
+for i, img in enumerate(train_ol.take(9)):
+    ax = plt.subplot(3, 3, i + 1)
+    plt.imshow(img[0])
+    plt.axis("off")
+
+plt.show()
+plt.close()
+
+# *********************************************************************
+
+validation_data_ol = ImageDataGenerator(
+    rescale=1. / 255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True)
+
+validation_ol = validation_data_ol.flow_from_directory(
+    'data_train/OL_NEW',
+    target_size=(255, 255),
+    batch_size=32,
+    class_mode='binary')
+
+images, labels = next(validation_ol)
+
+plt.figure(figsize=(10, 10))
+for i in range(9):
+    ax = plt.subplot(3, 3, i + 1)
+    plt.imshow(images[i])
+    plt.axis("off")
+
+plt.show()
+plt.close()
+
+# *********************************************************************
+
 train_lu = tf.keras.preprocessing.image_dataset_from_directory(
     "data_train/LU_NEW",
-    validation_split=0.2,
-    subset="training",
     seed=1,
     label_mode=None,
     shuffle=buffer_size,
@@ -101,6 +134,40 @@ train_lu = tf.keras.preprocessing.image_dataset_from_directory(
 train_lu = (
     train_lu.map(normalize_img, num_parallel_calls=autotune).shuffle(buffer_size)
 )
+
+plt.figure(figsize=(10, 10))
+for i, img in enumerate(train_lu.take(9)):
+    ax = plt.subplot(3, 3, i + 1)
+    plt.imshow(img[0])
+    plt.axis("off")
+
+plt.show()
+plt.close()
+
+# *********************************************************************
+
+validation_data_lu = ImageDataGenerator(
+    rescale=1. / 255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True)
+
+validation_lu = validation_data_lu.flow_from_directory(
+    'data_train/LU_NEW',
+    target_size=(255, 255),
+    batch_size=32,
+    class_mode='binary')
+
+images, labels = next(validation_lu)
+
+plt.figure(figsize=(10, 10))
+for i in range(9):
+    ax = plt.subplot(3, 3, i + 1)
+    plt.imshow(images[i])
+    plt.axis("off")
+
+plt.show()
+plt.close()
 
 
 # *********************************************************************
@@ -280,6 +347,9 @@ class Monitor(keras.callbacks.Callback):
         plt.close()
 
 
+plotter = Monitor()
+
+
 # *********************************************************************
 
 def get_model():
@@ -307,13 +377,11 @@ def get_model():
 
 # *********************************************************************
 
-plotter = Monitor()
-
 auto_encoder_A = get_model()
 
 auto_encoder_A.fit(
     tf.data.Dataset.zip((train_ol, train_lu)),
-    # validation_data=tf.data.Dataset.zip((train_ol, train_lu)),
+    validation_data=(validation_ol, validation_lu),
     epochs=2,
     callbacks=[plotter]
 )
