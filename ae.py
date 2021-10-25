@@ -138,13 +138,14 @@ def convDropout(filters, kernel_size=3, strides=2):
     return block
 
 
-def upscale(filters, filter_times=4, kernel_size=3):
+def upscale(filters, filter_times=4, kernel_size=3, name=""):
     def block(x):
         x = Conv2D(
             filters * filter_times,
             kernel_size=kernel_size,
             padding='same',
-            kernel_initializer=kernel_init
+            kernel_initializer=kernel_init,
+            name=name
         )(x)
         x = LeakyReLU(0.1)(x)
         x = PixelShuffler()(x)
@@ -154,7 +155,7 @@ def upscale(filters, filter_times=4, kernel_size=3):
 
 
 def Encoder(input_, name="Encoder"):
-    x = conv(64, strides=2, kernel_size=5)(input_)
+    x = conv(64, strides=2, kernel_size=7)(input_)
     x = conv(128, strides=2)(x)
     x = conv(128, strides=1)(x)
     x = conv(256, strides=2)(x)
@@ -177,11 +178,11 @@ def Encoder(input_, name="Encoder"):
 def Decoder(name="Decoder"):
     input_ = Input(shape=(32, 32, 512))
 
-    x = upscale(256, filter_times=2)(input_)
-    x = upscale(128, filter_times=2)(x)
-    x = upscale(64, filter_times=4)(x)
+    x = upscale(256, filter_times=2, name="decoder_up_1")(input_)
+    x = upscale(128, filter_times=2, name="decoder_up_2")(x)
+    x = upscale(64, filter_times=4, name="decoder_up_3")(x)
 
-    x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
+    x = Conv2D(3, kernel_size=7, padding='same', activation='sigmoid')(x)
 
     decoder = Model(input_, x, name=name)
     decoder.summary()
@@ -197,55 +198,49 @@ mae_metric = keras.metrics.MeanAbsoluteError(name="mae")
 
 class AutoEncoder(keras.Model):
 
-    def __init__(self, auto_encoder_A):
+    def __init__(self, auto_encoder_A, auto_encoder_B):
         super(AutoEncoder, self).__init__()
         self.auto_encoder_A = auto_encoder_A
-
-        self.total_loss_tracker = keras.metrics.Mean(name="total_loss")
+        self.auto_encoder_B = auto_encoder_B
+        self.optimizer_A = keras.optimizers.Adam(learning_rate=2e-4, beta_1=0.5)
+        self.optimizer_B = keras.optimizers.Adam(learning_rate=2e-4, beta_1=0.5)
+        self.total_loss_tracker_A = keras.metrics.Mean(name="total_loss")
+        self.total_loss_tracker_B = keras.metrics.Mean(name="total_loss")
 
     def train_step(self, data):
-
         x_real, y_pred = data
 
         with tf.GradientTape(persistent=True) as tape:
-            reconstruction = self.auto_encoder_A(x_real)
-            total_loss = keras.losses.mean_squared_error(y_pred, reconstruction)
 
-        gradients = tape.gradient(total_loss, self.trainable_weights)
-        self.optimizer.apply_gradients(zip(gradients, self.trainable_weights))
-        self.total_loss_tracker.update_state(total_loss)
+            reconstruction_A = self.auto_encoder_A(x_real)
+            total_loss_A = keras.losses.mean_squared_error(y_pred, reconstruction_A)
+
+            reconstruction_B = self.auto_encoder_B(x_real)
+            total_loss_B = keras.losses.mean_squared_error(y_pred, reconstruction_B)
+
+        gradients_A = tape.gradient(total_loss_A, self.auto_encoder_A.trainable_weights)
+        self.optimizer_A.apply_gradients(zip(gradients_A, self.auto_encoder_A.trainable_weights))
+        self.total_loss_tracker_A.update_state(total_loss_A)
+
+        gradients_B = tape.gradient(total_loss_B, self.auto_encoder_B.trainable_weights)
+        self.optimizer_B.apply_gradients(zip(gradients_B, self.auto_encoder_B.trainable_weights))
+        self.total_loss_tracker_B.update_state(total_loss_B)
 
         return {
-            "loss": self.total_loss_tracker.result()
+            "loss_A": self.total_loss_tracker_A.result(),
+            "loss_B": self.total_loss_tracker_B.result()
         }
-
-
-def get_model():
-
-    x = Input(shape=IMAGE_SHAPE)
-
-    encoder = Encoder(x)
-    decoder_A = Decoder()
-    auto_encoder_A = Model(x, decoder_A(encoder(x)))
-
-    model = AutoEncoder(auto_encoder_A=auto_encoder_A)
-
-    model.compile(optimizer=Adam(lr=5e-5, beta_1=0.5, beta_2=0.95))
-
-    return model
 
 
 class Monitor(keras.callbacks.Callback):
 
     def __init__(self, num_img=4):
-
         self.num_img = num_img
 
     def on_batch_begin(self, batch, logs=None):
 
         for i, img in enumerate(train_ol.take(self.num_img)):
-
-            prediction = self.model.auto_encoder_A(img)[0].numpy()
+            prediction = self.model.auto_encoder_B(img)[0].numpy()
 
             prediction = ((prediction * 127.5) + 127.5).astype(numpy.uint8)
             img = ((img[0] * 127.5) + 127.5).numpy().astype(numpy.uint8)
@@ -255,7 +250,42 @@ class Monitor(keras.callbacks.Callback):
 
             cv2.imshow("olTolu", figure)
 
+        for i, img in enumerate(train_lu.take(self.num_img)):
+            prediction = self.model.auto_encoder_A(img)[0].numpy()
+
+            prediction = ((prediction * 127.5) + 127.5).astype(numpy.uint8)
+            img = ((img[0] * 127.5) + 127.5).numpy().astype(numpy.uint8)
+
+            figure = numpy.stack((img, prediction))
+            figure = numpy.concatenate(figure, axis=1)
+
+            cv2.imshow("luTool", figure)
+
         cv2.waitKey(1)
+
+    # def on_epoch_end(self, epoch, logs=None):
+    #     auto_encoder_A.save_weights(("models/AE/ae.h5"))
+
+
+# *********************************************************************
+
+def get_model():
+
+    x = Input(shape=IMAGE_SHAPE)
+
+    encoder = Encoder(x)
+
+    decoder_A = Decoder()
+    auto_encoder_A = Model(x, decoder_A(encoder(x)))
+
+    decoder_B = Decoder()
+    auto_encoder_B = Model(x, decoder_B(encoder(x)))
+
+    model = AutoEncoder(auto_encoder_A=auto_encoder_A, auto_encoder_B=auto_encoder_B)
+
+    model.compile(optimizer=Adam(lr=5e-5, beta_1=0.5, beta_2=0.95))
+
+    return model
 
 
 # *********************************************************************
@@ -265,8 +295,8 @@ plotter = Monitor()
 auto_encoder_A = get_model()
 
 auto_encoder_A.fit(
-    tf.data.Dataset.zip((train_ol, train_ol)),
-    validation_data=tf.data.Dataset.zip((train_ol, train_ol)),
+    tf.data.Dataset.zip((train_ol, train_lu)),
+    validation_data=tf.data.Dataset.zip((train_ol, train_lu)),
     epochs=1,
     callbacks=[plotter]
 )
