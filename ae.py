@@ -67,7 +67,7 @@ autotune = tf.data.experimental.AUTOTUNE
 
 def normalize_img(img):
     img = tf.cast(img, dtype=tf.float32)
-    return (img / 127.5) - 1.0
+    return img / 255.0
 
 
 # *********************************************************************
@@ -241,8 +241,8 @@ class Monitor(keras.callbacks.Callback):
         for i, img in enumerate(train_ol.take(self.num_img)):
             prediction = self.model.auto_encoder_A(img, training=False)[0].numpy()
 
-            prediction = ((prediction * 127.5) + 127.5).astype(numpy.uint8)
-            img = ((img[0] * 127.5) + 127.5).numpy().astype(numpy.uint8)
+            prediction = (prediction * 255).astype(numpy.uint8)
+            img = (img[0] * 255).numpy().astype(numpy.uint8)
 
             figure = numpy.stack((img, prediction))
             figure = numpy.concatenate(figure, axis=1)
@@ -252,8 +252,8 @@ class Monitor(keras.callbacks.Callback):
         for i, img in enumerate(train_lu.take(self.num_img)):
             prediction = self.model.auto_encoder_B(img, training=False)[0].numpy()
 
-            prediction = ((prediction * 127.5) + 127.5).astype(numpy.uint8)
-            img = ((img[0] * 127.5) + 127.5).numpy().astype(numpy.uint8)
+            prediction = (prediction * 255).astype(numpy.uint8)
+            img = (img[0] * 255).numpy().astype(numpy.uint8)
 
             figure = numpy.stack((img, prediction))
             figure = numpy.concatenate(figure, axis=1)
@@ -266,8 +266,8 @@ class Monitor(keras.callbacks.Callback):
         _, ax = plt.subplots(4, 2, figsize=(12, 12))
         for i, img in enumerate(train_ol.take(self.num_img)):
             prediction = self.model.auto_encoder_B(img, training=False)[0].numpy()
-            prediction = (prediction * 127.5 + 127.5).astype(numpy.uint8)
-            img = (img[0] * 127.5 + 127.5).numpy().astype(numpy.uint8)
+            prediction = (prediction * 255).astype(numpy.uint8)
+            img = (img[0] * 255).numpy().astype(numpy.uint8)
 
             ax[i, 0].imshow(img)
             ax[i, 1].imshow(prediction)
