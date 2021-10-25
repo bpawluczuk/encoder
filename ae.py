@@ -240,7 +240,7 @@ class Monitor(keras.callbacks.Callback):
     def on_batch_begin(self, batch, logs=None):
 
         for i, img in enumerate(train_ol.take(self.num_img)):
-            prediction = self.model.auto_encoder_B(img)[0].numpy()
+            prediction = self.model.auto_encoder_A(img)[0].numpy()
 
             prediction = ((prediction * 127.5) + 127.5).astype(numpy.uint8)
             img = ((img[0] * 127.5) + 127.5).numpy().astype(numpy.uint8)
@@ -251,7 +251,7 @@ class Monitor(keras.callbacks.Callback):
             cv2.imshow("olTolu", figure)
 
         for i, img in enumerate(train_lu.take(self.num_img)):
-            prediction = self.model.auto_encoder_A(img)[0].numpy()
+            prediction = self.model.auto_encoder_B(img)[0].numpy()
 
             prediction = ((prediction * 127.5) + 127.5).astype(numpy.uint8)
             img = ((img[0] * 127.5) + 127.5).numpy().astype(numpy.uint8)
