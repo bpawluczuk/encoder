@@ -53,7 +53,7 @@ IMAGE_SHAPE = (size, size, chanels)
 image_size = (256, 256)
 ENCODER_DIM = 1024
 
-adam_optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.95)
+adam_optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.99)
 
 kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
@@ -133,7 +133,7 @@ def convDropout(filters, kernel_size=3, strides=2):
         )(x)
         x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         x = LeakyReLU(0.1)(x)
-        x = Dropout(0.2)(x)
+        # x = Dropout(0.2)(x)
         return x
 
     return block
@@ -199,12 +199,12 @@ mae_metric = keras.metrics.MeanAbsoluteError(name="mae")
 
 class AutoEncoder(keras.Model):
 
-    def __init__(self, auto_encoder_A, auto_encoder_B):
+    def __init__(self, auto_encoder_A, auto_encoder_B, optimizer_A, optimizer_B):
         super(AutoEncoder, self).__init__()
         self.auto_encoder_A = auto_encoder_A
         self.auto_encoder_B = auto_encoder_B
-        self.optimizer_A = keras.optimizers.Adam(learning_rate=2e-4, beta_1=0.5)
-        self.optimizer_B = keras.optimizers.Adam(learning_rate=2e-4, beta_1=0.5)
+        self.optimizer_A = optimizer_A
+        self.optimizer_B = optimizer_B
         self.total_loss_tracker_A = keras.metrics.Mean(name="total_loss")
         self.total_loss_tracker_B = keras.metrics.Mean(name="total_loss")
 
@@ -280,9 +280,14 @@ def get_model():
     decoder_B = Decoder()
     auto_encoder_B = Model(x, decoder_B(encoder(x)))
 
-    model = AutoEncoder(auto_encoder_A=auto_encoder_A, auto_encoder_B=auto_encoder_B)
+    model = AutoEncoder(
+        auto_encoder_A=auto_encoder_A,
+        auto_encoder_B=auto_encoder_B,
+        optimizer_A=Adam(lr=5e-5, beta_1=0.5, beta_2=0.99),
+        optimizer_B=Adam(lr=5e-5, beta_1=0.5, beta_2=0.99)
+    )
 
-    model.compile(optimizer=Adam(lr=5e-5, beta_1=0.5, beta_2=0.95))
+    model.compile()
 
     return model
 
