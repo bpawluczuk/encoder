@@ -3,6 +3,7 @@ import numpy
 
 import matplotlib.pyplot as plt
 import tensorflow as tf
+from PIL import Image
 from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import Adam
 
@@ -208,15 +209,14 @@ class AutoEncoder(keras.Model):
         self.total_loss_tracker_B = keras.metrics.Mean(name="total_loss")
 
     def train_step(self, data):
-        x_real, y_pred = data
+        x, y = data
 
         with tf.GradientTape(persistent=True) as tape:
+            reconstruction_A = self.auto_encoder_A(x, training=True)
+            total_loss_A = keras.losses.mean_squared_error(x, reconstruction_A)
 
-            reconstruction_A = self.auto_encoder_A(x_real)
-            total_loss_A = keras.losses.mean_squared_error(y_pred, reconstruction_A)
-
-            reconstruction_B = self.auto_encoder_B(x_real)
-            total_loss_B = keras.losses.mean_squared_error(y_pred, reconstruction_B)
+            reconstruction_B = self.auto_encoder_B(y, training=True)
+            total_loss_B = keras.losses.mean_squared_error(y, reconstruction_B)
 
         gradients_A = tape.gradient(total_loss_A, self.auto_encoder_A.trainable_weights)
         self.optimizer_A.apply_gradients(zip(gradients_A, self.auto_encoder_A.trainable_weights))
@@ -270,7 +270,6 @@ class Monitor(keras.callbacks.Callback):
 # *********************************************************************
 
 def get_model():
-
     x = Input(shape=IMAGE_SHAPE)
 
     encoder = Encoder(x)
