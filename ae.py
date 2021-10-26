@@ -194,8 +194,8 @@ def save_model_weights():
 
 # ********************************************************************************
 
-images_A = get_image_paths("data_test/OL/trainOL")
-images_B = get_image_paths("data_test/LU/trainLU")
+images_A = get_image_paths("data_test/OL_NEW/trainOL")
+images_B = get_image_paths("data_test/LU_NEW/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
@@ -221,3 +221,41 @@ for epoch in range(epochs):
 
         warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
         warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)
+
+        loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
+        loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
+
+        loss = 0.5 * numpy.add(loss_A, loss_B)
+
+        elapsed_time = datetime.datetime.now() - start_time
+
+        print(
+            "[Epoch %d/%d] [Batch %d/%d] [A loss: %f, acc: %3d%%] [B loss: %f, acc: %3d%%] time: %s " \
+            % (epoch, epochs,
+               batch, batches,
+               loss[0], 100 * loss[1],
+               loss[1], 100 * loss[0],
+               elapsed_time))
+
+        if batch % sample_interval == 0:
+            save_model_weights()
+
+            test_A = target_A[0:3]
+            test_B = target_B[0:3]
+
+            figure = numpy.stack([
+                test_A,
+                autoencoder_A.predict(test_A),
+                autoencoder_B.predict(test_A),
+                test_B,
+                autoencoder_B.predict(test_B),
+                autoencoder_A.predict(test_B),
+            ], axis=1)
+
+            figure = numpy.concatenate([figure], axis=0)
+            figure = stack_images(figure)
+
+            figure = numpy.clip(figure * 255, 0, 255).astype(numpy.uint8)
+
+            cv2.imshow("Results", figure)
+            key = cv2.waitKey(1)
