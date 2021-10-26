@@ -44,7 +44,7 @@ chanels = 3
 IMAGE_SHAPE = (size, size, chanels)
 ENCODER_DIM = 1024
 
-_latent_dim = 512  # 128
+_latent_dim = 128  # 128
 _variational = 0
 
 zoom = 4  # 64*zoom
@@ -125,29 +125,31 @@ def upscale(filters, kernel_size=4, filter_times=2, padding='same', activation=T
 
 
 def Encoder(input_, name="Encoder"):
-    x = convInOut(256, kernel_size=8)(input_)
+    x = convInOut(128, kernel_size=8)(input_)
+    x = conv(256)(x)
+    x = conv(256, strides=1)(x)
     x = conv(512)(x)
     x = conv(512, strides=1)(x)
-    x = conv(1024)(x)
-    x = conv(1024, strides=1)(x)
     x = Flatten()(x)
 
     latent_space = Dense(_latent_dim)(x)
 
-    x = Dense(32 * 32 * 1024, activation="relu")(latent_space)
-    x = Reshape((32, 32, 1024))(x)
-    x = upscale(1024, filter_times=4)(x)
+    x = Dense(16 * 16 * 128, activation="relu")(latent_space)
+    x = Reshape((16, 16, 128))(x)
+    x = upscale(512, filter_times=4)(x)
 
     return Model(input_, x, name=name)
 
 
 def Decoder(name="Decoder"):
-    input_ = Input(shape=(64, 64, 1024))
+    input_ = Input(shape=(32, 32, 512))
 
-    x = upscale(1024)(input_)
-    x = conv(1024, strides=1)(x)
-    x = upscale(512)(x)
+    x = upscale(512)(input_)
     x = conv(512, strides=1)(x)
+    x = upscale(256)(x)
+    x = conv(256, strides=1)(x)
+    x = upscale(128)(x)
+    x = conv(128, strides=1)(x)
 
     x = convInOut(chanels, kernel_size=8)(x)
     x = layers.Activation("sigmoid")(x)
@@ -205,7 +207,7 @@ batch_size = 4
 epochs = 2000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-sample_interval = 100
+sample_interval = 5
 
 # ********************************************************************************
 
