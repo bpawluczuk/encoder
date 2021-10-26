@@ -266,11 +266,11 @@ def upscale(filters, filter_times=4, kernel_size=3, name=""):
 
 
 def Encoder(input_, name="Encoder"):
-    x = conv(64, strides=2, kernel_size=7)(input_)
-    x = conv(128, strides=2)(x)
-    x = conv(128, strides=1)(x)
+    x = conv(128, strides=2, kernel_size=7)(input_)
     x = conv(256, strides=2)(x)
     x = conv(256, strides=1)(x)
+    x = conv(512, strides=2)(x)
+    x = conv(512, strides=1)(x)
     x = convDropout(512, strides=2)(x)
     x = Flatten()(x)
 
@@ -291,7 +291,7 @@ def Decoder(name="Decoder"):
 
     x = upscale(256, filter_times=2, name="decoder_up_1")(input_)
     x = upscale(128, filter_times=2, name="decoder_up_2")(x)
-    x = upscale(64, filter_times=4, name="decoder_up_3")(x)
+    x = upscale(128, filter_times=4, name="decoder_up_3")(x)
 
     x = Conv2D(3, kernel_size=7, padding='same', activation='sigmoid')(x)
 
@@ -410,8 +410,8 @@ def get_model():
     model = AutoEncoder(
         auto_encoder_A=auto_encoder_A,
         auto_encoder_B=auto_encoder_B,
-        optimizer_A=Adam(lr=5e-5, beta_1=0.5, beta_2=0.99),
-        optimizer_B=Adam(lr=5e-5, beta_1=0.5, beta_2=0.99)
+        optimizer_A=Adam(lr=2e-5, beta_1=0.5, beta_2=0.99),
+        optimizer_B=Adam(lr=2e-5, beta_1=0.5, beta_2=0.99)
     )
 
     model.compile()
@@ -426,7 +426,7 @@ auto_encoder_A = get_model()
 auto_encoder_A.fit(
     tf.data.Dataset.zip((train_ol_dataset, train_lu_dataset)),
     validation_data=tf.data.Dataset.zip((validation_ol_dataset, validation_lu_dataset)),
-    epochs=2,
+    epochs=6,
     steps_per_epoch=5998,
     callbacks=[plotter]
 )
