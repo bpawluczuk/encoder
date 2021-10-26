@@ -37,17 +37,17 @@ except:
 # ********************************************************************
 
 size = 256
-zoom = 4  # 64*zoom
 width = 256
 height = 256
-_latent_dim = 512  # 128
-_variational = 0
 chanels = 3
-batch_size = 1
-filtersInOut = 64
 
 IMAGE_SHAPE = (size, size, chanels)
 ENCODER_DIM = 1024
+
+_latent_dim = 512  # 128
+_variational = 0
+
+zoom = 4  # 64*zoom
 
 optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.95)
 
@@ -58,11 +58,6 @@ disable_eager_execution()
 
 
 # ********************************************************************
-
-def normalize_img(img):
-    img = tf.cast(img, dtype=tf.float32)
-    return img / 255
-
 
 def conv(filters, kernel_size=4, strides=2, padding='same', activation=True, dropout_rate=0):
     def block(x):
@@ -88,7 +83,7 @@ def conv(filters, kernel_size=4, strides=2, padding='same', activation=True, dro
     return block
 
 
-def convInOut(filters, kernel_size=4, strides=2, padding='same', activation=True, dropout_rate=0):
+def convInOut(filters, kernel_size=4, padding='same', activation=True, dropout_rate=0):
     return conv(
         filters=filters,
         kernel_size=kernel_size,
@@ -176,14 +171,11 @@ def get_resnet_generator(name="gen"):
 
 # ********************************************************************************
 
-# Loss weights
 lambda_cycle = 10.0  # Cycle-consistency loss
 lambda_id = 0.1 * lambda_cycle  # Identity loss
 
 disc_A = get_discriminator(name="disc_A")
 disc_B = get_discriminator(name="disc_B")
-
-disc_A.summary()
 
 disc_A.compile(loss='mse', optimizer=optimizer, metrics=['accuracy'])
 disc_B.compile(loss='mse', optimizer=optimizer, metrics=['accuracy'])
@@ -197,8 +189,6 @@ img_B = Input(shape=IMAGE_SHAPE)
 fake_B = gen_AB(img_A)
 fake_A = gen_BA(img_B)
 
-# gen_AB.summary()
-
 reconstr_A = gen_BA(fake_B)
 reconstr_B = gen_AB(fake_A)
 
@@ -211,15 +201,35 @@ disc_B.trainable = False
 valid_A = disc_A(fake_A)
 valid_B = disc_B(fake_B)
 
-combined = Model(inputs=[img_A, img_B], outputs=[valid_A, valid_B, reconstr_A, reconstr_B, img_A_id, img_B_id])
+# ********************************************************************************
 
-combined.compile(
+cyclegan = Model(inputs=[img_A, img_B], outputs=[valid_A, valid_B, reconstr_A, reconstr_B, img_A_id, img_B_id])
+
+cyclegan.compile(
     loss=['mse', 'mse', 'mae', 'mae', 'mae', 'mae'],
     loss_weights=[1, 1, lambda_cycle, lambda_cycle, lambda_id, lambda_id],
     optimizer=optimizer
 )
 
-# combined.summary()
+disc_A.summary()
+gen_AB.summary()
+cyclegan.summary()
+
+# ********************************************************************
+
+try:
+    cyclegan.load_weights("models/CycleGan/cyclegan_batch.h5")
+    print("... load model")
+except:
+    print("model does not exist")
+
+
+def save_model_weights():
+    cyclegan.save_weights("models/CycleGan/cyclegan_batch.h5")
+    print("save model weights")
+
+
+# ********************************************************************************
 
 images_A = get_image_paths("data_test/OL/trainOL")
 images_B = get_image_paths("data_test/LU/trainLU")
@@ -228,70 +238,82 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
+batch_size = 2
+epochs = 2
+dataset_size = len(images_A)
+batches = round(dataset_size / batch_size)
+sample_interval = 100
+
+# ********************************************************************************
+
 start_time = datetime.datetime.now()
 
-# Adversarial loss ground truths
 valid = numpy.ones((batch_size,) + (32, 32, 1))
 fake = numpy.zeros((batch_size,) + (32, 32, 1))
 
-for epoch in range(2):
-    warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
-    warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)
+for epoch in range(epochs):
+    epoch += 1
+    for batch in range(batches):
+        batch += 1
 
-    fake_B = gen_AB.predict(target_A)
-    fake_A = gen_BA.predict(target_B)
+        warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
+        warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)
 
-    dA_loss_real = disc_A.train_on_batch(target_A, valid)
-    dA_loss_fake = disc_A.train_on_batch(fake_A, fake)
-    dA_loss = 0.5 * numpy.add(dA_loss_real, dA_loss_fake)
+        fake_B = gen_AB.predict(target_A)
+        fake_A = gen_BA.predict(target_B)
 
-    dB_loss_real = disc_B.train_on_batch(target_B, valid)
-    dB_loss_fake = disc_B.train_on_batch(fake_B, fake)
-    dB_loss = 0.5 * numpy.add(dB_loss_real, dB_loss_fake)
+        dA_loss_real = disc_A.train_on_batch(target_A, valid)
+        dA_loss_fake = disc_A.train_on_batch(fake_A, fake)
+        dA_loss = 0.5 * numpy.add(dA_loss_real, dA_loss_fake)
 
-    # Total disciminator loss
-    d_loss = 0.5 * numpy.add(dA_loss, dB_loss)
+        dB_loss_real = disc_B.train_on_batch(target_B, valid)
+        dB_loss_fake = disc_B.train_on_batch(fake_B, fake)
+        dB_loss = 0.5 * numpy.add(dB_loss_real, dB_loss_fake)
 
-    # Train the generators
-    g_loss = combined.train_on_batch([target_A, target_B], [valid, valid, target_A, target_B, target_A, target_B])
+        # Total disciminator loss
+        d_loss = 0.5 * numpy.add(dA_loss, dB_loss)
 
-    elapsed_time = datetime.datetime.now() - start_time
+        # Train the generators
+        g_loss = cyclegan.train_on_batch([target_A, target_B], [valid, valid, target_A, target_B, target_A, target_B])
 
-    print(
-        "[Epoch %d] [D loss: %f, acc: %3d%%] [G loss: %05f, adv: %05f, recon: %05f, id: %05f] time: %s " \
-        % (epoch,
-           d_loss[0], 100 * d_loss[1],
-           g_loss[0],
-           numpy.mean(g_loss[1:3]),
-           numpy.mean(g_loss[3:5]),
-           numpy.mean(g_loss[5:6]),
-           elapsed_time))
+        elapsed_time = datetime.datetime.now() - start_time
 
-    if epoch % 1 == 0:
+        print(
+            "[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %05f, adv: %05f, recon: %05f, id: %05f] time: %s " \
+            % (epoch, epochs,
+               batch, batches,
+               d_loss[0], 100 * d_loss[1],
+               g_loss[0],
+               numpy.mean(g_loss[1:3]),
+               numpy.mean(g_loss[3:5]),
+               numpy.mean(g_loss[5:6]),
+               elapsed_time))
 
-        test_A = target_A[0:3]
-        test_B = target_B[0:3]
+        if batch % sample_interval == 0:
+            save_model_weights()
 
-        fake_B = gen_AB.predict(test_A)
-        fake_A = gen_BA.predict(test_B)
-        # Translate back to original domain
-        reconstr_A = gen_BA.predict(fake_B)
-        reconstr_B = gen_AB.predict(fake_A)
+            test_A = target_A[0:3]
+            test_B = target_B[0:3]
 
+            fake_B = gen_AB.predict(test_A)
+            fake_A = gen_BA.predict(test_B)
 
-        figure = numpy.stack([
-            test_A,
-            fake_B,
-            reconstr_A,
-            test_B,
-            fake_A,
-            reconstr_B,
-        ], axis=1)
+            reconstr_A = gen_BA.predict(fake_B)
+            reconstr_B = gen_AB.predict(fake_A)
 
-        figure = numpy.concatenate([figure], axis=0)
-        figure = stack_images(figure)
+            figure = numpy.stack([
+                test_A,
+                fake_B,
+                reconstr_A,
+                test_B,
+                fake_A,
+                reconstr_B,
+            ], axis=1)
 
-        figure = numpy.clip(figure * 255, 0, 255).astype(numpy.uint8)
+            figure = numpy.concatenate([figure], axis=0)
+            figure = stack_images(figure)
 
-        cv2.imshow("", figure)
-        key = cv2.waitKey(1)
+            figure = numpy.clip(figure * 255, 0, 255).astype(numpy.uint8)
+
+            cv2.imshow("Results", figure)
+            key = cv2.waitKey(1)
