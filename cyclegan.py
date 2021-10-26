@@ -235,7 +235,6 @@ valid = numpy.ones((batch_size,) + (32, 32, 1))
 fake = numpy.zeros((batch_size,) + (32, 32, 1))
 
 for epoch in range(2):
-    
     warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
     warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)
 
@@ -257,3 +256,42 @@ for epoch in range(2):
     g_loss = combined.train_on_batch([target_A, target_B], [valid, valid, target_A, target_B, target_A, target_B])
 
     elapsed_time = datetime.datetime.now() - start_time
+
+    print(
+        "[Epoch %d] [D loss: %f, acc: %3d%%] [G loss: %05f, adv: %05f, recon: %05f, id: %05f] time: %s " \
+        % (epoch,
+           d_loss[0], 100 * d_loss[1],
+           g_loss[0],
+           numpy.mean(g_loss[1:3]),
+           numpy.mean(g_loss[3:5]),
+           numpy.mean(g_loss[5:6]),
+           elapsed_time))
+
+    if epoch % 1 == 0:
+
+        test_A = target_A[0:3]
+        test_B = target_B[0:3]
+
+        fake_B = gen_AB.predict(test_A)
+        fake_A = gen_BA.predict(test_B)
+        # Translate back to original domain
+        reconstr_A = gen_BA.predict(fake_B)
+        reconstr_B = gen_AB.predict(fake_A)
+
+
+        figure = numpy.stack([
+            test_A,
+            fake_B,
+            reconstr_A,
+            test_B,
+            fake_A,
+            reconstr_B,
+        ], axis=1)
+
+        figure = numpy.concatenate([figure], axis=0)
+        figure = stack_images(figure)
+
+        figure = numpy.clip(figure * 255, 0, 255).astype(numpy.uint8)
+
+        cv2.imshow("", figure)
+        key = cv2.waitKey(1)
