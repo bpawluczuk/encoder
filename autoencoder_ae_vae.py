@@ -35,8 +35,8 @@ size = 256
 zoom = 4  # 64*zoom
 width = 256
 height = 256
-_latent_dim = 256  # 128
-_variational = 1
+_latent_dim = 512  # 128
+_variational = 0
 chanels = 3
 batch_size = 1
 
@@ -113,11 +113,11 @@ def vae_loss(input, x_decoded_mean):
 
 
 def Encoder(input_):
-    x = conv(64, strides=2, kernel_size=5)(input_)
-    x = conv(128, strides=2)(x)
-    x = conv(128, strides=1)(x)
+    x = conv(128, strides=2, kernel_size=5)(input_)
     x = conv(256, strides=2)(x)
     x = conv(256, strides=1)(x)
+    x = conv(512, strides=2)(x)
+    x = conv(512, strides=1)(x)
     x = convDropout(512, strides=2)(x)
     x = Flatten()(x)
 
@@ -138,9 +138,9 @@ def Encoder(input_):
 
 def Decoder():
     input_ = Input(shape=(32, 32, 512))
-    x = upscale(256, filter_times=2)(input_)
-    x = upscale(128, filter_times=2)(x)
-    x = upscale(64, filter_times=4)(x)
+    x = upscale(512, filter_times=2)(input_)
+    x = upscale(256, filter_times=2)(x)
+    x = upscale(128, filter_times=4)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
     return Model(input_, x)
@@ -208,8 +208,8 @@ def save_model_weights():
 # ********************************************************************
 
 encoder.summary()
-# autoencoder_A.summary()
-# autoencoder_B.summary()
+autoencoder_A.summary()
+autoencoder_B.summary()
 
 # ********************************************************************
 
@@ -223,7 +223,7 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 loss_A_array = []
 loss_B_array = []
 
-for epoch in range(10):
+for epoch in range(0):
 
     warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
     warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)
