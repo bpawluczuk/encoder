@@ -201,8 +201,8 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-batch_size = 2
-epochs = 2
+batch_size = 4
+epochs = 2000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
 sample_interval = 100
