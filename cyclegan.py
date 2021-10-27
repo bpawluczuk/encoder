@@ -192,8 +192,8 @@ fake_A = gen_BA(img_B)
 reconstr_A = gen_BA(fake_B)
 reconstr_B = gen_AB(fake_A)
 
-img_A_id = gen_BA(img_A)
-img_B_id = gen_AB(img_B)
+same_A = gen_BA(img_A)
+same_B = gen_AB(img_B)
 
 disc_A.trainable = False
 disc_B.trainable = False
@@ -203,7 +203,7 @@ valid_B = disc_B(fake_B)
 
 # ********************************************************************************
 
-cyclegan = Model(inputs=[img_A, img_B], outputs=[valid_A, valid_B, reconstr_A, reconstr_B, img_A_id, img_B_id])
+cyclegan = Model(inputs=[img_A, img_B], outputs=[valid_A, valid_B, reconstr_A, reconstr_B, same_A, same_B])
 
 cyclegan.compile(
     loss=['mse', 'mse', 'mae', 'mae', 'mae', 'mae'],
@@ -238,7 +238,7 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-batch_size = 10
+batch_size = 1
 epochs = 2000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
@@ -248,8 +248,8 @@ sample_interval = 100
 
 start_time = datetime.datetime.now()
 
-valid = numpy.ones((batch_size,) + (32, 32, 1))
-fake = numpy.zeros((batch_size,) + (32, 32, 1))
+valid = numpy.ones((batch_size, 1))
+fake = numpy.zeros((batch_size, 1))
 
 for epoch in range(epochs):
     epoch += 1
