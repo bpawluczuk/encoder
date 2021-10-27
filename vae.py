@@ -211,8 +211,8 @@ def save_model_weights():
 
 # ********************************************************************************
 
-images_A = get_image_paths("data_train/OL_NEW/trainOL")
-images_B = get_image_paths("data_train/LU_NEW/trainLU")
+images_A = get_image_paths("data_train/OL_NEW_NEW/trainOL")
+images_B = get_image_paths("data_train/LU_NEW_NEW/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
@@ -222,8 +222,8 @@ batch_size = 1
 epochs = 100
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-save_interval = 1000
-sample_interval = 10
+save_interval = 110
+sample_interval = 5
 
 # ********************************************************************************
 

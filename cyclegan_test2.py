@@ -126,6 +126,7 @@ def downsample(
         padding="same",
         gamma_initializer=gamma_init,
         use_bias=False,
+        dropout_rate=0
 ):
     x = layers.Conv2D(
         filters,
@@ -138,12 +139,14 @@ def downsample(
     x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_initializer)(x)
     if activation:
         x = activation(x)
+    if dropout_rate:
+        x = Dropout(dropout_rate)(x)
     return x
 
 
 # ********************************************************************************
 
-# def upsample(
+# def upsample2(
 #         x,
 #         filters,
 #         activation,
@@ -176,11 +179,11 @@ def upsample(filters, kernel_size=3, filter_times=2, padding='same', activation=
             padding=padding,
             kernel_initializer=kernel_init
         )(x)
-        x = PixelShuffler()(x)
         x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         if activation:
             x = LeakyReLU(0.1)(x)
 
+        x = PixelShuffler()(x)
         return x
 
     return block
@@ -311,8 +314,8 @@ def save_model_weights():
 
 # ********************************************************************************
 
-images_A = get_image_paths("data_train/OL_NEW/trainOL")
-images_B = get_image_paths("data_train/LU_NEW/trainLU")
+images_A = get_image_paths("data_train/OL_NEW_NEW/trainOL")
+images_B = get_image_paths("data_train/LU_NEW_NEW/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
@@ -322,8 +325,8 @@ batch_size = 1
 epochs = 2000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-save_interval = 1000
-sample_interval = 10
+save_interval = 110
+sample_interval = 5
 
 # ********************************************************************************
 
