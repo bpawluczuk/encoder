@@ -171,10 +171,10 @@ decoder_B = Decoder()
 # ********************************************************************
 
 autoencoder_A = Model(x, decoder_A(encoder(x)))
-autoencoder_A.compile(optimizer=optimizer, loss='mae', metrics=['accuracy'])
+autoencoder_A.compile(optimizer=optimizer, loss='mean_absolute_error', metrics=['accuracy'])
 
 autoencoder_B = Model(x, decoder_B(encoder(x)))
-autoencoder_B.compile(optimizer=optimizer, loss='mae', metrics=['accuracy'])
+autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error', metrics=['accuracy'])
 
 # encoder.summary()
 # autoencoder_A.summary()
@@ -197,10 +197,11 @@ def save_model_weights():
     decoder_B.save_weights("models/AE/decoder_b.h5")
     print("save model weights")
 
+
 # ********************************************************************************
 
-images_A = get_image_paths("data_test/OL_NEW/trainOL")
-images_B = get_image_paths("data_test/LU_NEW/trainLU")
+images_A = get_image_paths("data_train/OL_NEW/trainOL")
+images_B = get_image_paths("data_train/LU_NEW/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
@@ -257,7 +258,7 @@ for epoch in range(epochs):
             figure = numpy.concatenate([figure], axis=0)
             figure = stack_images(figure)
 
-            figure = numpy.clip(figure * 255).astype(numpy.uint8)
+            figure = numpy.clip(figure * 255, 0, 255).astype(numpy.uint8)
 
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
