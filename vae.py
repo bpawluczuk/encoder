@@ -113,11 +113,10 @@ def upscale(filters, kernel_size=4, filter_times=2, padding='same', activation=T
             padding=padding,
             kernel_initializer=kernel_init
         )(x)
-
+        x = PixelShuffler()(x)
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         if activation:
             x = LeakyReLU(0.1)(x)
-
-        x = PixelShuffler()(x)
 
         return x
 

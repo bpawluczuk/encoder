@@ -299,14 +299,14 @@ cyclegan.summary()
 # ********************************************************************
 
 try:
-    cyclegan.load_weights("models/CycleGan/cyclegan_batch.h5")
+    cyclegan.load_weights("models/CycleGan/cyclegan_test.h5")
     print("... load model")
 except:
     print("model does not exist")
 
 
 def save_model_weights():
-    cyclegan.save_weights("models/CycleGan/cyclegan_batch.h5")
+    cyclegan.save_weights("models/CycleGan/cyclegan_test.h5")
     print("save model weights")
 
 
