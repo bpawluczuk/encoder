@@ -143,7 +143,7 @@ def get_discriminator(name="disc"):
     x = conv(256, strides=2)(x)
     x = conv(512, strides=2)(x)
 
-    x = Conv2D(1, kernel_size=5, padding='same', activation='sigmoid')(x)
+    x = Conv2D(1, kernel_size=4, strides=(1, 1), padding='same')(x)
 
     return Model(input_, x, name=name)
 
@@ -155,6 +155,11 @@ def get_resnet_generator(name="gen"):
     x = conv(128, strides=2)(x)
     x = conv(256, strides=2, dropout_rate=0.4)(x)
 
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
     x = residual_block(x)
     x = residual_block(x)
     x = residual_block(x)
@@ -171,7 +176,7 @@ def get_resnet_generator(name="gen"):
 # ********************************************************************************
 
 lambda_cycle = 10.0  # Cycle-consistency loss
-lambda_id = 0.1 * lambda_cycle  # Identity loss
+lambda_id = 0.5 # Identity loss
 
 disc_A = get_discriminator(name="disc_A")
 disc_B = get_discriminator(name="disc_B")
@@ -205,8 +210,7 @@ valid_B = disc_B(fake_B)
 cyclegan = Model(inputs=[img_A, img_B], outputs=[valid_A, valid_B, reconstr_A, reconstr_B, same_A, same_B])
 
 cyclegan.compile(
-    loss=['mean_absolute_error', 'mean_absolute_error', 'mean_absolute_error', 'mean_absolute_error',
-          'mean_absolute_error', 'mean_absolute_error'],
+    loss=['mae', 'mae', 'mse', 'mse', 'mse', 'mse'],
     loss_weights=[1, 1, lambda_cycle, lambda_cycle, lambda_id, lambda_id],
     optimizer=optimizer
 )
@@ -280,7 +284,7 @@ for epoch in range(epochs):
         elapsed_time = datetime.datetime.now() - start_time
 
         print(
-            "[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %05f, adv: %05f, recon: %05f, id: %05f] time: %s " \
+            "[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %05f, adv: %05f, recon: %05f, same: %05f] time: %s " \
             % (epoch, epochs,
                batch, batches,
                d_loss[0], 100 * d_loss[1],
