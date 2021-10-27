@@ -143,7 +143,7 @@ def get_discriminator(name="disc"):
     x = conv(256, strides=2)(x)
     x = conv(512, strides=2)(x)
 
-    x = convInOut(1)(x)
+    x = Conv2D(1, kernel_size=5, padding='same', activation='sigmoid')(x)
 
     return Model(input_, x, name=name)
 
@@ -205,7 +205,8 @@ valid_B = disc_B(fake_B)
 cyclegan = Model(inputs=[img_A, img_B], outputs=[valid_A, valid_B, reconstr_A, reconstr_B, same_A, same_B])
 
 cyclegan.compile(
-    loss=['mse', 'mse', 'mae', 'mae', 'mae', 'mae'],
+    loss=['mean_absolute_error', 'mean_absolute_error', 'mean_absolute_error', 'mean_absolute_error',
+          'mean_absolute_error', 'mean_absolute_error'],
     loss_weights=[1, 1, lambda_cycle, lambda_cycle, lambda_id, lambda_id],
     optimizer=optimizer
 )
@@ -230,8 +231,8 @@ def save_model_weights():
 
 # ********************************************************************************
 
-images_A = get_image_paths("data_test/OL_NEW/trainOL")
-images_B = get_image_paths("data_test/LU_NEW/trainLU")
+images_A = get_image_paths("data_train/OL_NEW/trainOL")
+images_B = get_image_paths("data_train/LU_NEW/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
@@ -248,8 +249,8 @@ sample_interval = 10
 
 start_time = datetime.datetime.now()
 
-valid = numpy.ones((batch_size, 1))
-fake = numpy.zeros((batch_size, 1))
+valid = numpy.ones((batch_size,) + (32, 32, 1))
+fake = numpy.zeros((batch_size,) + (32, 32, 1))
 
 for epoch in range(epochs):
     epoch += 1
@@ -293,7 +294,6 @@ for epoch in range(epochs):
             save_model_weights()
 
         if batch % sample_interval == 0:
-
             test_A = target_A[0:3]
             test_B = target_B[0:3]
 
