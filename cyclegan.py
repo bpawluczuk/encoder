@@ -105,7 +105,7 @@ def downscale(filters, kernel_size=4, strides=2, padding='same', activation=True
     )
 
 
-def upscale(filters, kernel_size=4, filter_times=2, padding='same', activation=True):
+def upscale(filters, kernel_size=3, filter_times=2, padding='same', activation=True):
     def block(x):
         x = Conv2D(
             filters * filter_times,
@@ -151,9 +151,9 @@ def get_discriminator(name="disc"):
 def get_resnet_generator(name="gen"):
     input_ = Input(shape=IMAGE_SHAPE)
 
-    x = convInOut(64, kernel_size=8)(input_)
+    x = convInOut(64, kernel_size=5)(input_)
     x = conv(128, strides=2)(x)
-    x = conv(256, strides=2)(x)
+    x = conv(256, strides=2, dropout_rate=0.4)(x)
 
     x = residual_block(x)
     x = residual_block(x)
@@ -161,7 +161,7 @@ def get_resnet_generator(name="gen"):
     x = residual_block(x)
 
     x = upscale(256)(x)
-    x = upscale(128)(x)
+    x = upscale(128, filter_times=4)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
 
@@ -241,7 +241,8 @@ batch_size = 1
 epochs = 2000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-sample_interval = 100
+save_interval = 1000
+sample_interval = 10
 
 # ********************************************************************************
 
@@ -288,8 +289,10 @@ for epoch in range(epochs):
                numpy.mean(g_loss[5:6]),
                elapsed_time))
 
-        if batch % sample_interval == 0:
+        if batch % save_interval == 0:
             save_model_weights()
+
+        if batch % sample_interval == 0:
 
             test_A = target_A[0:3]
             test_B = target_B[0:3]
