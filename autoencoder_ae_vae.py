@@ -223,7 +223,7 @@ images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 loss_A_array = []
 loss_B_array = []
 
-for epoch in range(0):
+for epoch in range(100000):
 
     warped_A, target_A = get_training_data(images_A, batch_size, size, zoom)
     warped_B, target_B = get_training_data(images_B, batch_size, size, zoom)

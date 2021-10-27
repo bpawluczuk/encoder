@@ -216,9 +216,6 @@ sample_interval = 1000
 
 start_time = datetime.datetime.now()
 
-valid = numpy.ones((batch_size,) + (32, 32, 1))
-fake = numpy.zeros((batch_size,) + (32, 32, 1))
-
 for epoch in range(epochs):
     epoch += 1
     for batch in range(batches):
