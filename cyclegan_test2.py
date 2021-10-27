@@ -75,6 +75,7 @@ class ReflectionPadding2D(layers.Layer):
         ]
         return tf.pad(input_tensor, padding_tensor, mode="REFLECT")
 
+
 def residual_block(
         x,
         activation,
@@ -208,7 +209,7 @@ def get_resnet_generator(
     # Downsampling
     for _ in range(num_downsampling_blocks):
         filters *= 2
-        x = downsample(x, filters=filters, activation=layers.Activation("relu"))
+        x = downsample(x, filters=filters, activation=layers.Activation("relu"), dropout_rate=0.4)
 
     # Residual blocks
     for _ in range(num_residual_blocks):
