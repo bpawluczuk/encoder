@@ -44,7 +44,7 @@ chanels = 3
 IMAGE_SHAPE = (size, size, chanels)
 ENCODER_DIM = 1024
 
-_latent_dim = 128  # 128
+_latent_dim = 1024  # 128
 _variational = 0
 
 zoom = 4  # 64*zoom
@@ -83,7 +83,7 @@ def conv(filters, kernel_size=4, strides=2, padding='same', activation=True, dro
     return block
 
 
-def convInOut(filters, kernel_size=4, padding='same', activation=True, dropout_rate=0):
+def convInOut(filters, kernel_size=3, padding='same', activation=True, dropout_rate=0):
     return conv(
         filters=filters,
         kernel_size=kernel_size,
@@ -94,7 +94,7 @@ def convInOut(filters, kernel_size=4, padding='same', activation=True, dropout_r
     )
 
 
-def downscale(filters, kernel_size=4, strides=2, padding='same', activation=True, dropout_rate=0):
+def downscale(filters, kernel_size=3, strides=2, padding='same', activation=True, dropout_rate=0):
     return conv(
         filters=filters // 2,
         kernel_size=kernel_size,
@@ -125,17 +125,20 @@ def upscale(filters, kernel_size=4, filter_times=2, padding='same', activation=T
 
 
 def Encoder(input_, name="Encoder"):
-    x = convInOut(128, kernel_size=8)(input_)
+    x = conv(64, kernel_size=5)(input_)
+    # x = conv(64, strides=1)(x)
+    x = conv(128)(x)
+    # x = conv(128, strides=1)(x)
     x = conv(256)(x)
-    x = conv(256, strides=1)(x)
-    x = conv(512)(x)
-    x = conv(512, strides=1)(x)
+    # x = conv(256, strides=1)(x)
+    x = conv(512, dropout_rate=0.4)(x)
+    # x = conv(512, strides=1)(x)
     x = Flatten()(x)
 
     latent_space = Dense(_latent_dim)(x)
 
-    x = Dense(16 * 16 * 128, activation="relu")(latent_space)
-    x = Reshape((16, 16, 128))(x)
+    x = Dense(16 * 16 * 512, activation="relu")(latent_space)
+    x = Reshape((16, 16, 512))(x)
     x = upscale(512, filter_times=4)(x)
 
     return Model(input_, x, name=name)
@@ -145,13 +148,13 @@ def Decoder(name="Decoder"):
     input_ = Input(shape=(32, 32, 512))
 
     x = upscale(512)(input_)
-    x = conv(512, strides=1)(x)
+    # x = conv(512, strides=1)(x)
     x = upscale(256)(x)
-    x = conv(256, strides=1)(x)
+    # x = conv(256, strides=1)(x)
     x = upscale(128)(x)
-    x = conv(128, strides=1)(x)
+    # x = conv(128, strides=1)(x)
 
-    x = convInOut(chanels, kernel_size=8)(x)
+    x = convInOut(chanels, kernel_size=5)(x)
     x = layers.Activation("sigmoid")(x)
 
     return Model(input_, x, name=name)
@@ -203,11 +206,11 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
-batch_size = 4
-epochs = 2000
+batch_size = 1
+epochs = 100
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-sample_interval = 5
+sample_interval = 1000
 
 # ********************************************************************************
 
