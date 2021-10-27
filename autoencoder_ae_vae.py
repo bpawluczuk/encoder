@@ -177,30 +177,30 @@ else:
 
 # ********************************************************************
 
-try:
-    if not _variational:
-        encoder.load_weights("models/AE/encoder.h5")
-        decoder_A.load_weights("models/AE/decoder_a.h5")
-        decoder_B.load_weights("models/AE/decoder_b.h5")
-    else:
-        encoder.load_weights("models/VAE/encoder.h5")
-        decoder_A.load_weights("models/VAE/decoder_a.h5")
-        decoder_B.load_weights("models/VAE/decoder_b.h5")
-
-    print("... load models")
-except:
-    print("models does not exist")
+# try:
+#     if not _variational:
+#         encoder.load_weights("models/AE/encoder.h5")
+#         decoder_A.load_weights("models/AE/decoder_a.h5")
+#         decoder_B.load_weights("models/AE/decoder_b.h5")
+#     else:
+#         encoder.load_weights("models/VAE/encoder.h5")
+#         decoder_A.load_weights("models/VAE/decoder_a.h5")
+#         decoder_B.load_weights("models/VAE/decoder_b.h5")
+#
+#     print("... load models")
+# except:
+#     print("models does not exist")
 
 
 def save_model_weights():
-    if not _variational:
-        encoder.save_weights("models/AE/encoder.h5")
-        decoder_A.save_weights("models/AE/decoder_a.h5")
-        decoder_B.save_weights("models/AE/decoder_b.h5")
-    else:
-        encoder.save_weights("models/VAE/encoder.h5")
-        decoder_A.save_weights("models/VAE/decoder_a.h5")
-        decoder_B.save_weights("models/VAE/decoder_b.h5")
+    # if not _variational:
+    #     encoder.save_weights("models/AE/encoder.h5")
+    #     decoder_A.save_weights("models/AE/decoder_a.h5")
+    #     decoder_B.save_weights("models/AE/decoder_b.h5")
+    # else:
+    #     encoder.save_weights("models/VAE/encoder.h5")
+    #     decoder_A.save_weights("models/VAE/decoder_a.h5")
+    #     decoder_B.save_weights("models/VAE/decoder_b.h5")
 
     print("save model weights")
 
@@ -213,8 +213,8 @@ autoencoder_B.summary()
 
 # ********************************************************************
 
-images_A = get_image_paths("data/OL_NEW/trainOL")
-images_B = get_image_paths("data/LU_NEW/trainLU")
+images_A = get_image_paths("data_train/OL_NEW/trainOL")
+images_B = get_image_paths("data_train/LU_NEW/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 

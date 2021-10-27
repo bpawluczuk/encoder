@@ -126,13 +126,13 @@ def upscale(filters, kernel_size=4, filter_times=2, padding='same', activation=T
 
 def Encoder(input_, name="Encoder"):
     x = conv(64, kernel_size=5)(input_)
-    # x = conv(64, strides=1)(x)
+    x = conv(64, strides=1)(x)
     x = conv(128)(x)
-    # x = conv(128, strides=1)(x)
+    x = conv(128, strides=1)(x)
     x = conv(256)(x)
-    # x = conv(256, strides=1)(x)
+    x = conv(256, strides=1)(x)
     x = conv(512, dropout_rate=0.4)(x)
-    # x = conv(512, strides=1)(x)
+    x = conv(512, strides=1)(x)
     x = Flatten()(x)
 
     latent_space = Dense(_latent_dim)(x)
@@ -148,14 +148,13 @@ def Decoder(name="Decoder"):
     input_ = Input(shape=(32, 32, 512))
 
     x = upscale(512)(input_)
-    # x = conv(512, strides=1)(x)
+    x = conv(512, strides=1)(x)
     x = upscale(256)(x)
-    # x = conv(256, strides=1)(x)
-    x = upscale(128)(x)
-    # x = conv(128, strides=1)(x)
+    x = conv(256, strides=1)(x)
+    x = upscale(128, filter_times=4)(x)
+    x = conv(128, strides=1)(x)
 
-    x = convInOut(chanels, kernel_size=5)(x)
-    x = layers.Activation("sigmoid")(x)
+    x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
 
     return Model(input_, x, name=name)
 
@@ -177,7 +176,7 @@ autoencoder_B = Model(x, decoder_B(encoder(x)))
 autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error', metrics=['accuracy'])
 
 # encoder.summary()
-# autoencoder_A.summary()
+autoencoder_A.summary()
 # autoencoder_B.summary()
 
 # ********************************************************************
@@ -211,7 +210,8 @@ batch_size = 1
 epochs = 100
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-sample_interval = 1000
+save_interval = 1000
+sample_interval = 10
 
 # ********************************************************************************
 
@@ -240,9 +240,10 @@ for epoch in range(epochs):
                loss[1], 100 * loss[0],
                elapsed_time))
 
-        if batch % sample_interval == 0:
+        if batch % save_interval == 0:
             save_model_weights()
 
+        if batch % sample_interval == 0:
             test_A = target_A[0:3]
             test_B = target_B[0:3]
 

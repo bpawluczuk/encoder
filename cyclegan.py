@@ -138,7 +138,7 @@ def residual_block(input_):
 def get_discriminator(name="disc"):
     input_ = Input(shape=IMAGE_SHAPE)
 
-    x = convInOut(64, kernel_size=8)(input_)
+    x = convInOut(64, kernel_size=5)(input_)
     x = conv(128, strides=2)(x)
     x = conv(256, strides=2)(x)
     x = conv(512, strides=2)(x)
@@ -163,8 +163,7 @@ def get_resnet_generator(name="gen"):
     x = upscale(256)(x)
     x = upscale(128)(x)
 
-    x = convInOut(chanels, kernel_size=8, activation=False)(x)
-    x = layers.Activation("tanh")(x)
+    x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
 
     return Model(input_, x, name=name)
 
