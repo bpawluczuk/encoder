@@ -199,8 +199,8 @@ def save_model_weights():
 
 # ********************************************************************************
 
-images_A = get_image_paths("data_train/OL_TEST/trainOL")
-images_B = get_image_paths("data_train/LU_TEST/trainLU")
+images_A = get_image_paths("data_train/OL_TEST/trainTEST")
+images_B = get_image_paths("data_train/LU_TEST/trainTEST")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
