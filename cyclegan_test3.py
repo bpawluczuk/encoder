@@ -49,7 +49,7 @@ _variational = 0
 
 zoom = 4  # 64*zoom
 
-optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.95)
+optimizer = Adam(lr=2e-5, beta_1=0.5)
 
 kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
@@ -334,18 +334,18 @@ def save_model_weights():
 
 # ********************************************************************************
 
-images_A = get_image_paths("data_train/OL_NEW_NEW/trainOL")
-images_B = get_image_paths("data_train/LU_NEW_NEW/trainLU")
+images_A = get_image_paths("data_train/OL_TEST/trainOL")
+images_B = get_image_paths("data_train/LU_TEST/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 batch_size = 1
-epochs = 2000
+epochs = 20000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-save_interval = 110
+save_interval = 5
 sample_interval = 5
 
 # ********************************************************************************

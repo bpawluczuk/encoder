@@ -49,7 +49,7 @@ _variational = 0
 
 zoom = 4  # 64*zoom
 
-optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.95)
+optimizer = Adam(lr=2e-5, beta_1=0.5)
 
 kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
