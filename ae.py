@@ -83,7 +83,7 @@ def conv(filters, kernel_size=4, strides=2, padding='same', activation=True, dro
     return block
 
 
-def convInOut(filters, kernel_size=3, padding='same', activation=True, dropout_rate=0):
+def convInOut(filters, kernel_size=4, padding='same', activation=True, dropout_rate=0):
     return conv(
         filters=filters,
         kernel_size=kernel_size,
@@ -94,7 +94,7 @@ def convInOut(filters, kernel_size=3, padding='same', activation=True, dropout_r
     )
 
 
-def downscale(filters, kernel_size=3, strides=2, padding='same', activation=True, dropout_rate=0):
+def downscale(filters, kernel_size=4, strides=2, padding='same', activation=True, dropout_rate=0):
     return conv(
         filters=filters // 2,
         kernel_size=kernel_size,
@@ -125,13 +125,13 @@ def upscale(filters, kernel_size=4, filter_times=2, padding='same', activation=T
 
 
 def Encoder(input_, name="Encoder"):
-    x = conv(64, kernel_size=5)(input_)
+    x = conv(64, kernel_size=7)(input_)
     x = conv(64, strides=1)(x)
     x = conv(128)(x)
     x = conv(128, strides=1)(x)
     x = conv(256)(x)
     x = conv(256, strides=1)(x)
-    x = conv(512, dropout_rate=0.4)(x)
+    x = conv(512, dropout_rate=0.2)(x)
     x = conv(512, strides=1)(x)
     x = Flatten()(x)
 
@@ -154,7 +154,7 @@ def Decoder(name="Decoder"):
     x = upscale(128, filter_times=4)(x)
     x = conv(128, strides=1)(x)
 
-    x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
+    x = Conv2D(3, kernel_size=7, padding='same', activation='sigmoid')(x)
 
     return Model(input_, x, name=name)
 
@@ -199,8 +199,8 @@ def save_model_weights():
 
 # ********************************************************************************
 
-images_A = get_image_paths("data_train/OL_NEW/trainOL")
-images_B = get_image_paths("data_train/LU_NEW/trainLU")
+images_A = get_image_paths("data_train/OL_TEST/trainOL")
+images_B = get_image_paths("data_train/LU_TEST/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
