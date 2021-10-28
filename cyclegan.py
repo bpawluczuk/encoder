@@ -49,7 +49,7 @@ _variational = 0
 
 zoom = 4  # 64*zoom
 
-optimizer = Adam(lr=5e-5, beta_1=0.5, beta_2=0.95)
+optimizer = Adam(lr=2e-5, beta_1=0.5)
 
 kernel_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
 gamma_init = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
@@ -59,17 +59,81 @@ disable_eager_execution()
 
 # ********************************************************************
 
-def conv(filters, kernel_size=4, strides=2, padding='same', activation=True, dropout_rate=0):
+class ReflectionPadding2D(layers.Layer):
+
+    def __init__(self, padding=(1, 1), **kwargs):
+        self.padding = tuple(padding)
+        super(ReflectionPadding2D, self).__init__(**kwargs)
+
+    def call(self, input_tensor, mask=None):
+        padding_width, padding_height = self.padding
+        padding_tensor = [
+            [0, 0],
+            [padding_height, padding_height],
+            [padding_width, padding_width],
+            [0, 0],
+        ]
+        return tf.pad(input_tensor, padding_tensor, mode="REFLECT")
+
+
+def residual_block(
+        kernel_size=3,
+        strides=1,
+        padding="valid",
+        use_bias=False,
+):
     def block(x):
+        filters = x.shape[-1]
+        input_tensor = x
 
-        x = Conv2D(
+        x = ReflectionPadding2D()(input_tensor)
+        x = layers.Conv2D(
             filters,
-            kernel_size=kernel_size,
+            kernel_size,
             strides=strides,
+            kernel_initializer=kernel_init,
             padding=padding,
-            kernel_initializer=kernel_init
+            use_bias=use_bias,
         )(x)
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
+        x = LeakyReLU(0.1)(x)
 
+        x = ReflectionPadding2D()(x)
+        x = layers.Conv2D(
+            filters,
+            kernel_size,
+            strides=strides,
+            kernel_initializer=kernel_init,
+            padding=padding,
+            use_bias=use_bias,
+        )(x)
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
+        x = layers.add([input_tensor, x])
+
+        return x
+
+    return block
+
+# ********************************************************************************
+
+def downsample(
+        filters,
+        kernel_size=3,
+        strides=2,
+        padding="same",
+        activation=True,
+        dropout_rate=0,
+        use_bias=False,
+):
+    def block(x):
+        x = layers.Conv2D(
+            filters,
+            kernel_size,
+            strides=strides,
+            kernel_initializer=kernel_init,
+            padding=padding,
+            use_bias=use_bias,
+        )(x)
         x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
 
         if activation:
@@ -77,42 +141,58 @@ def conv(filters, kernel_size=4, strides=2, padding='same', activation=True, dro
 
         if dropout_rate:
             x = Dropout(dropout_rate)(x)
+        return x
+
+    return block
+
+
+# ********************************************************************************
+
+def upsampleTranspose(
+        filters,
+        kernel_size=3,
+        strides=2,
+        padding="same",
+        activation=True,
+        use_bias=False,
+):
+    def block(x):
+        x = layers.Conv2DTranspose(
+            filters,
+            kernel_size,
+            strides=strides,
+            padding=padding,
+            kernel_initializer=kernel_init,
+            use_bias=use_bias,
+        )(x)
+
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
+
+        if activation:
+            x = LeakyReLU(0.1)(x)
 
         return x
 
     return block
 
 
-def convInOut(filters, kernel_size=4, padding='same', activation=True, dropout_rate=0):
-    return conv(
-        filters=filters,
-        kernel_size=kernel_size,
-        strides=1,
-        padding=padding,
-        activation=activation,
-        dropout_rate=dropout_rate
-    )
-
-
-def downscale(filters, kernel_size=4, strides=2, padding='same', activation=True, dropout_rate=0):
-    return conv(
-        filters=filters // 2,
-        kernel_size=kernel_size,
-        strides=strides,
-        padding=padding,
-        activation=activation,
-        dropout_rate=dropout_rate
-    )
-
-
-def upscale(filters, kernel_size=3, filter_times=2, padding='same', activation=True):
+def upsampleShuffler(
+        filters,
+        kernel_size=3,
+        padding='same',
+        activation=True,
+        use_bias=False
+):
     def block(x):
         x = Conv2D(
-            filters * filter_times,
+            filters,
             kernel_size=kernel_size,
             padding=padding,
-            kernel_initializer=kernel_init
+            kernel_initializer=kernel_init,
+            use_bias=use_bias,
         )(x)
+
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
 
         if activation:
             x = LeakyReLU(0.1)(x)
@@ -124,59 +204,78 @@ def upscale(filters, kernel_size=3, filter_times=2, padding='same', activation=T
     return block
 
 
-def residual_block(input_):
-    filters = input_.shape[-1]
+# ********************************************************************************
 
-    x = conv(filters, strides=1)(input_)
-    x = conv(filters, strides=1, activation=False)(x)
+def get_resnet_generator(
+        filters=64,
+        num_downsampling_blocks=2,
+        num_residual_blocks=9,
+        num_upsample_blocks=2,
+        name='resnet_generator',
+):
+    input_ = layers.Input(shape=IMAGE_SHAPE)
 
-    x = layers.add([input_, x])
+    x = ReflectionPadding2D(padding=(3, 3))(input_)
+    x = layers.Conv2D(filters, (7, 7), kernel_initializer=kernel_init, use_bias=False)(x)
+    x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
+    x = layers.Activation("relu")(x)
 
-    return x
+    # Downsampling
+    for _ in range(num_downsampling_blocks):
+        filters *= 2
+        x = downsample(filters=filters, dropout_rate=0.4)(x)
 
+    # Residual blocks
+    for _ in range(num_residual_blocks):
+        x = residual_block()(x)
 
-def get_discriminator(name="disc"):
-    input_ = Input(shape=IMAGE_SHAPE)
+    # Upsampling
+    for _ in range(num_upsample_blocks):
+        filters //= 2
+        x = upsampleTranspose(filters)(x)
 
-    x = convInOut(64, kernel_size=5)(input_)
-    x = conv(128, strides=2)(x)
-    x = conv(256, strides=2)(x)
-    x = conv(512, strides=2)(x)
+    # filters *= 2
+    # x = upsampleShuffler(filters)(x)
+    # filters *= 2
+    # x = upsampleShuffler(filters)(x)
 
-    x = Conv2D(1, kernel_size=4, strides=(1, 1), padding='same')(x)
+    # Final block
+    x = ReflectionPadding2D(padding=(3, 3))(x)
+    x = layers.Conv2D(3, (7, 7), padding="valid")(x)
+    x = layers.Activation("tanh")(x)
 
-    return Model(input_, x, name=name)
-
-
-def get_resnet_generator(name="gen"):
-    input_ = Input(shape=IMAGE_SHAPE)
-
-    x = convInOut(64, kernel_size=5)(input_)
-    x = conv(128, strides=2)(x)
-    x = conv(256, strides=2, dropout_rate=0.4)(x)
-
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-
-    x = upscale(256)(x)
-    x = upscale(128, filter_times=4)(x)
-
-    x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
-
-    return Model(input_, x, name=name)
+    model = keras.models.Model(input_, x, name=name)
+    model.summary()
+    return model
 
 
 # ********************************************************************************
 
-lambda_cycle = 10.0  # Cycle-consistency loss
-lambda_id = 0.5 # Identity loss
+def get_discriminator(filters=64, name='discriminator'):
+    input_ = layers.Input(shape=IMAGE_SHAPE)
+
+    x = layers.Conv2D(filters, (4, 4), strides=(2, 2), padding="same", kernel_initializer=kernel_init)(input_)
+    x = layers.LeakyReLU(0.2)(x)
+
+    num_filters = filters
+
+    num_filters *= 2
+    x = downsample(filters=num_filters, kernel_size=(4, 4), strides=(2, 2))(x)
+    num_filters *= 2
+    x = downsample(filters=num_filters, kernel_size=(4, 4), strides=(2, 2))(x)
+    num_filters *= 2
+    x = downsample(filters=num_filters, kernel_size=(4, 4), strides=(1, 1))(x)
+
+    x = layers.Conv2D(1, (4, 4), strides=(1, 1), padding="same", kernel_initializer=kernel_init)(x)
+
+    model = keras.models.Model(inputs=input_, outputs=x, name=name)
+    return model
+
+
+# ********************************************************************************
+
+lambda_cycle = 10.0
+lambda_id = 0.5
 
 disc_A = get_discriminator(name="disc_A")
 disc_B = get_discriminator(name="disc_B")
@@ -235,19 +334,19 @@ def save_model_weights():
 
 # ********************************************************************************
 
-images_A = get_image_paths("data_train/OL_NEW/trainOL")
-images_B = get_image_paths("data_train/LU_NEW/trainLU")
+images_A = get_image_paths("data_train/OL_TEST/trainTEST")
+images_B = get_image_paths("data_train/LU_TEST/trainTEST")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 batch_size = 1
-epochs = 2000
+epochs = 100000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-save_interval = 1000
-sample_interval = 10
+save_interval = 100
+sample_interval = 1
 
 # ********************************************************************************
 
@@ -294,7 +393,7 @@ for epoch in range(epochs):
                numpy.mean(g_loss[5:6]),
                elapsed_time))
 
-        if batch % save_interval == 0:
+        if epoch % save_interval == 0:
             save_model_weights()
 
         if batch % sample_interval == 0:

@@ -59,17 +59,24 @@ disable_eager_execution()
 
 # ********************************************************************
 
-def conv(filters, kernel_size=4, strides=2, padding='same', activation=True, dropout_rate=0):
+def downsample(
+        filters,
+        kernel_size=4,
+        strides=2,
+        padding="same",
+        activation=True,
+        dropout_rate=0,
+        use_bias=False,
+):
     def block(x):
-
-        x = Conv2D(
+        x = layers.Conv2D(
             filters,
-            kernel_size=kernel_size,
+            kernel_size,
             strides=strides,
+            kernel_initializer=kernel_init,
             padding=padding,
-            kernel_initializer=kernel_init
+            use_bias=use_bias,
         )(x)
-
         x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
 
         if activation:
@@ -77,35 +84,12 @@ def conv(filters, kernel_size=4, strides=2, padding='same', activation=True, dro
 
         if dropout_rate:
             x = Dropout(dropout_rate)(x)
-
         return x
 
     return block
 
 
-def convInOut(filters, kernel_size=4, padding='same', activation=True, dropout_rate=0):
-    return conv(
-        filters=filters,
-        kernel_size=kernel_size,
-        strides=1,
-        padding=padding,
-        activation=activation,
-        dropout_rate=dropout_rate
-    )
-
-
-def downscale(filters, kernel_size=4, strides=2, padding='same', activation=True, dropout_rate=0):
-    return conv(
-        filters=filters // 2,
-        kernel_size=kernel_size,
-        strides=strides,
-        padding=padding,
-        activation=activation,
-        dropout_rate=dropout_rate
-    )
-
-
-def upscale(filters, kernel_size=4, filter_times=2, padding='same', activation=True):
+def upsampleShuffler(filters, kernel_size=4, filter_times=2, padding='same', activation=True):
     def block(x):
         x = Conv2D(
             filters * filter_times,
@@ -123,23 +107,53 @@ def upscale(filters, kernel_size=4, filter_times=2, padding='same', activation=T
 
     return block
 
+def upsampleTranspose(
+        filters,
+        kernel_size=4,
+        strides=2,
+        padding="same",
+        activation=True,
+        use_bias=False,
+):
+    def block(x):
+        x = layers.Conv2DTranspose(
+            filters,
+            kernel_size,
+            strides=strides,
+            padding=padding,
+            kernel_initializer=kernel_init,
+            use_bias=use_bias,
+        )(x)
+
+        x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
+
+        if activation:
+            x = LeakyReLU(0.1)(x)
+
+        return x
+
+    return block
+
 
 def Encoder(input_, name="Encoder"):
-    x = conv(64, kernel_size=7)(input_)
-    x = conv(64, strides=1)(x)
-    x = conv(128)(x)
-    x = conv(128, strides=1)(x)
-    x = conv(256)(x)
-    x = conv(256, strides=1)(x)
-    x = conv(512, dropout_rate=0.2)(x)
-    x = conv(512, strides=1)(x)
+    x = downsample(64, strides=1, kernel_size=7)(input_)
+    x = downsample(128)(x)
+    x = downsample(128, strides=1)(x)
+    x = downsample(256)(x)
+    x = downsample(512, strides=1)(x)
+    x = downsample(512)(x)
+    x = downsample(512, strides=1)(x)
+    x = downsample(512, dropout_rate=0.2)(x)
     x = Flatten()(x)
 
     latent_space = Dense(_latent_dim)(x)
 
     x = Dense(16 * 16 * 512, activation="relu")(latent_space)
     x = Reshape((16, 16, 512))(x)
-    x = upscale(512, filter_times=4)(x)
+
+    filters = 512
+    x = upsampleTranspose(filters)(x)
+    # x = upsampleShuffler(512, filter_times=4)(x)
 
     return Model(input_, x, name=name)
 
@@ -147,12 +161,21 @@ def Encoder(input_, name="Encoder"):
 def Decoder(name="Decoder"):
     input_ = Input(shape=(32, 32, 512))
 
-    x = upscale(512)(input_)
-    x = conv(512, strides=1)(x)
-    x = upscale(256)(x)
-    x = conv(256, strides=1)(x)
-    x = upscale(128, filter_times=4)(x)
-    x = conv(128, strides=1)(x)
+    filters = 512
+    filters //= 2
+    x = upsampleTranspose(filters)(input_)
+    # x = upsampleShuffler(512)(input_)
+    x = downsample(filters, strides=1)(x)
+
+    filters //= 2
+    x = upsampleTranspose(filters)(x)
+    # x = upsampleShuffler(256)(x)
+    x = downsample(filters, strides=1)(x)
+
+    filters //= 2
+    x = upsampleTranspose(filters)(x)
+    # x = upsampleShuffler(128, filter_times=4)(x)
+    x = downsample(filters, strides=1)(x)
 
     x = Conv2D(3, kernel_size=7, padding='same', activation='sigmoid')(x)
 
@@ -210,8 +233,8 @@ batch_size = 1
 epochs = 100000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-save_interval = 10
-sample_interval = 10
+save_interval = 100
+sample_interval = 1
 
 # ********************************************************************************
 
@@ -240,18 +263,22 @@ for epoch in range(epochs):
                loss[1], 100 * loss[0],
                elapsed_time))
 
-        if batch % save_interval == 0:
+        if epoch % save_interval == 0:
             save_model_weights()
 
         if batch % sample_interval == 0:
             test_A = target_A[0:3]
             test_B = target_B[0:3]
+            # wtest_A = warped_A[0:3]
+            # wtest_B = warped_B[0:3]
 
             figure = numpy.stack([
                 test_A,
+                # wtest_A,
                 autoencoder_A.predict(test_A),
                 autoencoder_B.predict(test_A),
                 test_B,
+                # wtest_B,
                 autoencoder_B.predict(test_B),
                 autoencoder_A.predict(test_B),
             ], axis=1)
