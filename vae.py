@@ -134,7 +134,7 @@ def vae_loss(input, x_decoded_mean):
     return mse_loss + kl_loss
 
 def Encoder(input_, name="Encoder"):
-    x = conv(64, kernel_size=5)(input_)
+    x = conv(64, kernel_size=7)(input_)
     x = conv(64, strides=1)(x)
     x = conv(128)(x)
     x = conv(128, strides=1)(x)
@@ -166,7 +166,7 @@ def Decoder(name="Decoder"):
     x = upscale(128, filter_times=4)(x)
     x = conv(128, strides=1)(x)
 
-    x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
+    x = Conv2D(3, kernel_size=7, padding='same', activation='sigmoid')(x)
 
     return Model(input_, x, name=name)
 
@@ -219,11 +219,11 @@ images_B = load_images(images_B) / 255.0
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 batch_size = 1
-epochs = 1000
+epochs = 100000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-save_interval = 100
-sample_interval = 5
+save_interval = 10
+sample_interval = 10
 
 # ********************************************************************************
 
