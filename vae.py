@@ -61,7 +61,7 @@ disable_eager_execution()
 
 def downsample(
         filters,
-        kernel_size=4,
+        kernel_size=3,
         strides=2,
         padding="same",
         activation=True,
@@ -109,7 +109,7 @@ def upsampleShuffler(filters, kernel_size=4, filter_times=2, padding='same', act
 
 def upsampleTranspose(
         filters,
-        kernel_size=4,
+        kernel_size=3,
         strides=2,
         padding="same",
         activation=True,
@@ -146,14 +146,13 @@ def vae_loss(input, x_decoded_mean):
     return mse_loss + kl_loss
 
 def Encoder(input_, name="Encoder"):
-    x = downsample(64, strides=1, kernel_size=7)(input_)
+    x = downsample(64, kernel_size=5)(input_)
+    # x = downsample(128, strides=1)(x)
     x = downsample(128)(x)
-    x = downsample(128, strides=1)(x)
+    # x = downsample(512, strides=1)(x)
     x = downsample(256)(x)
-    x = downsample(512, strides=1)(x)
+    # x = downsample(512, strides=1)(x)
     x = downsample(512)(x)
-    x = downsample(512, strides=1)(x)
-    x = downsample(512, dropout_rate=0.2)(x)
     x = Flatten()(x)
 
     z_mean = Dense(_latent_dim)(x)
@@ -165,32 +164,32 @@ def Encoder(input_, name="Encoder"):
     x = Reshape((16, 16, 512))(x)
 
     filters = 512
-    x = upsampleTranspose(filters)(x)
+    x = upsampleShuffler(filters)(x)
     # x = upsampleShuffler(512, filter_times=4)(x)
 
     return Model(input_, x, name=name), z_log_sigma, z_mean
 
 
 def Decoder(name="Decoder"):
-    input_ = Input(shape=(32, 32, 512))
+    input_ = Input(shape=(32, 32, 256))
 
-    filters = 512
-    filters //= 2
-    x = upsampleTranspose(filters)(input_)
-    # x = upsampleShuffler(512)(input_)
-    x = downsample(filters, strides=1)(x)
+    # filters = 512
+    # filters //= 2
+    # x = upsampleTranspose(filters)(input_)
+    # x = downsample(filters, strides=1)(x)
+    x = upsampleShuffler(256)(input_)
 
-    filters //= 2
-    x = upsampleTranspose(filters)(x)
-    # x = upsampleShuffler(256)(x)
-    x = downsample(filters, strides=1)(x)
+    # filters //= 2
+    # x = upsampleTranspose(filters)(x)
+    # x = downsample(filters, strides=1)(x)
+    x = upsampleShuffler(128)(x)
 
-    filters //= 2
-    x = upsampleTranspose(filters)(x)
-    # x = upsampleShuffler(128, filter_times=4)(x)
-    x = downsample(filters, strides=1)(x)
+    # filters //= 2
+    # x = upsampleTranspose(filters)(x)
+    # x = downsample(filters, strides=1)(x)
+    x = upsampleShuffler(64, filter_times=4)(x)
 
-    x = Conv2D(3, kernel_size=7, padding='same', activation='sigmoid')(x)
+    x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
 
     return Model(input_, x, name=name)
 
@@ -211,8 +210,8 @@ autoencoder_A.compile(optimizer=optimizer, loss=vae_loss, metrics=['accuracy'])
 autoencoder_B = Model(x, decoder_B(encoder(x)))
 autoencoder_B.compile(optimizer=optimizer, loss=vae_loss, metrics=['accuracy'])
 
-# encoder.summary()
-autoencoder_A.summary()
+encoder.summary()
+# autoencoder_A.summary()
 # autoencoder_B.summary()
 
 # ********************************************************************
