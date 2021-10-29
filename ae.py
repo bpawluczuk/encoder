@@ -198,8 +198,8 @@ autoencoder_A.compile(optimizer=optimizer, loss='mean_absolute_error', metrics=[
 autoencoder_B = Model(x, decoder_B(encoder(x)))
 autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error', metrics=['accuracy'])
 
-# encoder.summary()
-autoencoder_A.summary()
+encoder.summary()
+# autoencoder_A.summary()
 # autoencoder_B.summary()
 
 # ********************************************************************
@@ -258,8 +258,8 @@ for epoch in range(epochs):
             "[Epoch %d/%d] [Batch %d/%d] [A loss: %f, acc: %3d%%] [B loss: %f, acc: %3d%%] time: %s " \
             % (epoch, epochs,
                batch, batches,
-               loss_A[0] / 1000, 100 * loss_A[1],
-               loss_B[0] / 1000, 100 * loss_B[1],
+               loss_A[0], 100 * loss_A[1],
+               loss_B[0], 100 * loss_B[1],
                elapsed_time))
 
         if epoch % save_interval == 0:
