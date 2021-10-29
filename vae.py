@@ -107,6 +107,7 @@ def upsampleShuffler(filters, kernel_size=4, filter_times=2, padding='same', act
 
     return block
 
+
 def upsampleTranspose(
         filters,
         kernel_size=3,
@@ -134,16 +135,19 @@ def upsampleTranspose(
 
     return block
 
+
 def sampling(args):
     z_mean, z_log_var = args
     epsilon = K.random_normal(shape=(K.shape(z_mean)[0], _latent_dim), mean=0., stddev=1.)
 
     return z_mean + K.exp(z_log_var) * epsilon
 
+
 def vae_loss(input, x_decoded_mean):
     mse_loss = K.mean(keras.losses.mse(input, x_decoded_mean), axis=(1, 2)) * height * width
     kl_loss = - 0.5 * K.mean(1 + z_log_sigma - K.square(z_mean) - K.exp(z_log_sigma), axis=-1)
     return mse_loss + kl_loss
+
 
 def Encoder(input_, name="Encoder"):
     x = downsample(64, kernel_size=5)(input_)
@@ -245,6 +249,7 @@ batch_size = 1
 epochs = 100000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
+plot_result_test = 5000
 save_interval = 100
 sample_interval = 1
 
@@ -263,16 +268,14 @@ for epoch in range(epochs):
         loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
         loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
 
-        loss = 0.5 * numpy.add(loss_A, loss_B)
-
         elapsed_time = datetime.datetime.now() - start_time
 
         print(
             "[Epoch %d/%d] [Batch %d/%d] [A loss: %f, acc: %3d%%] [B loss: %f, acc: %3d%%] time: %s " \
             % (epoch, epochs,
                batch, batches,
-               loss[0]/10000, 100 * loss[1],
-               loss[1], loss[0]/100,
+               loss_A[0] / 1000, 100 * loss_A[1],
+               loss_B[0] / 1000, 100 * loss_B[1],
                elapsed_time))
 
         if epoch % save_interval == 0:
@@ -298,3 +301,27 @@ for epoch in range(epochs):
 
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
+
+        if epoch % plot_result_test == 0:
+            image_test_A = get_image_paths("data_train/OL_TEST/trainTEST")
+            ol = cv2.imread(image_test_A[0])
+
+            source_image_tensor_ol = numpy.expand_dims(ol, 0)
+            predict_image_ol = autoencoder_B.predict(source_image_tensor_ol)[0]
+            predict_image_ol = numpy.clip(predict_image_ol * 255, 0, 255).astype(numpy.uint8)
+
+            image_test_B = get_image_paths("data_train/OL_TEST/trainTEST")
+            lu = cv2.imread(image_test_B[0])
+
+            source_image_tensor_lu = numpy.expand_dims(lu, 0)
+            predict_image_lu = autoencoder_A.predict(source_image_tensor_lu)[0]
+            predict_image_lu = numpy.clip(predict_image_lu * 255, 0, 255).astype(numpy.uint8)
+
+            _, ax = plt.subplots(2, 2, figsize=(12, 12))
+            ax[0, 0].imshow(predict_image_ol)
+            ax[0, 1].imshow(predict_image_lu)
+            ax[0, 0].axis("off")
+            ax[0, 1].axis("off")
+
+            plt.show()
+            plt.close()

@@ -107,6 +107,7 @@ def upsampleShuffler(filters, kernel_size=4, filter_times=2, padding='same', act
 
     return block
 
+
 def upsampleTranspose(
         filters,
         kernel_size=4,
@@ -136,14 +137,13 @@ def upsampleTranspose(
 
 
 def Encoder(input_, name="Encoder"):
-    x = downsample(64, strides=1, kernel_size=7)(input_)
+    x = downsample(64, kernel_size=5)(input_)
+    # x = downsample(128, strides=1)(x)
     x = downsample(128)(x)
-    x = downsample(128, strides=1)(x)
+    # x = downsample(512, strides=1)(x)
     x = downsample(256)(x)
-    x = downsample(512, strides=1)(x)
+    # x = downsample(512, strides=1)(x)
     x = downsample(512)(x)
-    x = downsample(512, strides=1)(x)
-    x = downsample(512, dropout_rate=0.2)(x)
     x = Flatten()(x)
 
     latent_space = Dense(_latent_dim)(x)
@@ -152,32 +152,32 @@ def Encoder(input_, name="Encoder"):
     x = Reshape((16, 16, 512))(x)
 
     filters = 512
-    x = upsampleTranspose(filters)(x)
+    x = upsampleShuffler(filters)(x)
     # x = upsampleShuffler(512, filter_times=4)(x)
 
     return Model(input_, x, name=name)
 
 
 def Decoder(name="Decoder"):
-    input_ = Input(shape=(32, 32, 512))
+    input_ = Input(shape=(32, 32, 256))
 
-    filters = 512
-    filters //= 2
-    x = upsampleTranspose(filters)(input_)
-    # x = upsampleShuffler(512)(input_)
-    x = downsample(filters, strides=1)(x)
+    # filters = 512
+    # filters //= 2
+    # x = upsampleTranspose(filters)(input_)
+    # x = downsample(filters, strides=1)(x)
+    x = upsampleShuffler(256)(input_)
 
-    filters //= 2
-    x = upsampleTranspose(filters)(x)
-    # x = upsampleShuffler(256)(x)
-    x = downsample(filters, strides=1)(x)
+    # filters //= 2
+    # x = upsampleTranspose(filters)(x)
+    # x = downsample(filters, strides=1)(x)
+    x = upsampleShuffler(128)(x)
 
-    filters //= 2
-    x = upsampleTranspose(filters)(x)
-    # x = upsampleShuffler(128, filter_times=4)(x)
-    x = downsample(filters, strides=1)(x)
+    # filters //= 2
+    # x = upsampleTranspose(filters)(x)
+    # x = downsample(filters, strides=1)(x)
+    x = upsampleShuffler(64, filter_times=4)(x)
 
-    x = Conv2D(3, kernel_size=7, padding='same', activation='sigmoid')(x)
+    x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
 
     return Model(input_, x, name=name)
 
@@ -233,6 +233,7 @@ batch_size = 1
 epochs = 100000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
+plot_result_test = 5000
 save_interval = 100
 sample_interval = 1
 
@@ -251,16 +252,14 @@ for epoch in range(epochs):
         loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
         loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
 
-        loss = 0.5 * numpy.add(loss_A, loss_B)
-
         elapsed_time = datetime.datetime.now() - start_time
 
         print(
             "[Epoch %d/%d] [Batch %d/%d] [A loss: %f, acc: %3d%%] [B loss: %f, acc: %3d%%] time: %s " \
             % (epoch, epochs,
                batch, batches,
-               loss[0], 100 * loss[1],
-               loss[1], 100 * loss[0],
+               loss_A[0] / 1000, 100 * loss_A[1],
+               loss_B[0] / 1000, 100 * loss_B[1],
                elapsed_time))
 
         if epoch % save_interval == 0:
@@ -269,16 +268,12 @@ for epoch in range(epochs):
         if batch % sample_interval == 0:
             test_A = target_A[0:3]
             test_B = target_B[0:3]
-            # wtest_A = warped_A[0:3]
-            # wtest_B = warped_B[0:3]
 
             figure = numpy.stack([
                 test_A,
-                # wtest_A,
                 autoencoder_A.predict(test_A),
                 autoencoder_B.predict(test_A),
                 test_B,
-                # wtest_B,
                 autoencoder_B.predict(test_B),
                 autoencoder_A.predict(test_B),
             ], axis=1)
@@ -290,3 +285,27 @@ for epoch in range(epochs):
 
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
+
+        if epoch % plot_result_test == 0:
+            image_test_A = get_image_paths("data_train/OL_TEST/trainTEST")
+            ol = cv2.imread(image_test_A[0])
+
+            source_image_tensor_ol = numpy.expand_dims(ol, 0)
+            predict_image_ol = autoencoder_B.predict(source_image_tensor_ol)[0]
+            predict_image_ol = numpy.clip(predict_image_ol * 255, 0, 255).astype(numpy.uint8)
+
+            image_test_B = get_image_paths("data_train/OL_TEST/trainTEST")
+            lu = cv2.imread(image_test_B[0])
+
+            source_image_tensor_lu = numpy.expand_dims(lu, 0)
+            predict_image_lu = autoencoder_A.predict(source_image_tensor_lu)[0]
+            predict_image_lu = numpy.clip(predict_image_lu * 255, 0, 255).astype(numpy.uint8)
+
+            _, ax = plt.subplots(2, 2, figsize=(12, 12))
+            ax[0, 0].imshow(predict_image_ol)
+            ax[0, 1].imshow(predict_image_lu)
+            ax[0, 0].axis("off")
+            ax[0, 1].axis("off")
+
+            plt.show()
+            plt.close()
