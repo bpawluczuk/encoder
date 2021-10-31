@@ -79,14 +79,14 @@ class ReflectionPadding2D(layers.Layer):
 def residual_block(
         kernel_size=3,
         strides=1,
-        padding="valid",
+        padding="same",
         use_bias=False,
 ):
     def block(x):
         filters = x.shape[-1]
         input_tensor = x
 
-        x = ReflectionPadding2D()(input_tensor)
+        # x = ReflectionPadding2D()(input_tensor)
         x = layers.Conv2D(
             filters,
             kernel_size,
@@ -98,7 +98,7 @@ def residual_block(
         x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
         x = LeakyReLU(0.1)(x)
 
-        x = ReflectionPadding2D()(x)
+        # x = ReflectionPadding2D()(x)
         x = layers.Conv2D(
             filters,
             kernel_size,
@@ -209,39 +209,41 @@ def upsampleShuffler(
 def get_resnet_generator(
         filters=64,
         num_downsampling_blocks=2,
-        num_residual_blocks=9,
+        num_residual_blocks=12,
         num_upsample_blocks=2,
         name='resnet_generator',
 ):
     input_ = layers.Input(shape=IMAGE_SHAPE)
 
-    x = ReflectionPadding2D(padding=(3, 3))(input_)
-    x = layers.Conv2D(filters, (7, 7), kernel_initializer=kernel_init, use_bias=False)(x)
-    x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
-    x = layers.Activation("relu")(x)
+    # x = ReflectionPadding2D(padding=(2, 2))(input_)
+    # x = layers.Conv2D(filters, (5, 5), kernel_initializer=kernel_init, use_bias=False)(input_)
+    # x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
+    # x = layers.Activation("relu")(x)
+
+    x = downsample(64, kernel_size=5, strides=1)(input_)
 
     # Downsampling
     for _ in range(num_downsampling_blocks):
         filters *= 2
-        x = downsample(filters=filters, dropout_rate=0.4)(x)
+        x = downsample(filters=filters)(x)
 
     # Residual blocks
     for _ in range(num_residual_blocks):
         x = residual_block()(x)
 
     # Upsampling
-    for _ in range(num_upsample_blocks):
-        filters //= 2
-        x = upsampleTranspose(filters)(x)
+    # for _ in range(num_upsample_blocks):
+    #     filters //= 2
+    #     x = upsampleTranspose(filters)(x)
 
-    # filters *= 2
-    # x = upsampleShuffler(filters)(x)
-    # filters *= 2
-    # x = upsampleShuffler(filters)(x)
+    filters *= 2
+    x = upsampleShuffler(filters)(x)
+    filters *= 2
+    x = upsampleShuffler(filters)(x)
 
     # Final block
-    x = ReflectionPadding2D(padding=(3, 3))(x)
-    x = layers.Conv2D(3, (7, 7), padding="valid")(x)
+    # x = ReflectionPadding2D(padding=(2, 2))(x)
+    x = layers.Conv2D(3, (5, 5), padding="same")(x)
     x = layers.Activation("tanh")(x)
 
     model = keras.models.Model(input_, x, name=name)
@@ -345,6 +347,7 @@ batch_size = 1
 epochs = 100000
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
+plot_result_test = 5000
 save_interval = 100
 sample_interval = 1
 
@@ -422,3 +425,27 @@ for epoch in range(epochs):
 
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
+
+        if epoch % plot_result_test == 0:
+            image_test_A = get_image_paths("data_train/OL_TEST/trainTEST")
+            ol = cv2.imread(image_test_A[0])
+
+            source_image_tensor_ol = numpy.expand_dims(ol, 0)
+            predict_image_ol = gen_AB.predict(source_image_tensor_ol)[0]
+            predict_image_ol = numpy.clip(predict_image_ol * 255, 0, 255).astype(numpy.uint8)
+
+            image_test_B = get_image_paths("data_train/OL_TEST/trainTEST")
+            lu = cv2.imread(image_test_B[0])
+
+            source_image_tensor_lu = numpy.expand_dims(lu, 0)
+            predict_image_lu = gen_BA.predict(source_image_tensor_lu)[0]
+            predict_image_lu = numpy.clip(predict_image_lu * 255, 0, 255).astype(numpy.uint8)
+
+            _, ax = plt.subplots(2, 2, figsize=(12, 12))
+            ax[0, 0].imshow(predict_image_ol)
+            ax[0, 1].imshow(predict_image_lu)
+            ax[0, 0].axis("off")
+            ax[0, 1].axis("off")
+
+            plt.show()
+            plt.close()
