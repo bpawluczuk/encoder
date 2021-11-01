@@ -44,7 +44,7 @@ chanels = 3
 IMAGE_SHAPE = (size, size, chanels)
 ENCODER_DIM = 1024
 
-_latent_dim = 1024  # 128
+_latent_dim = 256  # 128
 _variational = 0
 
 zoom = 4  # 64*zoom
@@ -222,20 +222,20 @@ def save_model_weights():
 
 # ********************************************************************************
 
-images_A = get_image_paths("data_train/OL_TEST/trainTEST")
-images_B = get_image_paths("data_train/LU_TEST/trainTEST")
+images_A = get_image_paths("data_train/OL_NEW/trainOL")
+images_B = get_image_paths("data_train/LU_NEW/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 batch_size = 1
-epochs = 100000
+epochs = 100
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-plot_result_test = 5000
-save_interval = 100
-sample_interval = 1
+plot_result_test = 1000
+save_interval = 500
+sample_interval = 10
 
 # ********************************************************************************
 
@@ -262,7 +262,7 @@ for epoch in range(epochs):
                loss_B[0], 100 * loss_B[1],
                elapsed_time))
 
-        if epoch % save_interval == 0:
+        if batch % save_interval == 0:
             save_model_weights()
 
         if batch % sample_interval == 0:
@@ -286,26 +286,26 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if epoch % plot_result_test == 0:
-            image_test_A = get_image_paths("data_train/OL_TEST/trainTEST")
-            ol = cv2.imread(image_test_A[0])
-
-            source_image_tensor_ol = numpy.expand_dims(ol, 0)
-            predict_image_ol = autoencoder_B.predict(source_image_tensor_ol)[0]
-            predict_image_ol = numpy.clip(predict_image_ol * 255, 0, 255).astype(numpy.uint8)
-
-            image_test_B = get_image_paths("data_train/OL_TEST/trainTEST")
-            lu = cv2.imread(image_test_B[0])
-
-            source_image_tensor_lu = numpy.expand_dims(lu, 0)
-            predict_image_lu = autoencoder_A.predict(source_image_tensor_lu)[0]
-            predict_image_lu = numpy.clip(predict_image_lu * 255, 0, 255).astype(numpy.uint8)
-
-            _, ax = plt.subplots(2, 2, figsize=(12, 12))
-            ax[0, 0].imshow(predict_image_ol)
-            ax[0, 1].imshow(predict_image_lu)
-            ax[0, 0].axis("off")
-            ax[0, 1].axis("off")
-
-            plt.show()
-            plt.close()
+        # if batch % plot_result_test == 0:
+        #     image_test_A = get_image_paths("data_train/OL_TEST/trainTEST")
+        #     ol = cv2.imread(image_test_A[0])
+        #
+        #     source_image_tensor_ol = numpy.expand_dims(ol, 0)
+        #     predict_image_ol = autoencoder_B.predict(source_image_tensor_ol)[0]
+        #     predict_image_ol = numpy.clip(predict_image_ol * 255, 0, 255).astype(numpy.uint8)
+        #
+        #     image_test_B = get_image_paths("data_train/OL_TEST/trainTEST")
+        #     lu = cv2.imread(image_test_B[0])
+        #
+        #     source_image_tensor_lu = numpy.expand_dims(lu, 0)
+        #     predict_image_lu = autoencoder_A.predict(source_image_tensor_lu)[0]
+        #     predict_image_lu = numpy.clip(predict_image_lu * 255, 0, 255).astype(numpy.uint8)
+        #
+        #     _, ax = plt.subplots(2, 2, figsize=(12, 12))
+        #     ax[0, 0].imshow(predict_image_ol)
+        #     ax[0, 1].imshow(predict_image_lu)
+        #     ax[0, 0].axis("off")
+        #     ax[0, 1].axis("off")
+        #
+        #     plt.show()
+        #     plt.close()
