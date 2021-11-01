@@ -16,6 +16,7 @@ def get_training_data(images, batch_size, size=128, zoom=2):
 
     for i, index in enumerate(indices):
 
+        # print("Image index: "+str(index))
         image = images[index]
 
         image = random_transform(image, **random_transform_args)
