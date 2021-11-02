@@ -8,8 +8,8 @@ frontal_face_predictor = dlib.shape_predictor("/Users/bpawluczuk/Sites/python/en
 source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/laura_frame/"
 dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/LU_NEW/trainLU/"
 
-source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/oliwia_frame/"
-dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/OL_NEW/trainOL/"
+# source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/oliwia_frame/"
+# dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/OL_NEW/trainOL/"
 
 source_size = 512
 dest_size = 256
@@ -17,7 +17,7 @@ dest_size = 256
 def getFace(source_image, file_name, size, rect):
 
     x = rect.left()
-    y = rect.top()
+    y = rect.top()-100
     w = rect.right() - x
     h = rect.bottom() - y
 
