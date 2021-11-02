@@ -239,8 +239,17 @@ sample_interval = 10
 
 # ********************************************************************************
 
+test_images_A = get_image_paths("data_train/OL_NEW/testOL")
+test_images_B = get_image_paths("data_train/LU_NEW/testLU")
+loss_history_A = []
+loss_history_B = []
+temp_history = []
+batch_history = []
+# ********************************************************************************
+
 start_time = datetime.datetime.now()
 
+inc = 1
 for epoch in range(epochs):
     epoch += 1
     for batch in range(batches):
@@ -252,6 +261,13 @@ for epoch in range(epochs):
         loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
         loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
 
+        loss_history_A += loss_A
+        loss_history_B += loss_B
+
+        inc += 1
+        batch_history.append(inc)
+        temp_history.append(loss_A[0])
+
         elapsed_time = datetime.datetime.now() - start_time
 
         print(
@@ -261,6 +277,15 @@ for epoch in range(epochs):
                loss_A[0], 100 * loss_A[1],
                loss_B[0], 100 * loss_B[1],
                elapsed_time))
+
+        if batch % save_interval == 0:
+            plt.clf()
+            plt.plot(batch_history, temp_history, label='linear')
+            plt.legend()
+            plt.show()
+            # score = autoencoder_A.evaluate(target_B, target_A, verbose=0)
+            # print('Test loss:', score[0])
+            # print('Test accuracy:', score[1])
 
         if batch % save_interval == 0:
             save_model_weights()
