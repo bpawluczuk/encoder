@@ -241,13 +241,22 @@ sample_interval = 10
 
 test_images_A = get_image_paths("data_train/OL_NEW/testOL")
 test_images_B = get_image_paths("data_train/LU_NEW/testLU")
+
 loss_history_A = []
 loss_history_B = []
-temp_history = []
-batch_history = []
+acc_history_A = []
+acc_history_B = []
+valid_history_A = []
+valid_history_B = []
 
 avg_index = []
-avg_history_A = []
+avg_history_loss_A = []
+avg_history_loss_B = []
+avg_history_acc_A = []
+avg_history_acc_B = []
+avg_history_valid_A = []
+avg_history_valid_B = []
+
 # ********************************************************************************
 
 start_time = datetime.datetime.now()
@@ -266,10 +275,8 @@ for epoch in range(epochs):
 
         loss_history_A.append(loss_A[0])
         loss_history_B.append(loss_B[0])
-
-        inc += 1
-        batch_history.append(inc)
-        temp_history.append(loss_A[0])
+        acc_history_A.append(loss_A[1])
+        acc_history_A.append(loss_B[1])
 
         elapsed_time = datetime.datetime.now() - start_time
 
@@ -281,20 +288,33 @@ for epoch in range(epochs):
                loss_B[0], 100 * loss_B[1],
                elapsed_time))
 
-        if batch % save_interval == 0:
+        if batch % batches == 0:
+
+            avg_index.append(len(avg_index) + 1)
+
+            # -------
 
             la_sum = 0
             for la in loss_history_A:
                 la_sum += la
 
-            avg_history_A.append(la_sum / len(loss_history_A))
-            avg_index.append(len(avg_index) + 1)
+            avg_history_loss_A.append(la_sum / len(loss_history_A))
 
             loss_history_A = []
 
+            # -------
+
+            la_sum = 0
+            for la in loss_history_B:
+                la_sum += la
+
+            avg_history_loss_B.append(la_sum / len(loss_history_B))
+
+            loss_history_B = []
+
             plt.clf()
-            # plt.plot(avg_index, avg_history_A, label='linear', color='green', linestyle='dotted')
-            plt.scatter(avg_index, avg_history_A, s=50)
+            plt.scatter(avg_index, avg_history_loss_A, s=30, label="Autoencoder A")
+            plt.scatter(avg_index, avg_history_loss_B, s=30, label="Autoencoder B")
             plt.legend()
             plt.show()
 
