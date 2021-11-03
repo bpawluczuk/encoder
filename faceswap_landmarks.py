@@ -57,6 +57,30 @@ with faceModule.FaceMesh(static_image_mode=True) as face:
             cv2.imshow("Predicted image landmarks", annotated_image)
             cv2.imwrite(dest_dir + "/predicted_image_landmarks.jpg", annotated_image)
 
+        mpFaceDect = mp.solutions.face_detection
+        mpDrawing = mp.solutions.drawing_utils
+        faceDetection = mpFaceDect.FaceDetection(0.75)
+
+        img = annotated_image
+        imgRGB = cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB)
+        results = faceDetection.process(imgRGB)
+
+        if results.detections:
+            for id, detection in enumerate(results.detections):
+                mp_drawing.draw_detection(img, detection)
+                # print(id, detection)
+                # print(detection.location_data.relative_bounding_box)
+                bboxC = detection.location_data.relative_bounding_box
+                ih, iw, ic = img.shape
+                bbox = int(bboxC.xmin * iw), int(bboxC.ymin * ih), \
+                       int(bboxC.width * iw), int(bboxC.height * ih)
+
+                cv2.rectangle(img, bbox, (255, 0, 255), 2)
+                cv2.putText(img, f'{int(detection.score[0] * 100)}%',
+                            (bbox[0], bbox[1] - 20), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 255), 2)
+
+            cv2.imshow("rect", img)
+
     ##########################################################
 
     with faceModule.FaceMesh(static_image_mode=True) as face:

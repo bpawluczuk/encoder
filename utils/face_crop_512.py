@@ -5,11 +5,11 @@ import dlib
 frontal_face_detector = dlib.get_frontal_face_detector()
 frontal_face_predictor = dlib.shape_predictor("/Users/bpawluczuk/Sites/python/encoder/detect/shape_predictor_68_face_landmarks.dat")
 
-source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/laura_frame/"
-dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/LU_NEW/trainLU/"
+# source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/laura_frame/"
+# dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/LU_NEW/trainLU/"
 
-# source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/oliwia_frame/"
-# dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/OL_NEW/trainOL/"
+source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/oliwia_frame/"
+dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/OL_NEW/trainOL/"
 
 source_size = 512
 dest_size = 256
@@ -17,17 +17,23 @@ dest_size = 256
 def getFace(source_image, file_name, size, rect):
 
     x = rect.left()
-    y = rect.top()-100
+    # y = rect.top()-140
+    y = rect.top()-200
     w = rect.right() - x
     h = rect.bottom() - y
 
     x0 = x + w // 2
     y0 = y + h // 2
 
-    x1 = x0 - 384
-    y1 = y0 - 384
-    x2 = x0 + 384
-    y2 = y0 + 384
+    # x1 = x0 - 288
+    # y1 = y0 - 288
+    # x2 = x0 + 288
+    # y2 = y0 + 288
+
+    x1 = x0 - 320
+    y1 = y0 - 320
+    x2 = x0 + 320
+    y2 = y0 + 320
 
     sub_face = source_image[y1:y2, x1:x2]
     if source_image is not None and sub_face.any():

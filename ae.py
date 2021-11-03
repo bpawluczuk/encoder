@@ -276,7 +276,7 @@ for epoch in range(epochs):
         loss_history_A.append(loss_A[0])
         loss_history_B.append(loss_B[0])
         acc_history_A.append(loss_A[1])
-        acc_history_A.append(loss_B[1])
+        acc_history_B.append(loss_B[1])
 
         elapsed_time = datetime.datetime.now() - start_time
 
@@ -288,7 +288,7 @@ for epoch in range(epochs):
                loss_B[0], 100 * loss_B[1],
                elapsed_time))
 
-        if batch % batches == 0:
+        if batch % 2 == 0:
 
             avg_index.append(len(avg_index) + 1)
 
@@ -315,6 +315,32 @@ for epoch in range(epochs):
             plt.clf()
             plt.scatter(avg_index, avg_history_loss_A, s=30, label="Autoencoder A")
             plt.scatter(avg_index, avg_history_loss_B, s=30, label="Autoencoder B")
+            plt.legend()
+            plt.show()
+
+            # -------
+
+            la_sum = 0
+            for la in acc_history_A:
+                la_sum += la
+
+            avg_history_acc_A.append((la_sum / len(acc_history_A)) * 100)
+
+            acc_history_A = []
+
+            # -------
+
+            la_sum = 0
+            for la in acc_history_B:
+                la_sum += la
+
+            avg_history_acc_B.append((la_sum / len(acc_history_B) * 100))
+
+            acc_history_B = []
+
+            plt.clf()
+            plt.scatter(avg_index, avg_history_acc_A, s=30, label="Autoencoder A")
+            plt.scatter(avg_index, avg_history_acc_B, s=30, label="Autoencoder B")
             plt.legend()
             plt.show()
 

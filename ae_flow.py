@@ -423,10 +423,10 @@ def get_model():
 
 auto_encoder_A = get_model()
 
-auto_encoder_A.fit(
-    tf.data.Dataset.zip((train_ol_dataset, train_lu_dataset)),
-    validation_data=tf.data.Dataset.zip((validation_ol_dataset, validation_lu_dataset)),
-    epochs=6,
-    steps_per_epoch=5998,
-    callbacks=[plotter]
-)
+# auto_encoder_A.fit(
+#     tf.data.Dataset.zip((train_ol_dataset, train_lu_dataset)),
+#     validation_data=tf.data.Dataset.zip((validation_ol_dataset, validation_lu_dataset)),
+#     epochs=6,
+#     steps_per_epoch=5998,
+#     callbacks=[plotter]
+# )

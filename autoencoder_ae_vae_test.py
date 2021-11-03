@@ -10,6 +10,7 @@ from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
 import tensorflow_addons as tfa
+from tensorflow.python.framework.ops import disable_eager_execution
 
 from lib.utils import get_image_paths, load_images, stack_images
 from lib.training_data import get_training_data
@@ -31,6 +32,8 @@ try:
     tf.config.experimental.set_memory_growth(physical_devices[0], True)
 except:
     pass
+
+disable_eager_execution()
 
 # ********************************************************************
 
@@ -116,7 +119,7 @@ def vae_loss(input, x_decoded_mean):
 
 
 def Encoder(input_):
-    x = conv(64, strides=2)(input_)
+    x = conv(64, strides=2, kernel_size=5)(input_)
     x = conv(128, strides=2)(x)
     x = conv(128, strides=1)(x)
     x = conv(256, strides=2)(x)
@@ -130,20 +133,21 @@ def Encoder(input_):
     if not _variational:
         latent_space = Dense(_latent_dim)(x)
     else:
+
         latent_space = Lambda(sampling)([z_mean, z_log_sigma])
 
-    x = Dense(16 * 16 * 512, activation="relu")(latent_space)
-    x = Reshape((16, 16, 512))(x)
-    x = upscale(512)(x)
+    x = Dense(16 * 16 * 128, activation="relu")(latent_space)
+    x = Reshape((16, 16, 128))(x)
+    x = upscale(512, filter_times=4)(x)
 
     return Model(input_, x), z_log_sigma, z_mean
 
 
 def Decoder():
     input_ = Input(shape=(32, 32, 512))
-    x = upscale(256)(input_)
-    x = upscale(128)(x)
-    x = upscale(64)(x)
+    x = upscale(256, filter_times=2)(input_)
+    x = upscale(128, filter_times=2)(x)
+    x = upscale(64, filter_times=4)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
     return Model(input_, x)
