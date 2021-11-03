@@ -234,7 +234,7 @@ epochs = 100
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
 plot_result_test = 1000
-save_interval = 500
+save_interval = 1000
 sample_interval = 10
 
 # ********************************************************************************
@@ -245,6 +245,9 @@ loss_history_A = []
 loss_history_B = []
 temp_history = []
 batch_history = []
+
+avg_index = []
+avg_history_A = []
 # ********************************************************************************
 
 start_time = datetime.datetime.now()
@@ -261,8 +264,8 @@ for epoch in range(epochs):
         loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
         loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
 
-        loss_history_A += loss_A
-        loss_history_B += loss_B
+        loss_history_A.append(loss_A[0])
+        loss_history_B.append(loss_B[0])
 
         inc += 1
         batch_history.append(inc)
@@ -279,10 +282,22 @@ for epoch in range(epochs):
                elapsed_time))
 
         if batch % save_interval == 0:
+
+            la_sum = 0
+            for la in loss_history_A:
+                la_sum += la
+
+            avg_history_A.append(la_sum / len(loss_history_A))
+            avg_index.append(len(avg_index) + 1)
+
+            loss_history_A = []
+
             plt.clf()
-            plt.plot(batch_history, temp_history, label='linear')
+            # plt.plot(avg_index, avg_history_A, label='linear', color='green', linestyle='dotted')
+            plt.scatter(avg_index, avg_history_A, s=50)
             plt.legend()
             plt.show()
+
             # score = autoencoder_A.evaluate(target_B, target_A, verbose=0)
             # print('Test loss:', score[0])
             # print('Test accuracy:', score[1])
