@@ -239,8 +239,8 @@ sample_interval = 10
 
 # ********************************************************************************
 
-test_images_A = get_image_paths("data_train/OL_NEW/testOL")
-test_images_B = get_image_paths("data_train/LU_NEW/testLU")
+test_images_A = get_image_paths("data_train/OL_NEW/validOL")
+test_images_B = get_image_paths("data_train/LU_NEW/validLU")
 
 loss_history_A = []
 loss_history_B = []
