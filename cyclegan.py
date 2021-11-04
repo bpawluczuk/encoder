@@ -450,7 +450,7 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if batch % save_interval == 0:
+        if 1:
 
             _, ax = plt.subplots(4, 2, figsize=(12, 12))
 

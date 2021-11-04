@@ -269,9 +269,9 @@ for epoch in range(epochs):
         loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
 
         # Epoch encoder loss
-        epoch_loss_history_encoder = 0.5 * (loss_A[0] + loss_B[0])
+        epoch_loss_history_encoder.append(0.5 * (loss_A[0] + loss_B[0]))
         # Epoch encoder acc
-        epoch_acc_history_encoder = 0.5 * (loss_A[1] + loss_B[1])
+        epoch_acc_history_encoder.append(0.5 * (loss_A[1] + loss_B[1]))
 
         elapsed_time = datetime.datetime.now() - start_time
 
@@ -283,29 +283,29 @@ for epoch in range(epochs):
                loss_B[0], 100 * loss_B[1],
                elapsed_time))
 
-    if batch % save_interval == 0:
-        save_model_weights()
+        if batch % save_interval == 0:
+            save_model_weights()
 
-    if batch % sample_interval == 0:
-        test_A = target_A[0:3]
-        test_B = target_B[0:3]
+        if batch % sample_interval == 0:
+            test_A = target_A[0:3]
+            test_B = target_B[0:3]
 
-        figure = numpy.stack([
-            test_A,
-            autoencoder_A.predict(test_A),
-            autoencoder_B.predict(test_A),
-            test_B,
-            autoencoder_B.predict(test_B),
-            autoencoder_A.predict(test_B),
-        ], axis=1)
+            figure = numpy.stack([
+                test_A,
+                autoencoder_A.predict(test_A),
+                autoencoder_B.predict(test_A),
+                test_B,
+                autoencoder_B.predict(test_B),
+                autoencoder_A.predict(test_B),
+            ], axis=1)
 
-        figure = numpy.concatenate([figure], axis=0)
-        figure = stack_images(figure)
+            figure = numpy.concatenate([figure], axis=0)
+            figure = stack_images(figure)
 
-        figure = numpy.clip(figure * 255, 0, 255).astype(numpy.uint8)
+            figure = numpy.clip(figure * 255, 0, 255).astype(numpy.uint8)
 
-        cv2.imshow("Results", figure)
-        key = cv2.waitKey(1)
+            cv2.imshow("Results", figure)
+            key = cv2.waitKey(1)
 
         if batch % batches == 0:
 
