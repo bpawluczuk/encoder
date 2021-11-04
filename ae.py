@@ -293,7 +293,7 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if batch % 2 == 0:
+        if batch % 100 == 0:
 
             avg_index.append(len(avg_index) + 1)
 
@@ -314,6 +314,13 @@ for epoch in range(epochs):
 
             # -------
 
+            plt.clf()
+            plt.scatter(avg_index, avg_history_loss, s=20, label="Encoder loss")
+            plt.legend()
+            plt.show()
+
+            # -------
+
             acc_sum = 0
             for acc in epoch_acc_history_encoder:
                 acc_sum += acc
@@ -329,13 +336,14 @@ for epoch in range(epochs):
 
             # -------
 
-            plt.clf()
-            plt.scatter(avg_index, avg_history_loss, s=20, label="Encoder loss")
-            plt.scatter(avg_index, avg_history_acc, s=20, label="Encoder accuracy")
-            plt.legend()
-            plt.show()
+            # plt.clf()
+            # plt.scatter(avg_index, avg_history_acc, s=20, label="Encoder accuracy")
+            # plt.legend()
+            # plt.show()
 
             # -------
+
+        if batch % batches == 0:
 
             _, ax = plt.subplots(4, 4, figsize=(16, 16))
 

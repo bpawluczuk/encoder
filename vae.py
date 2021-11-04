@@ -250,7 +250,7 @@ epochs = 100
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
 plot_result_test = 1000
-save_interval = 1
+save_interval = 1000
 sample_interval = 10
 
 # ********************************************************************************
@@ -258,29 +258,16 @@ sample_interval = 10
 test_images_A = get_image_paths("data_train/OL_NEW/validOL")
 test_images_B = get_image_paths("data_train/LU_NEW/validLU")
 
-loss_history_A = []
-loss_history_B = []
-acc_history_A = []
-acc_history_B = []
-
-valid_index = []
-valid_loss_history_A = []
-valid_loss_history_B = []
-valid_acc_history_A = []
-valid_acc_history_B = []
+epoch_loss_history_encoder = []
+epoch_acc_history_encoder = []
 
 avg_index = []
-avg_history_loss_A = []
-avg_history_loss_B = []
-avg_history_acc_A = []
-avg_history_acc_B = []
-avg_history_valid_loss_A = []
-avg_history_valid_loss_B = []
-avg_history_valid_acc_A = []
-avg_history_valid_acc_B = []
+avg_history_loss = []
+avg_history_acc = []
 
-stats_A = 'history/VAE/stats_a.txt'
-stats_B = 'history/VAE/stats_b.txt'
+history_dir = 'history/AE/'
+stats_loss = history_dir + 'stats_loss.txt'
+stats_acc = history_dir + 'stats_acc.txt'
 
 # ********************************************************************************
 
@@ -297,10 +284,10 @@ for epoch in range(epochs):
         loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
         loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
 
-        loss_history_A.append(loss_A[0])
-        acc_history_A.append(loss_A[1])
-        loss_history_B.append(loss_B[0])
-        acc_history_B.append(loss_B[1])
+        # Epoch encoder loss
+        epoch_loss_history_encoder.append(0.5 * (loss_A[0] + loss_B[0]))
+        # Epoch encoder acc
+        epoch_acc_history_encoder.append(0.5 * (loss_A[1] + loss_B[1]))
 
         elapsed_time = datetime.datetime.now() - start_time
 
@@ -335,104 +322,84 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if batch % batches == 0:
+        if batch % 100 == 0:
 
             avg_index.append(len(avg_index) + 1)
 
             # -------
 
-            la_sum = 0
-            for la in loss_history_A:
-                la_sum += la
+            loss_sum = 0
+            for loss in epoch_loss_history_encoder:
+                loss_sum += loss
 
-            avg_history_loss_A.append(la_sum / len(loss_history_A))
+            avg_loss = loss_sum / len(epoch_loss_history_encoder)
+            avg_history_loss.append(avg_loss)
 
-            loss_history_A = []
+            with open(stats_loss, "a+") as f:
+                f.write(str(avg_loss) + "\n")
+                f.close()
+
+            epoch_loss_history_encoder = []
 
             # -------
 
-            la_sum = 0
-            for la in loss_history_B:
-                la_sum += la
-
-            avg_history_loss_B.append(la_sum / len(loss_history_B))
-
-            loss_history_B = []
-
             plt.clf()
-            plt.scatter(avg_index, avg_history_loss_A, s=30, label="Autoencoder A")
-            plt.scatter(avg_index, avg_history_loss_B, s=30, label="Autoencoder B")
+            plt.scatter(avg_index, avg_history_loss, s=20, label="Encoder loss")
             plt.legend()
             plt.show()
 
             # -------
 
-            la_sum = 0
-            for la in acc_history_A:
-                la_sum += la
+            acc_sum = 0
+            for acc in epoch_acc_history_encoder:
+                acc_sum += acc
 
-            avg_history_acc_A.append((la_sum / len(acc_history_A)) * 100)
+            avg_acc = acc_sum / len(epoch_acc_history_encoder)
+            avg_history_acc.append(avg_acc)
 
-            acc_history_A = []
+            with open(stats_acc, "a+") as f:
+                f.write(str(avg_acc) + "\n")
+                f.close()
 
-            # -------
-
-            la_sum = 0
-            for la in acc_history_B:
-                la_sum += la
-
-            avg_history_acc_B.append((la_sum / len(acc_history_B) * 100))
-
-            acc_history_B = []
-
-            plt.clf()
-            plt.scatter(avg_index, avg_history_acc_A, s=30, label="Autoencoder A")
-            plt.scatter(avg_index, avg_history_acc_B, s=30, label="Autoencoder B")
-            plt.legend()
-            plt.show()
+            epoch_acc_history_encoder = []
 
             # -------
 
-            val_loss, val_acc = 0, 0
+            # plt.clf()
+            # plt.scatter(avg_index, avg_history_acc, s=20, label="Encoder accuracy")
+            # plt.legend()
+            # plt.show()
 
-            _, ax = plt.subplots(4, 2, figsize=(12, 12))
+            # -------
+
+        if batch % batches == 0:
+
+            _, ax = plt.subplots(4, 4, figsize=(16, 16))
 
             for i, fn in enumerate(test_images_A):
                 test_image = cv2.imread(fn)
                 test_image_tensor = numpy.expand_dims(test_image, 0)
                 predict_image = autoencoder_B.predict(test_image_tensor)
 
-                val_loss, val_acc = autoencoder_A.test_on_batch(test_image_tensor, predict_image)
-
                 ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
                 ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
-                ax[i, 0].set_title("Test image")
-                ax[i, 1].set_title("Predict image")
+                ax[i, 0].set_title("Osoba A")
+                ax[i, 1].set_title("Osoba B")
                 ax[i, 0].axis("off")
                 ax[i, 1].axis("off")
 
-                valid_loss_history_A.append(val_loss)
-                valid_acc_history_A.append(val_acc)
+            for i, fn in enumerate(test_images_B):
+                test_image = cv2.imread(fn)
+                test_image_tensor = numpy.expand_dims(test_image, 0)
+                predict_image = autoencoder_A.predict(test_image_tensor)
 
+                ax[i, 2].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
+                ax[i, 3].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
+                ax[i, 2].set_title("Osoba B")
+                ax[i, 3].set_title("Osoba A")
+                ax[i, 2].axis("off")
+                ax[i, 3].axis("off")
+
+            plt.savefig(history_dir + str(epoch).zfill(3) + "_test_images.jpg")
             plt.show()
             plt.close()
-
-            la_sum = 0
-            for la in valid_loss_history_A:
-                la_sum += la
-
-            avg_history_valid_loss_A.append(la_sum / len(valid_loss_history_A))
-
-            valid_loss_history_A = []
-
-            plt.clf()
-            plt.scatter(avg_index, avg_history_valid_loss_A, s=30, label="Autoencoder A")
-            # plt.scatter(avg_index, avg_history_acc_B, s=30, label="Autoencoder B")
-            plt.legend()
-            plt.show()
-
-            # -------
-
-            # with open(stats_A, "a+") as f:
-            #     f.write(str(loss_A) + "\n")
-            #     f.close()
