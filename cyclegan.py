@@ -425,7 +425,7 @@ for epoch in range(epochs):
                numpy.mean(g_loss[5:6]),
                elapsed_time))
 
-        if epoch % save_interval == 0:
+        if batch % save_interval == 0:
             save_model_weights()
 
         if batch % sample_interval == 0:

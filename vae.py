@@ -250,7 +250,7 @@ epochs = 100
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
 plot_result_test = 1000
-save_interval = 1000
+save_interval = 1
 sample_interval = 10
 
 # ********************************************************************************
@@ -311,7 +311,7 @@ for epoch in range(epochs):
                loss_B[0], 100 * loss_B[1],
                elapsed_time))
 
-        if epoch % save_interval == 0:
+        if batch % save_interval == 0:
             save_model_weights()
 
         if batch % sample_interval == 0:
