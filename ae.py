@@ -9,7 +9,6 @@ from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import Adam
 
 from tensorflow import keras
-from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
 from tensorflow.python.framework.ops import disable_eager_execution
 
@@ -138,11 +137,8 @@ def upsampleTranspose(
 
 def Encoder(input_, name="Encoder"):
     x = downsample(64, kernel_size=5)(input_)
-    # x = downsample(128, strides=1)(x)
     x = downsample(128)(x)
-    # x = downsample(512, strides=1)(x)
     x = downsample(256)(x)
-    # x = downsample(512, strides=1)(x)
     x = downsample(512)(x)
     x = Flatten()(x)
 
@@ -153,7 +149,6 @@ def Encoder(input_, name="Encoder"):
 
     filters = 512
     x = upsampleShuffler(filters)(x)
-    # x = upsampleShuffler(512, filter_times=4)(x)
 
     return Model(input_, x, name=name)
 
@@ -161,20 +156,8 @@ def Encoder(input_, name="Encoder"):
 def Decoder(name="Decoder"):
     input_ = Input(shape=(32, 32, 256))
 
-    # filters = 512
-    # filters //= 2
-    # x = upsampleTranspose(filters)(input_)
-    # x = downsample(filters, strides=1)(x)
     x = upsampleShuffler(256)(input_)
-
-    # filters //= 2
-    # x = upsampleTranspose(filters)(x)
-    # x = downsample(filters, strides=1)(x)
     x = upsampleShuffler(128)(x)
-
-    # filters //= 2
-    # x = upsampleTranspose(filters)(x)
-    # x = downsample(filters, strides=1)(x)
     x = upsampleShuffler(64, filter_times=4)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
@@ -229,6 +212,8 @@ images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
+# ********************************************************************************
+
 batch_size = 1
 epochs = 100
 dataset_size = len(images_A)
@@ -249,8 +234,9 @@ avg_index = []
 avg_history_loss = []
 avg_history_acc = []
 
-stats_A = 'history/AE/stats_loss.txt'
-stats_B = 'history/AE/stats_acc.txt'
+history_dir = 'history/AE/'
+stats_loss = history_dir + 'stats_loss.txt'
+stats_acc = history_dir + 'stats_acc.txt'
 
 # ********************************************************************************
 
@@ -307,29 +293,41 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if batch % batches == 0:
+        if batch % 2 == 0:
 
             avg_index.append(len(avg_index) + 1)
 
             # -------
 
-            la_sum = 0
-            for la in epoch_loss_history_encoder:
-                la_sum += la
+            loss_sum = 0
+            for loss in epoch_loss_history_encoder:
+                loss_sum += loss
 
-            avg_history_loss.append(la_sum / len(epoch_loss_history_encoder))
+            avg_loss = loss_sum / len(epoch_loss_history_encoder)
+            avg_history_loss.append(avg_loss)
+
+            with open(stats_loss, "a+") as f:
+                f.write(str(avg_loss) + "\n")
+                f.close()
 
             epoch_loss_history_encoder = []
 
             # -------
 
-            la_sum = 0
-            for la in epoch_acc_history_encoder:
-                la_sum += la
+            acc_sum = 0
+            for acc in epoch_acc_history_encoder:
+                acc_sum += acc
 
-            avg_history_acc.append(la_sum / len(epoch_acc_history_encoder))
+            avg_acc = acc_sum / len(epoch_acc_history_encoder)
+            avg_history_acc.append(avg_acc)
+
+            with open(stats_acc, "a+") as f:
+                f.write(str(avg_acc) + "\n")
+                f.close()
 
             epoch_acc_history_encoder = []
+
+            # -------
 
             plt.clf()
             plt.scatter(avg_index, avg_history_loss, s=20, label="Encoder loss")
@@ -339,7 +337,7 @@ for epoch in range(epochs):
 
             # -------
 
-            _, ax = plt.subplots(4, 2, figsize=(12, 12))
+            _, ax = plt.subplots(4, 4, figsize=(16, 16))
 
             for i, fn in enumerate(test_images_A):
                 test_image = cv2.imread(fn)
@@ -348,16 +346,23 @@ for epoch in range(epochs):
 
                 ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
                 ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
-                ax[i, 0].set_title("Test image")
-                ax[i, 1].set_title("Predict image")
+                ax[i, 0].set_title("Osoba A")
+                ax[i, 1].set_title("Osoba B")
                 ax[i, 0].axis("off")
                 ax[i, 1].axis("off")
 
+            for i, fn in enumerate(test_images_B):
+                test_image = cv2.imread(fn)
+                test_image_tensor = numpy.expand_dims(test_image, 0)
+                predict_image = autoencoder_A.predict(test_image_tensor)
+
+                ax[i, 2].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
+                ax[i, 3].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
+                ax[i, 2].set_title("Osoba B")
+                ax[i, 3].set_title("Osoba A")
+                ax[i, 2].axis("off")
+                ax[i, 3].axis("off")
+
+            plt.savefig(history_dir + str(epoch).zfill(3) + "_test_images.jpg")
             plt.show()
             plt.close()
-
-            # -------
-
-            # with open(stats_A, "a+") as f:
-            #     f.write(str(loss_A) + "\n")
-            #     f.close()
