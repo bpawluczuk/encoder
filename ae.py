@@ -390,8 +390,6 @@ for epoch in range(epochs):
 
                 val_loss, val_acc = autoencoder_A.test_on_batch(test_image_tensor, predict_image)
 
-                # score = autoencoder_A.evaluate(test_image_tensor, predict_image, verbose=0)
-
                 ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
                 ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
                 ax[i, 0].set_title("Test image")

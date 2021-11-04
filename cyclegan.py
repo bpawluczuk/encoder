@@ -456,25 +456,22 @@ for epoch in range(epochs):
             key = cv2.waitKey(1)
 
         if epoch % plot_result_test == 0:
-            image_test_A = get_image_paths("data_train/OL_TEST/trainTEST")
-            ol = cv2.imread(image_test_A[0])
 
-            source_image_tensor_ol = numpy.expand_dims(ol, 0)
-            predict_image_ol = gen_AB.predict(source_image_tensor_ol)[0]
-            predict_image_ol = numpy.clip(predict_image_ol * 255, 0, 255).astype(numpy.uint8)
+            _, ax = plt.subplots(4, 2, figsize=(12, 12))
 
-            image_test_B = get_image_paths("data_train/OL_TEST/trainTEST")
-            lu = cv2.imread(image_test_B[0])
+            for i, fn in enumerate(test_images_A):
+                test_image = cv2.imread(fn)
+                test_image_tensor = numpy.expand_dims(test_image, 0)
+                predict_image = gen_BA.predict(test_image_tensor)
 
-            source_image_tensor_lu = numpy.expand_dims(lu, 0)
-            predict_image_lu = gen_BA.predict(source_image_tensor_lu)[0]
-            predict_image_lu = numpy.clip(predict_image_lu * 255, 0, 255).astype(numpy.uint8)
+                val_loss, val_acc = cyclegan.test_on_batch(test_image_tensor, predict_image)
 
-            _, ax = plt.subplots(2, 2, figsize=(12, 12))
-            ax[0, 0].imshow(predict_image_ol)
-            ax[0, 1].imshow(predict_image_lu)
-            ax[0, 0].axis("off")
-            ax[0, 1].axis("off")
+                ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
+                ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
+                ax[i, 0].set_title("Test image")
+                ax[i, 1].set_title("Predict image")
+                ax[i, 0].axis("off")
+                ax[i, 1].axis("off")
 
             plt.show()
             plt.close()
