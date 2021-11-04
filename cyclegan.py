@@ -336,20 +336,49 @@ def save_model_weights():
 
 # ********************************************************************************
 
-images_A = get_image_paths("data_train/OL_TEST/trainTEST")
-images_B = get_image_paths("data_train/LU_TEST/trainTEST")
+images_A = get_image_paths("data_train/OL_NEW/trainOL")
+images_B = get_image_paths("data_train/LU_NEW/trainLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 batch_size = 1
-epochs = 100000
+epochs = 100
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
-plot_result_test = 5000
-save_interval = 100
-sample_interval = 1
+plot_result_test = 1000
+save_interval = 1000
+sample_interval = 10
+
+# ********************************************************************************
+
+test_images_A = get_image_paths("data_train/OL_NEW/validOL")
+test_images_B = get_image_paths("data_train/LU_NEW/validLU")
+
+loss_history_A = []
+loss_history_B = []
+acc_history_A = []
+acc_history_B = []
+
+valid_index = []
+valid_loss_history_A = []
+valid_loss_history_B = []
+valid_acc_history_A = []
+valid_acc_history_B = []
+
+avg_index = []
+avg_history_loss_A = []
+avg_history_loss_B = []
+avg_history_acc_A = []
+avg_history_acc_B = []
+avg_history_valid_loss_A = []
+avg_history_valid_loss_B = []
+avg_history_valid_acc_A = []
+avg_history_valid_acc_B = []
+
+stats_A = 'history/AE/stats_a.txt'
+stats_B = 'history/AE/stats_b.txt'
 
 # ********************************************************************************
 

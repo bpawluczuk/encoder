@@ -263,6 +263,9 @@ avg_history_valid_loss_B = []
 avg_history_valid_acc_A = []
 avg_history_valid_acc_B = []
 
+stats_A = 'history/AE/stats_a.txt'
+stats_B = 'history/AE/stats_b.txt'
+
 # ********************************************************************************
 
 start_time = datetime.datetime.now()
@@ -280,8 +283,8 @@ for epoch in range(epochs):
         loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
 
         loss_history_A.append(loss_A[0])
-        loss_history_B.append(loss_B[0])
         acc_history_A.append(loss_A[1])
+        loss_history_B.append(loss_B[0])
         acc_history_B.append(loss_B[1])
 
         elapsed_time = datetime.datetime.now() - start_time
@@ -293,6 +296,30 @@ for epoch in range(epochs):
                loss_A[0], 100 * loss_A[1],
                loss_B[0], 100 * loss_B[1],
                elapsed_time))
+
+    if batch % save_interval == 0:
+        save_model_weights()
+
+    if batch % sample_interval == 0:
+        test_A = target_A[0:3]
+        test_B = target_B[0:3]
+
+        figure = numpy.stack([
+            test_A,
+            autoencoder_A.predict(test_A),
+            autoencoder_B.predict(test_A),
+            test_B,
+            autoencoder_B.predict(test_B),
+            autoencoder_A.predict(test_B),
+        ], axis=1)
+
+        figure = numpy.concatenate([figure], axis=0)
+        figure = stack_images(figure)
+
+        figure = numpy.clip(figure * 255, 0, 255).astype(numpy.uint8)
+
+        cv2.imshow("Results", figure)
+        key = cv2.waitKey(1)
 
         if batch % batches == 0:
 
@@ -352,6 +379,8 @@ for epoch in range(epochs):
 
             # -------
 
+            val_loss, val_acc = 0, 0
+
             _, ax = plt.subplots(2, 2, figsize=(12, 12))
 
             for i, fn in enumerate(test_images_A):
@@ -359,7 +388,9 @@ for epoch in range(epochs):
                 test_image_tensor = numpy.expand_dims(test_image, 0)
                 predict_image = autoencoder_B.predict(test_image_tensor)
 
-                score = autoencoder_A.evaluate(test_image_tensor, predict_image, verbose=0)
+                val_loss, val_acc = autoencoder_A.test_on_batch(test_image_tensor, predict_image)
+
+                # score = autoencoder_A.evaluate(test_image_tensor, predict_image, verbose=0)
 
                 ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
                 ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
@@ -368,8 +399,8 @@ for epoch in range(epochs):
                 ax[i, 0].axis("off")
                 ax[i, 1].axis("off")
 
-                valid_loss_history_A.append(score[0])
-                valid_acc_history_A.append(score[1])
+                valid_loss_history_A.append(val_loss)
+                valid_acc_history_A.append(val_acc)
 
             plt.show()
             plt.close()
@@ -388,51 +419,8 @@ for epoch in range(epochs):
             plt.legend()
             plt.show()
 
+            # -------
 
-    if batch % save_interval == 0:
-        save_model_weights()
-
-    if batch % sample_interval == 0:
-        test_A = target_A[0:3]
-        test_B = target_B[0:3]
-
-        figure = numpy.stack([
-            test_A,
-            autoencoder_A.predict(test_A),
-            autoencoder_B.predict(test_A),
-            test_B,
-            autoencoder_B.predict(test_B),
-            autoencoder_A.predict(test_B),
-        ], axis=1)
-
-        figure = numpy.concatenate([figure], axis=0)
-        figure = stack_images(figure)
-
-        figure = numpy.clip(figure * 255, 0, 255).astype(numpy.uint8)
-
-        cv2.imshow("Results", figure)
-        key = cv2.waitKey(1)
-
-    # if batch % plot_result_test == 0:
-    #     image_test_A = get_image_paths("data_train/OL_TEST/trainTEST")
-    #     ol = cv2.imread(image_test_A[0])
-    #
-    #     source_image_tensor_ol = numpy.expand_dims(ol, 0)
-    #     predict_image_ol = autoencoder_B.predict(source_image_tensor_ol)[0]
-    #     predict_image_ol = numpy.clip(predict_image_ol * 255, 0, 255).astype(numpy.uint8)
-    #
-    #     image_test_B = get_image_paths("data_train/OL_TEST/trainTEST")
-    #     lu = cv2.imread(image_test_B[0])
-    #
-    #     source_image_tensor_lu = numpy.expand_dims(lu, 0)
-    #     predict_image_lu = autoencoder_A.predict(source_image_tensor_lu)[0]
-    #     predict_image_lu = numpy.clip(predict_image_lu * 255, 0, 255).astype(numpy.uint8)
-    #
-    #     _, ax = plt.subplots(2, 2, figsize=(12, 12))
-    #     ax[0, 0].imshow(predict_image_ol)
-    #     ax[0, 1].imshow(predict_image_lu)
-    #     ax[0, 0].axis("off")
-    #     ax[0, 1].axis("off")
-    #
-    #     plt.show()
-    #     plt.close()
+            # with open(stats_A, "a+") as f:
+            #     f.write(str(loss_A) + "\n")
+            #     f.close()
