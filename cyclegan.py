@@ -356,29 +356,18 @@ sample_interval = 10
 test_images_A = get_image_paths("data_train/OL_NEW/validOL")
 test_images_B = get_image_paths("data_train/LU_NEW/validLU")
 
-loss_history_A = []
-loss_history_B = []
-acc_history_A = []
-acc_history_B = []
-
-valid_index = []
-valid_loss_history_A = []
-valid_loss_history_B = []
-valid_acc_history_A = []
-valid_acc_history_B = []
+loss_history_disc = []
+loss_history_gen = []
+acc_history_disc = []
+acc_history_gen = []
 
 avg_index = []
-avg_history_loss_A = []
-avg_history_loss_B = []
-avg_history_acc_A = []
-avg_history_acc_B = []
-avg_history_valid_loss_A = []
-avg_history_valid_loss_B = []
-avg_history_valid_acc_A = []
-avg_history_valid_acc_B = []
+avg_history_loss_disc = []
+avg_history_loss_gen = []
+avg_history_acc_disc = []
+avg_history_acc_gen = []
 
-stats_A = 'history/AE/stats_a.txt'
-stats_B = 'history/AE/stats_b.txt'
+stats = 'history/GAN/stats.txt'
 
 # ********************************************************************************
 
@@ -413,6 +402,12 @@ for epoch in range(epochs):
         g_loss = cyclegan.train_on_batch([target_A, target_B], [valid, valid, target_A, target_B, target_A, target_B])
 
         elapsed_time = datetime.datetime.now() - start_time
+
+        loss_history_disc.append(d_loss[0])
+        acc_history_disc.append(d_loss[1])
+        loss_history_gen.append(d_loss[0])
+        acc_history_gen.append(d_loss[1])
+
 
         print(
             "[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %05f, adv: %05f, recon: %05f, same: %05f] time: %s " \
@@ -455,7 +450,7 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if epoch % plot_result_test == 0:
+        if batch % batches == 0:
 
             _, ax = plt.subplots(4, 2, figsize=(12, 12))
 
