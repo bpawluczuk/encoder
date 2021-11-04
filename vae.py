@@ -335,7 +335,7 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if batch % 2 == 0:
+        if batch % batches == 0:
 
             avg_index.append(len(avg_index) + 1)
 
@@ -359,11 +359,11 @@ for epoch in range(epochs):
 
             loss_history_B = []
 
-            # plt.clf()
-            # plt.scatter(avg_index, avg_history_loss_A, s=30, label="Autoencoder A")
-            # plt.scatter(avg_index, avg_history_loss_B, s=30, label="Autoencoder B")
-            # plt.legend()
-            # plt.show()
+            plt.clf()
+            plt.scatter(avg_index, avg_history_loss_A, s=30, label="Autoencoder A")
+            plt.scatter(avg_index, avg_history_loss_B, s=30, label="Autoencoder B")
+            plt.legend()
+            plt.show()
 
             # -------
 
@@ -385,17 +385,17 @@ for epoch in range(epochs):
 
             acc_history_B = []
 
-            # plt.clf()
-            # plt.scatter(avg_index, avg_history_acc_A, s=30, label="Autoencoder A")
-            # plt.scatter(avg_index, avg_history_acc_B, s=30, label="Autoencoder B")
-            # plt.legend()
-            # plt.show()
+            plt.clf()
+            plt.scatter(avg_index, avg_history_acc_A, s=30, label="Autoencoder A")
+            plt.scatter(avg_index, avg_history_acc_B, s=30, label="Autoencoder B")
+            plt.legend()
+            plt.show()
 
             # -------
 
             val_loss, val_acc = 0, 0
 
-            _, ax = plt.subplots(2, 2, figsize=(12, 12))
+            _, ax = plt.subplots(4, 2, figsize=(12, 12))
 
             for i, fn in enumerate(test_images_A):
                 test_image = cv2.imread(fn)

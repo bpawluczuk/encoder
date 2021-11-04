@@ -381,7 +381,7 @@ for epoch in range(epochs):
 
             val_loss, val_acc = 0, 0
 
-            _, ax = plt.subplots(2, 2, figsize=(12, 12))
+            _, ax = plt.subplots(4, 2, figsize=(12, 12))
 
             for i, fn in enumerate(test_images_A):
                 test_image = cv2.imread(fn)
