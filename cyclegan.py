@@ -450,7 +450,7 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if batch % batches == 0:
+        if batch % save_interval == 0:
 
             _, ax = plt.subplots(4, 2, figsize=(12, 12))
 
@@ -458,8 +458,6 @@ for epoch in range(epochs):
                 test_image = cv2.imread(fn)
                 test_image_tensor = numpy.expand_dims(test_image, 0)
                 predict_image = gen_BA.predict(test_image_tensor)
-
-                val_loss, val_acc = cyclegan.test_on_batch(test_image_tensor, predict_image)
 
                 ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
                 ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
