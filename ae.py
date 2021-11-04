@@ -242,29 +242,15 @@ sample_interval = 10
 test_images_A = get_image_paths("data_train/OL_NEW/validOL")
 test_images_B = get_image_paths("data_train/LU_NEW/validLU")
 
-loss_history_A = []
-loss_history_B = []
-acc_history_A = []
-acc_history_B = []
-
-valid_index = []
-valid_loss_history_A = []
-valid_loss_history_B = []
-valid_acc_history_A = []
-valid_acc_history_B = []
+epoch_loss_history_encoder = []
+epoch_acc_history_encoder = []
 
 avg_index = []
-avg_history_loss_A = []
-avg_history_loss_B = []
-avg_history_acc_A = []
-avg_history_acc_B = []
-avg_history_valid_loss_A = []
-avg_history_valid_loss_B = []
-avg_history_valid_acc_A = []
-avg_history_valid_acc_B = []
+avg_history_loss = []
+avg_history_acc = []
 
-stats_A = 'history/AE/stats_a.txt'
-stats_B = 'history/AE/stats_b.txt'
+stats_A = 'history/AE/stats_loss.txt'
+stats_B = 'history/AE/stats_acc.txt'
 
 # ********************************************************************************
 
@@ -282,10 +268,10 @@ for epoch in range(epochs):
         loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
         loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
 
-        loss_history_A.append(loss_A[0])
-        acc_history_A.append(loss_A[1])
-        loss_history_B.append(loss_B[0])
-        acc_history_B.append(loss_B[1])
+        # Epoch encoder loss
+        epoch_loss_history_encoder = 0.5 * (loss_A[0] + loss_B[0])
+        # Epoch encoder acc
+        epoch_acc_history_encoder = 0.5 * (loss_A[1] + loss_B[1])
 
         elapsed_time = datetime.datetime.now() - start_time
 
@@ -328,58 +314,30 @@ for epoch in range(epochs):
             # -------
 
             la_sum = 0
-            for la in loss_history_A:
+            for la in epoch_loss_history_encoder:
                 la_sum += la
 
-            avg_history_loss_A.append(la_sum / len(loss_history_A))
+            avg_history_loss.append(la_sum / len(epoch_loss_history_encoder))
 
-            loss_history_A = []
+            epoch_loss_history_encoder = []
 
             # -------
 
             la_sum = 0
-            for la in loss_history_B:
+            for la in epoch_acc_history_encoder:
                 la_sum += la
 
-            avg_history_loss_B.append(la_sum / len(loss_history_B))
+            avg_history_acc.append(la_sum / len(epoch_acc_history_encoder))
 
-            loss_history_B = []
+            epoch_acc_history_encoder = []
 
-            # plt.clf()
-            # plt.scatter(avg_index, avg_history_loss_A, s=30, label="Autoencoder A")
-            # plt.scatter(avg_index, avg_history_loss_B, s=30, label="Autoencoder B")
-            # plt.legend()
-            # plt.show()
-
-            # -------
-
-            la_sum = 0
-            for la in acc_history_A:
-                la_sum += la
-
-            avg_history_acc_A.append((la_sum / len(acc_history_A)) * 100)
-
-            acc_history_A = []
+            plt.clf()
+            plt.scatter(avg_index, avg_history_loss, s=20, label="Encoder loss")
+            plt.scatter(avg_index, avg_history_acc, s=20, label="Encoder accuracy")
+            plt.legend()
+            plt.show()
 
             # -------
-
-            la_sum = 0
-            for la in acc_history_B:
-                la_sum += la
-
-            avg_history_acc_B.append((la_sum / len(acc_history_B) * 100))
-
-            acc_history_B = []
-
-            # plt.clf()
-            # plt.scatter(avg_index, avg_history_acc_A, s=30, label="Autoencoder A")
-            # plt.scatter(avg_index, avg_history_acc_B, s=30, label="Autoencoder B")
-            # plt.legend()
-            # plt.show()
-
-            # -------
-
-            val_loss, val_acc = 0, 0
 
             _, ax = plt.subplots(4, 2, figsize=(12, 12))
 
@@ -388,8 +346,6 @@ for epoch in range(epochs):
                 test_image_tensor = numpy.expand_dims(test_image, 0)
                 predict_image = autoencoder_B.predict(test_image_tensor)
 
-                val_loss, val_acc = autoencoder_A.test_on_batch(test_image_tensor, predict_image)
-
                 ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
                 ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
                 ax[i, 0].set_title("Test image")
@@ -397,25 +353,8 @@ for epoch in range(epochs):
                 ax[i, 0].axis("off")
                 ax[i, 1].axis("off")
 
-                valid_loss_history_A.append(val_loss)
-                valid_acc_history_A.append(val_acc)
-
             plt.show()
             plt.close()
-
-            la_sum = 0
-            for la in valid_loss_history_A:
-                la_sum += la
-
-            avg_history_valid_loss_A.append(la_sum / len(valid_loss_history_A))
-
-            valid_loss_history_A = []
-
-            plt.clf()
-            plt.scatter(avg_index, avg_history_valid_loss_A, s=30, label="Autoencoder A")
-            # plt.scatter(avg_index, avg_history_acc_B, s=30, label="Autoencoder B")
-            plt.legend()
-            plt.show()
 
             # -------
 
