@@ -280,7 +280,7 @@ for epoch in range(epochs):
         loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
         loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
 
-        if 1:
+        if epoch != 1:
             # Epoch encoder loss
             epoch_loss_history_encoder.append(0.5 * (loss_A[0] / 10000 + loss_B[0] / 10000))
             # Epoch encoder acc
@@ -352,7 +352,7 @@ for epoch in range(epochs):
             plt.show()
             plt.close()
 
-        if 2:
+        if batch % batches == 0 and epoch != 1:
 
             avg_index.append(len(avg_index) + 1)
 
