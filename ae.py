@@ -390,7 +390,7 @@ for epoch in range(epochs):
 
             test_avg_index.append(len(test_avg_index) + 1)
 
-            _, ax = plt.subplots(2, 2, figsize=(16, 16))
+            _, ax = plt.subplots(4, 2, figsize=(16, 16))
             for i, fn in enumerate(test_images_A):
                 test_image = cv2.imread(fn)
                 test_image_tensor = numpy.expand_dims(test_image, 0)
