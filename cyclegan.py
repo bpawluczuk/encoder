@@ -116,6 +116,7 @@ def residual_block(
 
     return block
 
+
 # ********************************************************************************
 
 def downsample(
@@ -212,15 +213,9 @@ def get_resnet_generator(
         filters=64,
         num_downsampling_blocks=2,
         num_residual_blocks=12,
-        num_upsample_blocks=2,
         name='resnet_generator',
 ):
     input_ = layers.Input(shape=IMAGE_SHAPE)
-
-    # x = ReflectionPadding2D(padding=(2, 2))(input_)
-    # x = layers.Conv2D(filters, (5, 5), kernel_initializer=kernel_init, use_bias=False)(input_)
-    # x = tfa.layers.InstanceNormalization(gamma_initializer=gamma_init)(x)
-    # x = layers.Activation("relu")(x)
 
     x = downsample(64, kernel_size=5, strides=1)(input_)
 
@@ -233,18 +228,12 @@ def get_resnet_generator(
     for _ in range(num_residual_blocks):
         x = residual_block()(x)
 
-    # Upsampling
-    # for _ in range(num_upsample_blocks):
-    #     filters //= 2
-    #     x = upsampleTranspose(filters)(x)
-
     filters *= 2
     x = upsampleShuffler(filters)(x)
     filters *= 2
     x = upsampleShuffler(filters)(x)
 
     # Final block
-    # x = ReflectionPadding2D(padding=(2, 2))(x)
     x = layers.Conv2D(3, (5, 5), padding="same")(x)
     x = layers.Activation("tanh")(x)
 
@@ -355,13 +344,16 @@ sample_interval = 10
 
 # ********************************************************************************
 
-test_images_A = get_image_paths("data_train/OL_NEW/validOL")
-test_images_B = get_image_paths("data_train/LU_NEW/validLU")
+test_images_A = get_image_paths("data_train/OL_NEW/testOL")
+test_images_B = get_image_paths("data_train/LU_NEW/testLU")
 
-loss_history_disc = []
-loss_history_gen = []
-acc_history_disc = []
-acc_history_gen = []
+valid_images_A = get_image_paths("data_train/OL_NEW/validOL")
+valid_images_B = get_image_paths("data_train/LU_NEW/validLU")
+
+epoch_loss_history_disc = []
+epoch_loss_history_gen = []
+epoch_acc_history_disc = []
+epoch_acc_history_gen = []
 
 avg_index = []
 avg_history_loss_disc = []
@@ -369,7 +361,11 @@ avg_history_loss_gen = []
 avg_history_acc_disc = []
 avg_history_acc_gen = []
 
-stats = 'history/GAN/stats.txt'
+history_dir = 'history/GAN/'
+stats_loss_disc = history_dir + 'stats_loss_disc.txt'
+stats_acc_disc = history_dir + 'stats_acc_disc.txt'
+stats_loss_gen = history_dir + 'stats_loss_gen.txt'
+stats_acc_gen = history_dir + 'stats_acc_gen.txt'
 
 # ********************************************************************************
 
@@ -405,11 +401,11 @@ for epoch in range(epochs):
 
         elapsed_time = datetime.datetime.now() - start_time
 
-        loss_history_disc.append(d_loss[0])
-        acc_history_disc.append(d_loss[1])
-        loss_history_gen.append(d_loss[0])
-        acc_history_gen.append(d_loss[1])
-
+        if 1:
+            epoch_loss_history_disc.append(d_loss[0])
+            epoch_acc_history_disc.append(d_loss[1])
+            epoch_loss_history_gen.append(d_loss[0])
+            epoch_acc_history_gen.append(d_loss[1])
 
         print(
             "[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %05f, adv: %05f, recon: %05f, same: %05f] time: %s " \
@@ -452,21 +448,100 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if batch % save_interval == 0:
+        if batch % batches == 0:
 
-            _, ax = plt.subplots(4, 2, figsize=(12, 12))
+            _, ax = plt.subplots(4, 4, figsize=(16, 16))
 
-            for i, fn in enumerate(test_images_A):
+            for i, fn in enumerate(valid_images_A):
+                test_image = cv2.imread(fn)
+                test_image_tensor = numpy.expand_dims(test_image, 0)
+                predict_image = gen_AB.predict(test_image_tensor)
+
+                ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
+                ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
+                ax[i, 0].set_title("Osoba A")
+                ax[i, 1].set_title("Osoba B")
+                ax[i, 0].axis("off")
+                ax[i, 1].axis("off")
+
+            for i, fn in enumerate(valid_images_B):
                 test_image = cv2.imread(fn)
                 test_image_tensor = numpy.expand_dims(test_image, 0)
                 predict_image = gen_BA.predict(test_image_tensor)
 
-                ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
-                ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
-                ax[i, 0].set_title("Test image")
-                ax[i, 1].set_title("Predict image")
-                ax[i, 0].axis("off")
-                ax[i, 1].axis("off")
+                ax[i, 2].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
+                ax[i, 3].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
+                ax[i, 2].set_title("Osoba B")
+                ax[i, 3].set_title("Osoba A")
+                ax[i, 2].axis("off")
+                ax[i, 3].axis("off")
 
+            plt.clf()
+            plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
             plt.show()
             plt.close()
+
+        if batch % batches == 0:
+
+            avg_index.append(len(avg_index) + 1)
+
+            # ------- Loss discriminator ----------------
+
+            loss_sum = 0
+            for loss in epoch_loss_history_disc:
+                loss_sum += loss
+
+            avg_loss = loss_sum / len(epoch_loss_history_disc)
+            avg_history_loss_disc.append(avg_loss)
+
+            with open(stats_loss_disc, "a+") as f:
+                f.write(str(avg_loss) + "\n")
+                f.close()
+
+            epoch_loss_history_disc = []
+
+
+            plt.scatter(avg_index, avg_history_loss_disc, s=20, label="Discriminator loss")
+            plt.legend()
+            plt.show()
+            plt.savefig(history_dir + "loss_disc_" + str(epoch).zfill(3) + "_plot.jpg")
+
+            # ------- Accuracy discriminator -------
+
+            # acc_sum = 0
+            # for acc in epoch_acc_history_disc:
+            #     acc_sum += acc
+            #
+            # avg_acc = acc_sum / len(epoch_acc_history_disc)
+            # avg_history_acc_disc.append(avg_acc)
+            #
+            # with open(stats_acc_disc, "a+") as f:
+            #     f.write(str(avg_acc) + "\n")
+            #     f.close()
+            #
+            # epoch_acc_history_disc = []
+
+            # plt.scatter(avg_index, avg_history_acc_disc, s=20, label="Discriminator accuracy")
+            # plt.legend()
+            # plt.show()
+            # plt.savefig(history_dir + "acc_disc_" + str(epoch).zfill(3) + "_plot.jpg")
+
+            # ------- Loss generator ----------------
+
+            loss_sum = 0
+            for loss in epoch_loss_history_gen:
+                loss_sum += loss
+
+            avg_loss = loss_sum / len(epoch_loss_history_gen)
+            avg_history_loss_gen.append(avg_loss)
+
+            with open(stats_loss_gen, "a+") as f:
+                f.write(str(avg_loss) + "\n")
+                f.close()
+
+            epoch_loss_history_gen = []
+
+            plt.scatter(avg_index, avg_history_loss_gen, s=20, label="Generator loss")
+            plt.legend()
+            plt.show()
+            plt.savefig(history_dir + "loss_gen_" + str(epoch).zfill(3) + "_plot.jpg")

@@ -282,7 +282,7 @@ for epoch in range(epochs):
 
         if epoch != 1:
             # Epoch encoder loss
-            epoch_loss_history_encoder.append(0.5 * (loss_A[0] / 10000 + loss_B[0] / 10000))
+            epoch_loss_history_encoder.append(0.5 * (loss_A[0] + loss_B[0]))
             # Epoch encoder acc
             epoch_acc_history_encoder.append(0.5 * (loss_A[1] + loss_B[1]))
 
@@ -291,8 +291,8 @@ for epoch in range(epochs):
         print("[Epoch %d/%d] [Batch %d/%d] [A loss: %f, acc: %3d%%] [B loss: %f, acc: %3d%%] time: %s " \
               % (epoch, epochs,
                  batch, batches,
-                 loss_A[0] / 10000, 100 * loss_A[1],
-                 loss_B[0] / 10000, 100 * loss_B[1],
+                 loss_A[0], 100 * loss_A[1],
+                 loss_B[0], 100 * loss_B[1],
                  elapsed_time))
 
         if batch % save_interval == 0:
@@ -347,7 +347,6 @@ for epoch in range(epochs):
                 ax[i, 2].axis("off")
                 ax[i, 3].axis("off")
 
-            plt.clf()
             plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
             plt.show()
             plt.close()
@@ -356,7 +355,7 @@ for epoch in range(epochs):
 
             avg_index.append(len(avg_index) + 1)
 
-            # -------
+            # ------- Loss encoder ----------------
 
             loss_sum = 0
             for loss in epoch_loss_history_encoder:
@@ -371,15 +370,12 @@ for epoch in range(epochs):
 
             epoch_loss_history_encoder = []
 
-            # -------
-
-            plt.clf()
             plt.scatter(avg_index, avg_history_loss, s=20, label="Encoder loss")
             plt.legend()
             plt.show()
             plt.savefig(history_dir + "loss_" + str(epoch).zfill(3) + "_plot.jpg")
 
-            # -------
+            # ------- Accuracy encoder -----------
 
             acc_sum = 0
             for acc in epoch_acc_history_encoder:
@@ -394,15 +390,11 @@ for epoch in range(epochs):
 
             epoch_acc_history_encoder = []
 
-            # -------
-
-            # plt.clf()
             # plt.scatter(avg_index, avg_history_acc, s=20, label="Encoder accuracy")
             # plt.legend()
             # plt.show()
             # plt.savefig(history_dir + "acc_" + str(epoch).zfill(3) + "_plot.jpg")
 
-            # -------
 
         if 0:
 
@@ -430,7 +422,6 @@ for epoch in range(epochs):
                     ax[i, 0].axis("off")
                     ax[i, 1].axis("off")
 
-            plt.clf()
             plt.show()
             plt.close()
 
@@ -444,7 +435,6 @@ for epoch in range(epochs):
 
             test_epoch_loss_history_encoder = []
 
-            plt.clf()
             plt.scatter(test_avg_index, test_avg_history_loss, s=20, label="Encoder test")
             plt.legend()
             plt.show()
