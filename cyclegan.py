@@ -522,18 +522,18 @@ for epoch in range(epochs):
 
             # ------- Accuracy discriminator -------
 
-            # acc_sum = 0
-            # for acc in epoch_acc_history_disc:
-            #     acc_sum += acc
-            #
-            # avg_acc = acc_sum / len(epoch_acc_history_disc)
-            # avg_history_acc_disc.append(avg_acc)
-            #
-            # with open(stats_acc_disc, "a+") as f:
-            #     f.write(str(avg_acc) + "\n")
-            #     f.close()
-            #
-            # epoch_acc_history_disc = []
+            acc_sum = 0
+            for acc in epoch_acc_history_disc:
+                acc_sum += acc
+
+            avg_acc = acc_sum / len(epoch_acc_history_disc)
+            avg_history_acc_disc.append(avg_acc)
+
+            with open(stats_acc_disc, "a+") as f:
+                f.write(str(avg_acc) + "\n")
+                f.close()
+
+            epoch_acc_history_disc = []
 
             # plt.scatter(avg_index, avg_history_acc_disc, s=20, label="Discriminator accuracy")
             # plt.legend()
