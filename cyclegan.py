@@ -485,7 +485,7 @@ for epoch in range(epochs):
             plt.clf()
             plt.close()
 
-        if batch % batches == 0:
+        if batch % 2 == 0:
 
             # ------- Epoch time ------------------
 
@@ -513,12 +513,10 @@ for epoch in range(epochs):
 
             epoch_loss_history_disc = []
 
-            plt.scatter(avg_index, avg_history_loss_disc, s=20, label="Discriminator loss")
-            plt.legend()
-            plt.show()
-            plt.savefig(history_dir + "loss_disc_" + str(epoch).zfill(3) + "_plot.jpg")
-            plt.clf()
-            plt.close()
+            # plt.scatter(avg_index, avg_history_loss_disc, s=20, label="Discriminator loss")
+            # plt.legend()
+            # plt.show()
+            # plt.savefig(history_dir + "loss_disc_" + str(epoch).zfill(3) + "_plot.jpg")
 
             # ------- Accuracy discriminator -------
 
@@ -555,9 +553,16 @@ for epoch in range(epochs):
 
             epoch_loss_history_gen = []
 
-            plt.scatter(avg_index, avg_history_loss_gen, s=20, label="Generator loss")
-            plt.legend()
+            # plt.scatter(avg_index, avg_history_loss_gen, s=20, label="Generator loss")
+            # plt.legend()
+            # plt.show()
+            # plt.savefig(history_dir + "loss_gen_" + str(epoch).zfill(3) + "_plot.jpg")
+
+            fig, axs = plt.subplots(2, 2)
+            axs[0, 0].plot(avg_index, avg_history_loss_disc, label="Discriminator loss")
+            axs[0, 0].set_title('Axis [0, 0]')
+            axs[0, 1].plot(avg_index, avg_history_acc_disc, label="Discriminator accuracy")
+            axs[0, 1].set_title('Axis [0, 1]')
+            axs[1, 0].plot(avg_index, avg_history_loss_gen, label="Generator loss")
+            axs[1, 0].set_title('Axis [1, 0]')
             plt.show()
-            plt.savefig(history_dir + "loss_gen_" + str(epoch).zfill(3) + "_plot.jpg")
-            plt.clf()
-            plt.close()
