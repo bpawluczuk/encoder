@@ -254,10 +254,11 @@ for epoch in range(epochs):
         loss_A = autoencoder_A.train_on_batch(warped_A, target_A)
         loss_B = autoencoder_B.train_on_batch(warped_B, target_B)
 
-        # Epoch encoder loss
-        epoch_loss_history_encoder.append(0.5 * (loss_A[0] + loss_B[0]))
-        # Epoch encoder acc
-        epoch_acc_history_encoder.append(0.5 * (loss_A[1] + loss_B[1]))
+        if epoch != 1:
+            # Epoch encoder loss
+            epoch_loss_history_encoder.append(0.5 * (loss_A[0] + loss_B[0]))
+            # Epoch encoder acc
+            epoch_acc_history_encoder.append(0.5 * (loss_A[1] + loss_B[1]))
 
         elapsed_time = datetime.datetime.now() - start_time
 
@@ -293,7 +294,39 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if batch % 100 == 0:
+        if batch % batches == 0:
+
+            _, ax = plt.subplots(4, 4, figsize=(16, 16))
+
+            for i, fn in enumerate(test_images_A):
+                test_image = cv2.imread(fn)
+                test_image_tensor = numpy.expand_dims(test_image, 0)
+                predict_image = autoencoder_B.predict(test_image_tensor)
+
+                ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
+                ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
+                ax[i, 0].set_title("Osoba A")
+                ax[i, 1].set_title("Osoba B")
+                ax[i, 0].axis("off")
+                ax[i, 1].axis("off")
+
+            for i, fn in enumerate(test_images_B):
+                test_image = cv2.imread(fn)
+                test_image_tensor = numpy.expand_dims(test_image, 0)
+                predict_image = autoencoder_A.predict(test_image_tensor)
+
+                ax[i, 2].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
+                ax[i, 3].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
+                ax[i, 2].set_title("Osoba B")
+                ax[i, 3].set_title("Osoba A")
+                ax[i, 2].axis("off")
+                ax[i, 3].axis("off")
+
+            plt.savefig(history_dir + str(epoch).zfill(3) + "_test_images.jpg")
+            plt.show()
+            plt.close()
+
+        if batch % batches == 0 and epoch != 1:
 
             avg_index.append(len(avg_index) + 1)
 
@@ -342,35 +375,3 @@ for epoch in range(epochs):
             # plt.show()
 
             # -------
-
-        if batch % batches == 0:
-
-            _, ax = plt.subplots(4, 4, figsize=(16, 16))
-
-            for i, fn in enumerate(test_images_A):
-                test_image = cv2.imread(fn)
-                test_image_tensor = numpy.expand_dims(test_image, 0)
-                predict_image = autoencoder_B.predict(test_image_tensor)
-
-                ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
-                ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
-                ax[i, 0].set_title("Osoba A")
-                ax[i, 1].set_title("Osoba B")
-                ax[i, 0].axis("off")
-                ax[i, 1].axis("off")
-
-            for i, fn in enumerate(test_images_B):
-                test_image = cv2.imread(fn)
-                test_image_tensor = numpy.expand_dims(test_image, 0)
-                predict_image = autoencoder_A.predict(test_image_tensor)
-
-                ax[i, 2].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
-                ax[i, 3].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
-                ax[i, 2].set_title("Osoba B")
-                ax[i, 3].set_title("Osoba A")
-                ax[i, 2].axis("off")
-                ax[i, 3].axis("off")
-
-            plt.savefig(history_dir + str(epoch).zfill(3) + "_test_images.jpg")
-            plt.show()
-            plt.close()
