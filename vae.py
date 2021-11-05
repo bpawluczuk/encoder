@@ -264,6 +264,7 @@ test_avg_history_acc = []
 history_dir = 'history/VAE/'
 stats_loss = history_dir + 'stats_loss.txt'
 stats_acc = history_dir + 'stats_acc.txt'
+stats_time = history_dir + 'stats_time.txt'
 
 # ********************************************************************************
 
@@ -271,6 +272,9 @@ start_time = datetime.datetime.now()
 
 for epoch in range(epochs):
     epoch += 1
+
+    start_epoch_time = datetime.datetime.now()
+
     for batch in range(batches):
         batch += 1
 
@@ -347,11 +351,20 @@ for epoch in range(epochs):
                 ax[i, 2].axis("off")
                 ax[i, 3].axis("off")
 
-            plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
             plt.show()
+            plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
             plt.close()
 
         if batch % batches == 0 and epoch != 1:
+
+            # ------- Epoch time ------------------
+
+            end_epoch_time = datetime.datetime.now() - start_epoch_time
+            with open(stats_time, "a+") as f:
+                f.write(str(end_epoch_time) + "\n")
+                f.close()
+
+            # ------- Epoch index -----------------
 
             avg_index.append(len(avg_index) + 1)
 

@@ -366,6 +366,7 @@ stats_loss_disc = history_dir + 'stats_loss_disc.txt'
 stats_acc_disc = history_dir + 'stats_acc_disc.txt'
 stats_loss_gen = history_dir + 'stats_loss_gen.txt'
 stats_acc_gen = history_dir + 'stats_acc_gen.txt'
+stats_time = history_dir + 'stats_time.txt'
 
 # ********************************************************************************
 
@@ -376,6 +377,9 @@ fake = numpy.zeros((batch_size,) + (32, 32, 1))
 
 for epoch in range(epochs):
     epoch += 1
+
+    start_epoch_time = datetime.datetime.now()
+
     for batch in range(batches):
         batch += 1
 
@@ -403,9 +407,9 @@ for epoch in range(epochs):
 
         if 1:
             epoch_loss_history_disc.append(d_loss[0])
-            epoch_acc_history_disc.append(d_loss[1])
-            epoch_loss_history_gen.append(d_loss[0])
-            epoch_acc_history_gen.append(d_loss[1])
+            epoch_acc_history_disc.append(100 * d_loss[1])
+            epoch_loss_history_gen.append(g_loss[0])
+            epoch_acc_history_gen.append(numpy.mean(g_loss[1:3]))
 
         print(
             "[Epoch %d/%d] [Batch %d/%d] [D loss: %f, acc: %3d%%] [G loss: %05f, adv: %05f, recon: %05f, same: %05f] time: %s " \
@@ -476,12 +480,21 @@ for epoch in range(epochs):
                 ax[i, 2].axis("off")
                 ax[i, 3].axis("off")
 
-            plt.clf()
-            plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
             plt.show()
+            plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
+            plt.clf()
             plt.close()
 
         if batch % batches == 0:
+
+            # ------- Epoch time ------------------
+
+            end_epoch_time = datetime.datetime.now() - start_epoch_time
+            with open(stats_time, "a+") as f:
+                f.write(str(end_epoch_time) + "\n")
+                f.close()
+
+            # ------- Epoch index -----------------
 
             avg_index.append(len(avg_index) + 1)
 
@@ -500,11 +513,12 @@ for epoch in range(epochs):
 
             epoch_loss_history_disc = []
 
-
             plt.scatter(avg_index, avg_history_loss_disc, s=20, label="Discriminator loss")
             plt.legend()
             plt.show()
             plt.savefig(history_dir + "loss_disc_" + str(epoch).zfill(3) + "_plot.jpg")
+            plt.clf()
+            plt.close()
 
             # ------- Accuracy discriminator -------
 
@@ -545,3 +559,5 @@ for epoch in range(epochs):
             plt.legend()
             plt.show()
             plt.savefig(history_dir + "loss_gen_" + str(epoch).zfill(3) + "_plot.jpg")
+            plt.clf()
+            plt.close()

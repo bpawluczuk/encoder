@@ -249,6 +249,7 @@ test_avg_history_acc = []
 history_dir = 'history/AE/'
 stats_loss = history_dir + 'stats_loss.txt'
 stats_acc = history_dir + 'stats_acc.txt'
+stats_time = history_dir + 'stats_time.txt'
 
 # ********************************************************************************
 
@@ -257,6 +258,9 @@ start_time = datetime.datetime.now()
 inc = 1
 for epoch in range(epochs):
     epoch += 1
+
+    start_epoch_time = datetime.datetime.now()
+
     for batch in range(batches):
         batch += 1
 
@@ -334,11 +338,20 @@ for epoch in range(epochs):
                 ax[i, 2].axis("off")
                 ax[i, 3].axis("off")
 
-            plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
             plt.show()
+            plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
             plt.close()
 
         if batch % batches == 0 and epoch != 1:
+
+            # ------- Epoch time ------------------
+
+            end_epoch_time = datetime.datetime.now() - start_epoch_time
+            with open(stats_time, "a+") as f:
+                f.write(str(end_epoch_time) + "\n")
+                f.close()
+
+            # ------- Epoch index -----------------
 
             avg_index.append(len(avg_index) + 1)
 
@@ -381,48 +394,3 @@ for epoch in range(epochs):
             # plt.legend()
             # plt.show()
             # plt.savefig(history_dir + "acc_" + str(epoch).zfill(3) + "_plot.jpg")
-
-            # -------
-
-        if 0:
-
-            test_avg_index.append(len(test_avg_index) + 1)
-
-            _, ax = plt.subplots(4, 2, figsize=(16, 16))
-            for i, fn in enumerate(test_images_A):
-                test_image = cv2.imread(fn)
-                test_image_tensor = numpy.expand_dims(test_image, 0)
-                predict_image = autoencoder_B.predict(test_image_tensor)
-
-                test_loss, test_acc = autoencoder_A.test_on_batch(predict_image, test_image_tensor)
-
-                test_epoch_loss_history_encoder.append(test_loss)
-
-                for i, fn in enumerate(test_images_A):
-                    test_image = cv2.imread(fn)
-                    test_image_tensor = numpy.expand_dims(test_image, 0)
-                    predict_image = autoencoder_B.predict(test_image_tensor)
-
-                    ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
-                    ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
-                    ax[i, 0].set_title("Osoba A")
-                    ax[i, 1].set_title("Osoba B")
-                    ax[i, 0].axis("off")
-                    ax[i, 1].axis("off")
-
-            plt.show()
-            plt.close()
-
-            loss_sum = 0
-            avg_loss = 0
-            for loss in test_epoch_loss_history_encoder:
-                loss_sum += loss
-
-            avg_loss = loss_sum / len(test_epoch_loss_history_encoder)
-            test_avg_history_loss.append(avg_loss)
-
-            test_epoch_loss_history_encoder = []
-
-            plt.scatter(test_avg_index, test_avg_history_loss, s=20, label="Encoder test")
-            plt.legend()
-            plt.show()
