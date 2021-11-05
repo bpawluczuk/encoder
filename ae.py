@@ -1,7 +1,9 @@
 import datetime
-
 import cv2
 import numpy
+import seaborn as sns
+
+sns.set()
 
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -332,7 +334,8 @@ for epoch in range(epochs):
                 ax[i, 2].axis("off")
                 ax[i, 3].axis("off")
 
-            plt.savefig(history_dir + str(epoch).zfill(3) + "_test_images.jpg")
+            plt.clf()
+            plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
             plt.show()
             plt.close()
 
@@ -357,10 +360,11 @@ for epoch in range(epochs):
 
             # -------
 
-            # plt.clf()
-            # plt.scatter(avg_index, avg_history_loss, s=20, label="Encoder loss")
-            # plt.legend()
-            # plt.show()
+            plt.clf()
+            plt.scatter(avg_index, avg_history_loss, s=20, label="Encoder loss")
+            plt.legend()
+            plt.show()
+            plt.savefig(history_dir + "loss_" + str(epoch).zfill(3) + "_plot.jpg")
 
             # -------
 
@@ -383,10 +387,11 @@ for epoch in range(epochs):
             # plt.scatter(avg_index, avg_history_acc, s=20, label="Encoder accuracy")
             # plt.legend()
             # plt.show()
+            # plt.savefig(history_dir + "acc_" + str(epoch).zfill(3) + "_plot.jpg")
 
             # -------
 
-        if batch % batches == 0 and epoch != 1:
+        if 0:
 
             test_avg_index.append(len(test_avg_index) + 1)
 
@@ -412,6 +417,7 @@ for epoch in range(epochs):
                     ax[i, 0].axis("off")
                     ax[i, 1].axis("off")
 
+            plt.clf()
             plt.show()
             plt.close()
 

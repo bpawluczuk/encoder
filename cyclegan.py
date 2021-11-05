@@ -1,7 +1,9 @@
 import datetime
-
 import cv2
 import numpy
+import seaborn as sns
+
+sns.set()
 
 import matplotlib.pyplot as plt
 import tensorflow as tf
