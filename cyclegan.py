@@ -454,7 +454,7 @@ for epoch in range(epochs):
 
         if batch % batches == 0:
 
-            _, ax = plt.subplots(4, 4, figsize=(16, 16))
+            _, ax = plt.subplots(4, 4, figsize=(20, 20))
 
             for i, fn in enumerate(valid_images_A):
                 test_image = cv2.imread(fn)
@@ -480,9 +480,8 @@ for epoch in range(epochs):
                 ax[i, 2].axis("off")
                 ax[i, 3].axis("off")
 
-            plt.show()
             plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
-            plt.clf()
+            plt.show()
             plt.close()
 
         if batch % batches == 0:
@@ -515,8 +514,9 @@ for epoch in range(epochs):
 
             # plt.scatter(avg_index, avg_history_loss_disc, s=20, label="Discriminator loss")
             # plt.legend()
-            # plt.show()
             # plt.savefig(history_dir + "loss_disc_" + str(epoch).zfill(3) + "_plot.jpg")
+            # plt.show()
+            # plt.close()
 
             # ------- Accuracy discriminator -------
 
@@ -535,8 +535,9 @@ for epoch in range(epochs):
 
             # plt.scatter(avg_index, avg_history_acc_disc, s=20, label="Discriminator accuracy")
             # plt.legend()
-            # plt.show()
             # plt.savefig(history_dir + "acc_disc_" + str(epoch).zfill(3) + "_plot.jpg")
+            # plt.show()
+            # plt.close()
 
             # ------- Loss generator ----------------
 
@@ -555,8 +556,9 @@ for epoch in range(epochs):
 
             # plt.scatter(avg_index, avg_history_loss_gen, s=20, label="Generator loss")
             # plt.legend()
-            # plt.show()
             # plt.savefig(history_dir + "loss_gen_" + str(epoch).zfill(3) + "_plot.jpg")
+            # plt.show()
+            # plt.close()
 
             fig, axs = plt.subplots(2, 2)
             axs[0, 0].plot(avg_index, avg_history_loss_disc, label="Discriminator loss")

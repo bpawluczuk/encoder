@@ -325,7 +325,7 @@ for epoch in range(epochs):
 
         if batch % batches == 0:
 
-            _, ax = plt.subplots(4, 4, figsize=(16, 16))
+            _, ax = plt.subplots(4, 4, figsize=(20, 20))
 
             for i, fn in enumerate(valid_images_A):
                 test_image = cv2.imread(fn)
@@ -351,8 +351,8 @@ for epoch in range(epochs):
                 ax[i, 2].axis("off")
                 ax[i, 3].axis("off")
 
-            plt.show()
             plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
+            plt.show()
             plt.close()
 
         if batch % batches == 0 and epoch != 1:
@@ -385,8 +385,9 @@ for epoch in range(epochs):
 
             plt.scatter(avg_index, avg_history_loss, s=20, label="Encoder loss")
             plt.legend()
-            plt.show()
             plt.savefig(history_dir + "loss_" + str(epoch).zfill(3) + "_plot.jpg")
+            plt.show()
+            plt.close()
 
             # ------- Accuracy encoder -----------
 
@@ -405,5 +406,6 @@ for epoch in range(epochs):
 
             # plt.scatter(avg_index, avg_history_acc, s=20, label="Encoder accuracy")
             # plt.legend()
-            # plt.show()
             # plt.savefig(history_dir + "acc_" + str(epoch).zfill(3) + "_plot.jpg")
+            # plt.show()
+            # plt.close()
