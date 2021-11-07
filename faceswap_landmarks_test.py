@@ -2,10 +2,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-from lib.facial_landmarks import FaceLandmarks
-from lib.seamless_image import seamless_images, seamless_images_mp
-
-face_landmarks = FaceLandmarks()
 faceModule = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
