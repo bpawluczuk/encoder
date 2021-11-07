@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 import cv2
@@ -194,7 +193,6 @@ try:
 except:
     print("model does not exist")
 
-
 # *******************************************************************
 
 test_images_A = get_image_paths("data_train/OL_NEW/testOL")
@@ -227,3 +225,4 @@ for fn in test_images_B:
     predict_image = numpy.clip(predict_image * 255, 0, 255).astype(numpy.uint8)
 
     cv2.imwrite(str(output_dir) + "/predicted_img_{i}.jpg".format(i=inc), predict_image)
+
