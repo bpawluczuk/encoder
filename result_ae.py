@@ -200,7 +200,20 @@ except:
 test_images_A = get_image_paths("data_train/OL_NEW/testOL")
 test_images_B = get_image_paths("data_train/LU_NEW/testLU")
 
-# output_dir = Path('output/AE/oliwka_laura')
+output_dir = Path('output/AE/oliwka_laura')
+
+inc = 0
+for fn in test_images_A:
+    inc = inc + 1
+    source_image = cv2.imread(fn)
+    cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
+
+    source_image_tensor = numpy.expand_dims(source_image, 0)
+    predict_image = autoencoder_B.predict(source_image_tensor)[0]
+    predict_image = numpy.clip(predict_image * 255, 0, 255).astype(numpy.uint8)
+
+    cv2.imwrite(str(output_dir) + "/predicted_img_{i}.jpg".format(i=inc), predict_image)
+
 output_dir = Path('output/AE/laura_oliwka')
 
 inc = 0

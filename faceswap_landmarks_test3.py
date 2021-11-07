@@ -60,14 +60,57 @@ def getFaceCoordinates(source_image):
 
     return sub_face_resize
 
-img = getFaceCoordinates(cv2.imread(oryginal_image_path))
+
+#--------- Predict ---------------
+
+predict_image = getFaceCoordinates(cv2.imread(predicted_image_path))
+cv2.imshow('image_predict', predict_image)
 
 with faceModule.FaceMesh(static_image_mode=True) as face:
-    image_oryginal = img.copy()
-    height, width, _ = image_oryginal.shape
-    cv2.imshow('image_oryginal', image_oryginal)
+    image = predict_image.copy()
+    height, width, _ = image.shape
 
-    results = face.process(cv2.cvtColor(image_oryginal, cv2.COLOR_BGR2RGB))
+    results = face.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
+    facelandmarks = []
+    for facial_landmarks in results.multi_face_landmarks:
+        for i in range(0, 468):
+            pt1 = facial_landmarks.landmark[i]
+            x = int(pt1.x * width)
+            y = int(pt1.y * height)
+            facelandmarks.append([x, y])
+
+        facelandmarks = np.array(facelandmarks, np.int32)
+
+        if facelandmarks.any():
+            convexhull_predict = cv2.convexHull(facelandmarks)
+            mask_predict = np.zeros((height, width), np.uint8)
+            cv2.polylines(mask_predict, [convexhull_predict], True, 255, 3)
+
+            # ------- Predict Image -------------
+
+            image_predict_face_mask = cv2.fillConvexPoly(mask_predict, convexhull_predict, 255)
+            image_predict_face_mask = cv2.bitwise_not(image_predict_face_mask)
+            cv2.imshow('Predict image mask', image_predict_face_mask)
+
+            background_predict = cv2.bitwise_and(image, image, mask=image_predict_face_mask)
+            cv2.imshow('Predict image crop face', background_predict)
+
+            image_predict_face = cv2.bitwise_and(image, image, mask=mask_predict)
+            cv2.imshow('Predict image face', image_predict_face)
+
+
+#--------- Oryginal ---------------
+
+
+oryginal_image = getFaceCoordinates(cv2.imread(oryginal_image_path))
+cv2.imshow('image_oryginal', oryginal_image)
+
+with faceModule.FaceMesh(static_image_mode=True) as face:
+    image = oryginal_image.copy()
+    height, width, _ = image.shape
+
+    results = face.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
 
     facelandmarks = []
     for facial_landmarks in results.multi_face_landmarks:
@@ -82,8 +125,7 @@ with faceModule.FaceMesh(static_image_mode=True) as face:
         if facelandmarks.any():
             convexhull_oryginal = cv2.convexHull(facelandmarks)
             mask_oryginal = np.zeros((height, width), np.uint8)
-            mask_oryginal_zeros = np.zeros((height, width), np.uint8)
-            # cv2.polylines(mask_oryginal, [convexhull_oryginal], True, 255, 3)
+            cv2.polylines(mask_oryginal, [convexhull_oryginal], True, 255, 3)
 
             # ------- Oryginal Image -------------
 
@@ -91,51 +133,38 @@ with faceModule.FaceMesh(static_image_mode=True) as face:
             image_oryginal_face_mask = cv2.bitwise_not(image_oryginal_face_mask)
             cv2.imshow('Oryginal image mask', image_oryginal_face_mask)
 
-            background_oryginal = cv2.bitwise_and(image_oryginal, image_oryginal, mask=image_oryginal_face_mask)
+            background_oryginal = cv2.bitwise_and(image, image, mask=image_oryginal_face_mask)
             cv2.imshow('Oryginal image crop face', background_oryginal)
 
-            image_oryginal_face = cv2.bitwise_and(image_oryginal, image_oryginal, mask=mask_oryginal)
+            image_oryginal_face = cv2.bitwise_and(image, image, mask=mask_oryginal)
             cv2.imshow('Oryginal image face', image_oryginal_face)
 
-            # ------- Predict Image -------------
 
-            # image_predict = cv2.imread(predicted_image_path)
-            # height, width, _ = image_predict.shape
-            image_predict = getFaceCoordinates(cv2.imread(predicted_image_path))
-            height, width, _ = image_predict.shape
-            cv2.imshow('image_predict', image_predict)
 
-            background_predict = cv2.bitwise_and(image_predict, image_predict, mask=image_oryginal_face_mask)
-            cv2.imshow('Predict image crop face', background_predict)
 
-            image_predict_face = cv2.bitwise_and(image_predict, image_predict, mask=mask_oryginal)
-            cv2.imshow('Predict image face', image_predict_face)
 
-            image_result = cv2.add(background_oryginal, image_predict_face)
-            cv2.imshow('Result', image_result)
+            # image_result = cv2.add(background_predict, image_predict_face)
+            # cv2.imshow('Result', image_result)
 
-            # ------- Seamless Image -------------
 
-            (x, y, w, h) = cv2.boundingRect(convexhull_oryginal)
-            cv2.rectangle(image_result, (x, y, w, h), (255, 0, 255), 2)
-            cv2.imshow('Result2', image_result)
 
-    (x, y, w, h) = cv2.boundingRect(convexhull_oryginal)
+    # (x, y, w, h) = cv2.boundingRect(convexhull_oryginal)
+    #
+    # center_x = (int((x + x + w) / 2))
+    # center_y = (int((y + y + h) / 2))
+    #
+    # center_face = (center_x, center_y)
+    #
+    # result_image = cv2.seamlessClone(
+    #             image_oryginal,
+    #             image_result,
+    #             mask_oryginal_zeros,
+    #             center_face,
+    #             cv2.NORMAL_CLONE
+    #         )
+    #
+    # cv2.imshow('Result seamlessClone', result_image)
 
-    center_x = (int((x + x + w) / 2))
-    center_y = (int((y + y + h) / 2))
 
-    center_face = (center_x, center_y)
-
-    result_image = cv2.seamlessClone(
-                image_oryginal,
-                image_result,
-                mask_oryginal_zeros,
-                center_face,
-                cv2.NORMAL_CLONE
-            )
-
-    cv2.imshow('Result seamlessClone', result_image)
-
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+cv2.waitKey(0)
+cv2.destroyAllWindows()
