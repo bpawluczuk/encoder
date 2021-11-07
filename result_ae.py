@@ -200,8 +200,8 @@ except:
 test_images_A = get_image_paths("data_train/OL_NEW/testOL")
 test_images_B = get_image_paths("data_train/LU_NEW/testLU")
 
+# output_dir = Path('output/AE/oliwka_laura')
 output_dir = Path('output/AE/laura_oliwka')
-output_dir = Path('output/AE/oliwka_laura')
 
 inc = 0
 for fn in test_images_B:

@@ -3,11 +3,11 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-# source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/laura_frame/"
-# dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/LU_NEW/trainLU/"
+source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/laura_frame/"
+dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/LU_NEW/trainLU/"
 
-source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/oliwia_frame/"
-dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/OL_NEW/trainOL/"
+# source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/oliwia_frame/"
+# dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/OL_NEW/trainOL/"
 
 mpFaceDect = mp.solutions.face_detection
 mpDrawing = mp.solutions.drawing_utils
@@ -17,7 +17,7 @@ mp_drawing_styles = mp.solutions.drawing_styles
 faceModule = mp.solutions.face_mesh
 
 
-def getFaceCoordinates(source_image, additional_size_from_center=192):
+def getFaceCoordinates(source_image, additional_size_from_center=216):
     with faceModule.FaceMesh(static_image_mode=True) as face:
         img = source_image.copy()
         height, width, _ = img.shape
@@ -40,20 +40,10 @@ def getFaceCoordinates(source_image, additional_size_from_center=192):
 
         (x, y, w, h) = cv2.boundingRect(convexhull)
         cv2.rectangle(img, (x, y, w, h), (255, 0, 0), 2)
-        # cv2.imshow('convexhull box', img)
+        cv2.imshow('convexhull box', img)
 
         center_x = (int((x + x + w) / 2))
         center_y = (int((y + y + h) / 2))
-
-        center_face = (center_x, center_y)
-        result_image = cv2.seamlessClone(
-            img,
-            img,
-            mask,
-            center_face,
-            cv2.NORMAL_CLONE
-        )
-        # cv2.imshow('seamlessClone', result_image)
 
         x1 = center_x - additional_size_from_center
         x2 = center_x + additional_size_from_center
@@ -64,7 +54,18 @@ def getFaceCoordinates(source_image, additional_size_from_center=192):
         h = y2 - y1
 
         cv2.rectangle(img, (x1, y1, w, h), (255, 127, 127), 3)
-        # cv2.imshow('Result box', img)
+        cv2.imshow('Result box', img)
+
+        sub_face = source_image[y1:y2, x1:x2]
+        center_face = (additional_size_from_center, additional_size_from_center)
+        result_image = cv2.seamlessClone(
+            sub_face,
+            sub_face,
+            mask,
+            center_face,
+            cv2.NORMAL_CLONE
+        )
+        # cv2.imshow('seamlessClone', result_image)
 
     return x1, x2, y1, y2, w, h
 
@@ -92,7 +93,7 @@ def getFace(source_image, file_name):
             cv2.putText(img, f'{int(detection.score[0] * 100)}%', (bbox[0], bbox[1] - 20), cv2.FONT_HERSHEY_PLAIN, 2,
                         (255, 0, 255), 2)
 
-            x1, x2, y1, y2, w, h = getFaceCoordinates(img, 192)
+            x1, x2, y1, y2, w, h = getFaceCoordinates(img, 216)
 
             sub_face = source_image[y1:y2, x1:x2]
 
