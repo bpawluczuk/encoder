@@ -485,7 +485,7 @@ for epoch in range(epochs):
             plt.clf()
             plt.close()
 
-        if batch % 2 == 0:
+        if batch % batches == 0:
 
             # ------- Epoch time ------------------
 
