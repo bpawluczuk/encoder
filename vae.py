@@ -232,7 +232,7 @@ images_B = load_images(images_B) / 255.0
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 batch_size = 1
-epochs = 1000
+epochs = 150
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
 plot_result_test = 1000

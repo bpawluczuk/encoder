@@ -335,7 +335,7 @@ images_B = load_images(images_B) / 255.0
 images_A += images_B.mean(axis=(0, 1, 2)) - images_A.mean(axis=(0, 1, 2))
 
 batch_size = 1
-epochs = 100
+epochs = 150
 dataset_size = len(images_A)
 batches = round(dataset_size / batch_size)
 plot_result_test = 1000
@@ -512,11 +512,11 @@ for epoch in range(epochs):
 
             epoch_loss_history_disc = []
 
-            # plt.scatter(avg_index, avg_history_loss_disc, s=20, label="Discriminator loss")
-            # plt.legend()
-            # plt.savefig(history_dir + "loss_disc_" + str(epoch).zfill(3) + "_plot.jpg")
-            # plt.show()
-            # plt.close()
+            plt.scatter(avg_index, avg_history_loss_disc, s=20, label="Discriminator loss")
+            plt.legend()
+            plt.savefig(history_dir + "loss_disc_" + str(epoch).zfill(3) + "_plot.jpg")
+            plt.show()
+            plt.close()
 
             # ------- Accuracy discriminator -------
 
@@ -533,11 +533,11 @@ for epoch in range(epochs):
 
             epoch_acc_history_disc = []
 
-            # plt.scatter(avg_index, avg_history_acc_disc, s=20, label="Discriminator accuracy")
-            # plt.legend()
-            # plt.savefig(history_dir + "acc_disc_" + str(epoch).zfill(3) + "_plot.jpg")
-            # plt.show()
-            # plt.close()
+            plt.scatter(avg_index, avg_history_acc_disc, s=20, label="Discriminator accuracy")
+            plt.legend()
+            plt.savefig(history_dir + "acc_disc_" + str(epoch).zfill(3) + "_plot.jpg")
+            plt.show()
+            plt.close()
 
             # ------- Loss generator ----------------
 
@@ -554,11 +554,11 @@ for epoch in range(epochs):
 
             epoch_loss_history_gen = []
 
-            # plt.scatter(avg_index, avg_history_loss_gen, s=20, label="Generator loss")
-            # plt.legend()
-            # plt.savefig(history_dir + "loss_gen_" + str(epoch).zfill(3) + "_plot.jpg")
-            # plt.show()
-            # plt.close()
+            plt.scatter(avg_index, avg_history_loss_gen, s=20, label="Generator loss")
+            plt.legend()
+            plt.savefig(history_dir + "loss_gen_" + str(epoch).zfill(3) + "_plot.jpg")
+            plt.show()
+            plt.close()
 
             fig, axs = plt.subplots(2, 2)
             axs[0, 0].plot(avg_index, avg_history_loss_disc, label="Discriminator loss")
