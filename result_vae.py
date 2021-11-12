@@ -1,4 +1,3 @@
-import datetime
 from pathlib import Path
 
 import cv2
@@ -17,10 +16,7 @@ from tensorflow.python.framework.ops import disable_eager_execution
 import tensorflow_addons as tfa
 from tensorflow.keras import layers
 
-from lib.seamless_image import seamless_images
-from lib.util_face import getFaceAndCoordinates
-from lib.utils import get_image_paths, load_images, stack_images
-from lib.training_data import get_training_data
+from lib.utils import get_image_paths, load_images
 from lib.pixel_shuffler import PixelShuffler
 
 config = tf.compat.v1.ConfigProto()
@@ -202,8 +198,8 @@ autoencoder_B = Model(x, decoder_B(encoder(x)))
 autoencoder_B.compile(optimizer=optimizer, loss=vae_loss, metrics=['accuracy'])
 
 encoder.summary()
-# autoencoder_A.summary()
-# autoencoder_B.summary()
+autoencoder_A.summary()
+autoencoder_B.summary()
 
 # ********************************************************************
 
@@ -223,32 +219,82 @@ images_B = get_image_paths("data_train/LU_NEW/testLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
+# ************************
+
 output_dir = Path('output/VAE/oliwka_laura')
+_, ax = plt.subplots(5, 3, figsize=(20, 20))
 
 inc = 0
+i = 0
 for source_image in images_A:
     inc = inc + 1
 
     source_image_tensor = numpy.expand_dims(source_image, 0)
-    predict_image = autoencoder_B.predict(source_image_tensor)[0]
-    predict_image = numpy.clip(predict_image * 255, 0, 255).astype(numpy.uint8)
+    predict_image_tensor = autoencoder_B.predict(source_image_tensor)
+    predict_image = numpy.clip(predict_image_tensor[0] * 255, 0, 255).astype(numpy.uint8)
 
     cv2.imwrite(str(output_dir) + "/predicted_img_{i}.jpg".format(i=inc), predict_image)
+
+    reconstructed_image = autoencoder_A.predict(predict_image_tensor)[0]
+    reconstructed_image = numpy.clip(reconstructed_image * 255, 0, 255).astype(numpy.uint8)
+
+    cv2.imwrite(str(output_dir) + "/reconstructed_img_{i}.jpg".format(i=inc), reconstructed_image)
 
     source_image = numpy.clip(source_image * 255, 0, 255).astype(numpy.uint8)
     cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
 
+    ax[i, 0].imshow(cv2.cvtColor(source_image, cv2.COLOR_BGR2RGB))
+    ax[i, 1].imshow(cv2.cvtColor(predict_image, cv2.COLOR_BGR2RGB))
+    ax[i, 2].imshow(cv2.cvtColor(reconstructed_image, cv2.COLOR_BGR2RGB))
+    ax[i, 0].set_title("Obraz A")
+    ax[i, 1].set_title("Obraz A na obraz B")
+    ax[i, 2].set_title("Rekonstrukcja B na A")
+    ax[i, 0].axis("off")
+    ax[i, 1].axis("off")
+    ax[i, 2].axis("off")
+
+    i = i + 1
+
+plt.savefig(str(output_dir) + "/result.jpg")
+plt.show()
+plt.close()
+
+# ************************
+
 output_dir = Path('output/VAE/laura_oliwka')
+_, ax = plt.subplots(5, 3, figsize=(20, 20))
 
 inc = 0
+i = 0
 for source_image in images_B:
     inc = inc + 1
 
     source_image_tensor = numpy.expand_dims(source_image, 0)
-    predict_image = autoencoder_A.predict(source_image_tensor)[0]
-    predict_image = numpy.clip(predict_image * 255, 0, 255).astype(numpy.uint8)
+    predict_image_tensor = autoencoder_A.predict(source_image_tensor)
+    predict_image = numpy.clip(predict_image_tensor[0] * 255, 0, 255).astype(numpy.uint8)
 
     cv2.imwrite(str(output_dir) + "/predicted_img_{i}.jpg".format(i=inc), predict_image)
 
+    reconstructed_image = autoencoder_B.predict(predict_image_tensor)[0]
+    reconstructed_image = numpy.clip(reconstructed_image * 255, 0, 255).astype(numpy.uint8)
+
+    cv2.imwrite(str(output_dir) + "/reconstructed_img_{i}.jpg".format(i=inc), reconstructed_image)
+
     source_image = numpy.clip(source_image * 255, 0, 255).astype(numpy.uint8)
     cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
+
+    ax[i, 0].imshow(cv2.cvtColor(source_image, cv2.COLOR_BGR2RGB))
+    ax[i, 1].imshow(cv2.cvtColor(predict_image, cv2.COLOR_BGR2RGB))
+    ax[i, 2].imshow(cv2.cvtColor(reconstructed_image, cv2.COLOR_BGR2RGB))
+    ax[i, 0].set_title("Obraz A")
+    ax[i, 1].set_title("Obraz A na obraz B")
+    ax[i, 2].set_title("Rekonstrukcja B na A")
+    ax[i, 0].axis("off")
+    ax[i, 1].axis("off")
+    ax[i, 2].axis("off")
+
+    i = i + 1
+
+plt.savefig(str(output_dir) + "/result.jpg")
+plt.show()
+plt.close()
