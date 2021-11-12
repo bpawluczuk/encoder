@@ -62,7 +62,6 @@ disable_eager_execution()
 
 # ********************************************************************
 
-
 def downsample(
         filters,
         kernel_size=3,
@@ -155,11 +154,8 @@ def vae_loss(input, x_decoded_mean):
 
 def Encoder(input_, name="Encoder"):
     x = downsample(64, kernel_size=5)(input_)
-    # x = downsample(128, strides=1)(x)
     x = downsample(128)(x)
-    # x = downsample(512, strides=1)(x)
     x = downsample(256)(x)
-    # x = downsample(512, strides=1)(x)
     x = downsample(512)(x)
     x = Flatten()(x)
 
@@ -173,7 +169,6 @@ def Encoder(input_, name="Encoder"):
 
     filters = 512
     x = upsampleShuffler(filters)(x)
-    # x = upsampleShuffler(512, filter_times=4)(x)
 
     return Model(input_, x, name=name), z_log_sigma, z_mean
 
@@ -181,20 +176,8 @@ def Encoder(input_, name="Encoder"):
 def Decoder(name="Decoder"):
     input_ = Input(shape=(32, 32, 256))
 
-    # filters = 512
-    # filters //= 2
-    # x = upsampleTranspose(filters)(input_)
-    # x = downsample(filters, strides=1)(x)
     x = upsampleShuffler(256)(input_)
-
-    # filters //= 2
-    # x = upsampleTranspose(filters)(x)
-    # x = downsample(filters, strides=1)(x)
     x = upsampleShuffler(128)(x)
-
-    # filters //= 2
-    # x = upsampleTranspose(filters)(x)
-    # x = downsample(filters, strides=1)(x)
     x = upsampleShuffler(64, filter_times=4)(x)
 
     x = Conv2D(3, kernel_size=5, padding='same', activation='sigmoid')(x)
@@ -235,56 +218,13 @@ except:
 
 # ********************************************************************
 
-def convert_one_image(autoencoder, source_image, output_dir, inc):
-    assert source_image.shape == (256, 256, 3)
+test_images_A = get_image_paths("data_train/OL_NEW/testOL")
+test_images_B = get_image_paths("data_train/LU_NEW/testLU")
 
-    result = None
-
-    sourceImageFace = getFaceAndCoordinates(source_image, output_dir, inc)
-
-    source_image_tensor = numpy.expand_dims(source_image, 0)
-    predict_image = autoencoder.predict(source_image_tensor)[0]
-    predict_image = numpy.clip(predict_image * 255, 0, 255).astype(numpy.uint8)
-
-    cv2.imwrite(str(output_dir) + "/" + str(inc) + "_source_image.jpg", source_image)
-    cv2.imwrite(str(output_dir) + "/" + str(inc) + "_predict_image.jpg", predict_image)
-
-    if sourceImageFace is not None:
-        xmin, ymin, xmax, ymax, h, w, face = sourceImageFace
-
-        source_image_face = cv2.resize(face, (int(128), int(128)))
-
-        # cv2.imshow("Source face", source_image_face)
-        # cv2.imwrite(str(output_dir) + "/" + str(inc) + "_source_image_face.jpg", source_image_face)
-
-        destination_image = source_image.copy()
-        destination_image[ymin:ymin + h, xmin:xmin + w] = predict_image[ymin:ymin + h, xmin:xmin + w]
-
-        # cv2.imshow("Dest image", destination_image)
-        # cv2.imwrite(str(output_dir) + "/" + str(inc) + "_dest_image.jpg", destination_image)
-
-        seamless_destination_image = seamless_images(destination_image, source_image)
-
-        # cv2.imshow("Dest image seamless", seamless_destination_image)
-        cv2.imwrite(str(output_dir) + "/" + str(inc) + "_dest_image_seamless.jpg", seamless_destination_image)
-
-        # cv2.imshow("#1", source_image_tensor[0])
-        # cv2.imshow("#2", predict_image)
-
-        result = seamless_destination_image
-
-    return result
-
-
-# *******************************************************************
-
-images_A = get_image_paths("output/resultOL")
-images_B = get_image_paths("output/resultLU")
-
-output_dir = Path('output/VAE/laura_oliwka')
+output_dir = Path('output/VAE/oliwka_laura')
 
 inc = 0
-for fn in images_A:
+for fn in test_images_A:
     inc = inc + 1
     source_image = cv2.imread(fn)
     cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
@@ -295,6 +235,16 @@ for fn in images_A:
 
     cv2.imwrite(str(output_dir) + "/predicted_img_{i}.jpg".format(i=inc), predict_image)
 
-    # convert_one_image(autoencoder_B, source_image, output_dir, inc)
+output_dir = Path('output/VAE/laura_oliwka')
 
-    # key = cv2.waitKey(0)
+inc = 0
+for fn in test_images_B:
+    inc = inc + 1
+    source_image = cv2.imread(fn)
+    cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
+
+    source_image_tensor = numpy.expand_dims(source_image, 0)
+    predict_image = autoencoder_A.predict(source_image_tensor)[0]
+    predict_image = numpy.clip(predict_image * 255, 0, 255).astype(numpy.uint8)
+
+    cv2.imwrite(str(output_dir) + "/predicted_img_{i}.jpg".format(i=inc), predict_image)
