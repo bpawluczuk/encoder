@@ -196,17 +196,17 @@ except:
 
 # *******************************************************************
 
-images_A = get_image_paths("data_train/OL_NEW/testOL")
-images_B = get_image_paths("data_train/LU_NEW/testLU")
+images_A = get_image_paths("data_train/OL_NEW/validOL")
+images_B = get_image_paths("data_train/LU_NEW/validLU")
 images_A = load_images(images_A) / 255.0
 images_B = load_images(images_B) / 255.0
 
-figsize = 20, 20
+figsize = (20, 20)
 
 # ************************
 
 output_dir = Path('output/AE/oliwka_laura')
-_, ax = plt.subplots(5, 3, figsize=figsize)
+_, ax = plt.subplots(2, 3, figsize=figsize)
 
 inc = 0
 i = 0
@@ -246,7 +246,7 @@ plt.close()
 # ************************
 
 output_dir = Path('output/AE/laura_oliwka')
-_, ax = plt.subplots(5, 3, figsize=figsize)
+_, ax = plt.subplots(2, 3, figsize=figsize)
 
 inc = 0
 i = 0
@@ -270,9 +270,9 @@ for source_image in images_B:
     ax[i, 0].imshow(cv2.cvtColor(source_image, cv2.COLOR_BGR2RGB))
     ax[i, 1].imshow(cv2.cvtColor(predict_image, cv2.COLOR_BGR2RGB))
     ax[i, 2].imshow(cv2.cvtColor(reconstructed_image, cv2.COLOR_BGR2RGB))
-    ax[i, 0].set_title("Obraz A")
-    ax[i, 1].set_title("Obraz A na obraz B")
-    ax[i, 2].set_title("Rekonstrukcja B na A")
+    ax[i, 0].set_title("Obraz B")
+    ax[i, 1].set_title("Obraz B na obraz A")
+    ax[i, 2].set_title("Rekonstrukcja A na B")
     ax[i, 0].axis("off")
     ax[i, 1].axis("off")
     ax[i, 2].axis("off")
