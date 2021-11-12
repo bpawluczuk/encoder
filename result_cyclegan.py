@@ -323,16 +323,16 @@ except:
 
 # ********************************************************************************
 
-test_images_A = get_image_paths("data_train/OL_NEW/testOL")
-test_images_B = get_image_paths("data_train/LU_NEW/testLU")
+images_A = get_image_paths("data_train/OL_NEW/testOL")
+images_B = get_image_paths("data_train/LU_NEW/testLU")
+images_A = load_images(images_A) / 255.0
+images_B = load_images(images_B) / 255.0
 
 output_dir = Path('output/GAN/oliwka_laura')
 
 inc = 0
-for fn in test_images_A:
+for source_image in images_A:
     inc = inc + 1
-    source_image = cv2.imread(fn)
-    cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
 
     source_image_tensor = numpy.expand_dims(source_image, 0)
     predict_image = gen_AB.predict(source_image_tensor)[0]
@@ -340,16 +340,20 @@ for fn in test_images_A:
 
     cv2.imwrite(str(output_dir) + "/predicted_img_{i}.jpg".format(i=inc), predict_image)
 
+    source_image = numpy.clip(source_image * 255, 0, 255).astype(numpy.uint8)
+    cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
+
 output_dir = Path('output/GAN/laura_oliwka')
 
 inc = 0
-for fn in test_images_B:
+for source_image in images_B:
     inc = inc + 1
-    source_image = cv2.imread(fn)
-    cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
 
     source_image_tensor = numpy.expand_dims(source_image, 0)
     predict_image = gen_BA.predict(source_image_tensor)[0]
     predict_image = numpy.clip(predict_image * 255, 0, 255).astype(numpy.uint8)
 
     cv2.imwrite(str(output_dir) + "/predicted_img_{i}.jpg".format(i=inc), predict_image)
+
+    source_image = numpy.clip(source_image * 255, 0, 255).astype(numpy.uint8)
+    cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
