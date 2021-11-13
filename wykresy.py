@@ -7,6 +7,7 @@ sns.set()
 import matplotlib.pyplot as plt
 
 # ********************************************************************
+
 dir = "history/AE/"
 
 loss = []
@@ -18,12 +19,13 @@ with open(dir + "stats_loss.txt", "r") as f:
         loss.append(float(line))
         index.append(i)
 
-# plt.scatter(index, loss, s=20, label="AE koder loss")
+# plt.scatter(index, loss, s=20, label="AE koder - strata")
 # plt.legend()
 # plt.show()
 # plt.close()
 
 # ********************************************************************
+
 dir = "history/VAE/"
 
 loss = []
@@ -32,15 +34,16 @@ i = 0
 with open(dir + "stats_loss.txt", "r") as f:
     for line in f:
         i = i + 1
-        loss.append(float(line))
+        loss.append(float(line)/1000)
         index.append(i)
 
-# plt.scatter(index, loss, s=20, label="VAE koder loss")
+# plt.scatter(index, loss, s=20, label="VAE koder - strata")
 # plt.legend()
 # plt.show()
 # plt.close()
 
 # ********************************************************************
+
 dir = "history/GAN/"
 
 loss = []
@@ -49,15 +52,16 @@ i = 0
 with open(dir + "stats_loss_gen.txt", "r") as f:
     for line in f:
         i = i + 1
-        loss.append(float(line))
+        loss.append(float(line)/10)
         index.append(i)
 
-# plt.scatter(index, loss, s=20, label="GAN generator loss")
+# plt.scatter(index, loss, s=20, label="CGAN generator - strata")
 # plt.legend()
 # plt.show()
 # plt.close()
 
 # ********************************************************************
+
 dir = "history/GAN/"
 
 time = []
@@ -72,12 +76,13 @@ with open(dir + "stats_time.txt", "r") as f:
         time.append(str(round(time_epoc / 60, 2)))
         index.append(i)
 
-plt.scatter(index, time, s=20, label="GAN time")
-plt.legend()
-plt.show()
-plt.close()
+# plt.scatter(index, time, s=20, label="GAN time")
+# plt.legend()
+# plt.show()
+# plt.close()
 
 # ********************************************************************
+
 dir = "history/AE/"
 
 time = []
@@ -92,12 +97,13 @@ with open(dir + "stats_time.txt", "r") as f:
         time.append(str(round(time_epoc / 60, 2)))
         index.append(i)
 
-plt.scatter(index, time, s=20, label="AE time")
-plt.legend()
-plt.show()
-plt.close()
+# plt.scatter(index, time, s=20, label="AE time")
+# plt.legend()
+# plt.show()
+# plt.close()
 
 # ********************************************************************
+
 dir = "history/VAE/"
 
 time = []
@@ -112,7 +118,34 @@ with open(dir + "stats_time.txt", "r") as f:
         time.append(str(round(time_epoc / 60, 2)))
         index.append(i)
 
-plt.scatter(index, time, s=20, label="VAE time")
+# plt.scatter(index, time, s=20, label="VAE time")
+# plt.legend()
+# plt.show()
+# plt.close()
+
+# ********************************************************************
+
+plt.bar(["AE"], [78], label='AE')
+plt.bar(["VAE"], [110], label='VAE')
+plt.bar(["CGAN"], [39], label='GAN')
+plt.title("Objętość modeli w [Mb]")
 plt.legend()
 plt.show()
-plt.close()
+
+# ********************************************************************
+
+plt.bar(["AE"], [4], label='AE')
+plt.bar(["VAE"], [5], label='VAE')
+plt.bar(["CGAN"], [38], label='GAN')
+plt.title("Czas uczenia w [h] dla 40 epok")
+plt.legend()
+plt.show()
+
+# ********************************************************************
+
+plt.bar(["AE"], [40], label='AE')
+plt.bar(["VAE"], [40], label='VAE')
+plt.bar(["CGAN"], [10], label='GAN')
+plt.title("Zadowalające wyniki po [n] epokach")
+plt.legend()
+plt.show()
