@@ -11,11 +11,11 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_face_mesh = mp.solutions.face_mesh
 
-# oryginal_image_path = "data/laura_frame/00000.jpg"
+# oryginal_image_path = "data/laura_frame/03130.jpg"
 # predicted_image_path = "output/AE/laura_oliwka/predicted_img_1.jpg"
 
 oryginal_image_path = "data/oliwia_frame/00000.jpg"
-predicted_image_path = "output/AE/oliwka_laura/predicted_img_1.jpg"
+predicted_image_path = "output/GAN/oliwka_laura/predicted_img_1.jpg"
 
 dest_dir = "output/faceswap/AE"
 
@@ -122,7 +122,7 @@ cv2.imshow('Result', image_result)
 
 # ------- Seamless --------------
 
-(x, y, w, h) = (0, 0, 256, 256)
+# (x, y, w, h) = (0, 0, 256, 256)
 (x, y, w, h) = cv2.boundingRect(convexhull_oryginal)
 
 center_x = (int((x + x + w) / 2))
@@ -137,6 +137,14 @@ result_image_seamless = cv2.seamlessClone(
     center_face,
     cv2.NORMAL_CLONE
 )
+
+# result_image_seamless = cv2.seamlessClone(
+#     oryginal_image,
+#     result_image_seamless,
+#     image_oryginal_face_mask,
+#     center_face,
+#     cv2.NORMAL_CLONE
+# )
 
 cv2.imshow('Result seamlessClone', result_image_seamless)
 
