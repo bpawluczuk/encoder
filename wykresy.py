@@ -145,7 +145,16 @@ plt.show()
 
 plt.bar(["AE"], [40], label='AE')
 plt.bar(["VAE"], [40], label='VAE')
-plt.bar(["CGAN"], [10], label='GAN')
+plt.bar(["CGAN"], [5], label='GAN')
 plt.title("Zadowalające wyniki po [n] epokach")
+plt.legend()
+plt.show()
+
+# ********************************************************************
+
+plt.bar(["AE"], [4], label='AE')
+plt.bar(["VAE"], [4], label='VAE')
+plt.bar(["CGAN"], [8], label='GAN')
+plt.title("Czas procesowania dla 100 obrazów [s]")
 plt.legend()
 plt.show()
