@@ -181,8 +181,8 @@ autoencoder_B = Model(x, decoder_B(encoder(x)))
 autoencoder_B.compile(optimizer=optimizer, loss='mean_absolute_error', metrics=['accuracy'])
 
 encoder.summary()
-autoencoder_A.summary()
-autoencoder_B.summary()
+# autoencoder_A.summary()
+# autoencoder_B.summary()
 
 # ********************************************************************
 

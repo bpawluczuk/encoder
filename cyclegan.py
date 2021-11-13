@@ -349,6 +349,8 @@ test_images_B = get_image_paths("data_train/LU_NEW/testLU")
 
 valid_images_A = get_image_paths("data_train/OL_NEW/validOL")
 valid_images_B = get_image_paths("data_train/LU_NEW/validLU")
+valid_images_A = load_images(valid_images_A) / 255.0
+valid_images_B = load_images(valid_images_B) / 255.0
 
 epoch_loss_history_disc = []
 epoch_loss_history_gen = []
@@ -452,33 +454,45 @@ for epoch in range(epochs):
             cv2.imshow("Results", figure)
             key = cv2.waitKey(1)
 
-        if batch % batches == 0:
+        if batch % plot_result_test == 0:
 
             _, ax = plt.subplots(4, 4, figsize=(20, 20))
 
-            for i, fn in enumerate(valid_images_A):
-                test_image = cv2.imread(fn)
-                test_image_tensor = numpy.expand_dims(test_image, 0)
-                predict_image = gen_AB.predict(test_image_tensor)
+            i = 0
+            for test_image in valid_images_A:
 
-                ax[i, 0].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
-                ax[i, 1].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
+                test_image_tensor = numpy.expand_dims(test_image, 0)
+                predict_image_tensor = gen_AB.predict(test_image_tensor)
+                predict_image = numpy.clip(predict_image_tensor[0] * 255, 0, 255).astype(numpy.uint8)
+
+                test_image = numpy.clip(test_image * 255, 0, 255).astype(numpy.uint8)
+
+                ax[i, 0].imshow(cv2.cvtColor(test_image, cv2.COLOR_BGR2RGB))
+                ax[i, 1].imshow(cv2.cvtColor(predict_image, cv2.COLOR_BGR2RGB))
                 ax[i, 0].set_title("Osoba A")
                 ax[i, 1].set_title("Osoba B")
                 ax[i, 0].axis("off")
                 ax[i, 1].axis("off")
 
-            for i, fn in enumerate(valid_images_B):
-                test_image = cv2.imread(fn)
+                i = i + 1
+
+            i = 0
+            for test_image in valid_images_B:
+
                 test_image_tensor = numpy.expand_dims(test_image, 0)
                 predict_image = gen_BA.predict(test_image_tensor)
+                predict_image = numpy.clip(predict_image_tensor[0] * 255, 0, 255).astype(numpy.uint8)
 
-                ax[i, 2].imshow(cv2.cvtColor(test_image_tensor[0], cv2.COLOR_BGR2RGB))
-                ax[i, 3].imshow(cv2.cvtColor(predict_image[0], cv2.COLOR_BGR2RGB))
+                test_image = numpy.clip(test_image * 255, 0, 255).astype(numpy.uint8)
+
+                ax[i, 2].imshow(cv2.cvtColor(test_image, cv2.COLOR_BGR2RGB))
+                ax[i, 3].imshow(cv2.cvtColor(predict_image, cv2.COLOR_BGR2RGB))
                 ax[i, 2].set_title("Osoba B")
                 ax[i, 3].set_title("Osoba A")
                 ax[i, 2].axis("off")
                 ax[i, 3].axis("off")
+
+                i = i + 1
 
             plt.savefig(history_dir + "predict_" + str(epoch).zfill(3) + ".jpg")
             plt.show()
