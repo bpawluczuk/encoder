@@ -7,6 +7,28 @@ sns.set()
 import matplotlib.pyplot as plt
 
 # ********************************************************************
+loss = [2, 1, 0, 1, 2]
+index = [-2, -1, 0, 1, 2]
+
+plt.plot(index, loss, linestyle='solid', label="MAE")
+plt.xlabel('oczekiwane')
+plt.ylabel('przewidywane')
+plt.legend()
+plt.show()
+plt.close()
+
+# ********************************************************************
+index = numpy.linspace(-2, 2, 100)
+loss = index * index
+
+plt.plot(index, loss, linestyle='solid', label="MSE")
+plt.xlabel('oczekiwane')
+plt.ylabel('przewidywane')
+plt.legend()
+plt.show()
+plt.close()
+
+# ********************************************************************
 
 dir = "history/AE/"
 
@@ -34,7 +56,7 @@ i = 0
 with open(dir + "stats_loss.txt", "r") as f:
     for line in f:
         i = i + 1
-        loss.append(float(line)/1000)
+        loss.append(float(line) / 1000)
         index.append(i)
 
 # plt.scatter(index, loss, s=20, label="VAE koder - strata")
@@ -52,7 +74,7 @@ i = 0
 with open(dir + "stats_loss_gen.txt", "r") as f:
     for line in f:
         i = i + 1
-        loss.append(float(line)/10)
+        loss.append(float(line) / 10)
         index.append(i)
 
 # plt.scatter(index, loss, s=20, label="CGAN generator - strata")
@@ -130,7 +152,7 @@ plt.bar(["VAE"], [110], label='VAE')
 plt.bar(["CGAN"], [39], label='GAN')
 plt.title("Objętość modeli w [Mb]")
 plt.legend()
-plt.show()
+# plt.show()
 
 # ********************************************************************
 
@@ -139,7 +161,7 @@ plt.bar(["VAE"], [5], label='VAE')
 plt.bar(["CGAN"], [38], label='GAN')
 plt.title("Czas uczenia w [h] dla 40 epok")
 plt.legend()
-plt.show()
+# plt.show()
 
 # ********************************************************************
 
@@ -148,7 +170,7 @@ plt.bar(["VAE"], [40], label='VAE')
 plt.bar(["CGAN"], [5], label='GAN')
 plt.title("Zadowalające wyniki po [n] epokach")
 plt.legend()
-plt.show()
+# plt.show()
 
 # ********************************************************************
 
@@ -157,4 +179,4 @@ plt.bar(["VAE"], [4], label='VAE')
 plt.bar(["CGAN"], [8], label='GAN')
 plt.title("Czas procesowania dla 100 obrazów [s]")
 plt.legend()
-plt.show()
+# plt.show()
