@@ -11,8 +11,8 @@ loss = [2, 1, 0, 1, 2]
 index = [-2, -1, 0, 1, 2]
 
 plt.plot(index, loss, linestyle='solid', label="MAE")
-plt.xlabel('oczekiwane')
-plt.ylabel('przewidywane')
+plt.ylabel('strata')
+plt.xlabel('predykcja')
 plt.legend()
 plt.show()
 plt.close()
@@ -22,8 +22,8 @@ index = numpy.linspace(-2, 2, 100)
 loss = index * index
 
 plt.plot(index, loss, linestyle='solid', label="MSE")
-plt.xlabel('oczekiwane')
-plt.ylabel('przewidywane')
+plt.ylabel('strata')
+plt.xlabel('predykcja')
 plt.legend()
 plt.show()
 plt.close()
