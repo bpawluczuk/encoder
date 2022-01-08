@@ -10,7 +10,7 @@ def convert_image(file):
     return np.array(Image.open(file).convert('L'))
 
 
-image = convert_image('/Users/bpawluczuk/Sites/python/encoder/data_train/OL_NEW/testOL/00000.jpg')
+image = convert_image('data_train/OL_NEW/testOL/00000.jpg')
 # image.shape
 
 plt.imshow(image, cmap='gray')
