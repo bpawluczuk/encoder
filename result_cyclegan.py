@@ -346,29 +346,29 @@ for source_image in images_A:
 
     cv2.imwrite(str(output_dir) + "/predicted_img_{i}.jpg".format(i=inc), predict_image)
 
-    reconstructed_image = gen_BA.predict(predict_image_tensor)[0]
-    reconstructed_image = numpy.clip(reconstructed_image * 255, 0, 255).astype(numpy.uint8)
+    # reconstructed_image = gen_BA.predict(predict_image_tensor)[0]
+    # reconstructed_image = numpy.clip(reconstructed_image * 255, 0, 255).astype(numpy.uint8)
+    #
+    # cv2.imwrite(str(output_dir) + "/reconstructed_img_{i}.jpg".format(i=inc), reconstructed_image)
+    #
+    # source_image = numpy.clip(source_image * 255, 0, 255).astype(numpy.uint8)
+    # cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
 
-    cv2.imwrite(str(output_dir) + "/reconstructed_img_{i}.jpg".format(i=inc), reconstructed_image)
-
-    source_image = numpy.clip(source_image * 255, 0, 255).astype(numpy.uint8)
-    cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
-
-    ax[i, 0].imshow(cv2.cvtColor(source_image, cv2.COLOR_BGR2RGB))
-    ax[i, 1].imshow(cv2.cvtColor(predict_image, cv2.COLOR_BGR2RGB))
-    ax[i, 2].imshow(cv2.cvtColor(reconstructed_image, cv2.COLOR_BGR2RGB))
-    ax[i, 0].set_title("Obraz A")
-    ax[i, 1].set_title("Obraz A na obraz B")
-    ax[i, 2].set_title("Rekonstrukcja B na A")
-    ax[i, 0].axis("off")
-    ax[i, 1].axis("off")
-    ax[i, 2].axis("off")
-
-    i = i + 1
-
-plt.savefig(str(output_dir) + "/result.jpg")
-plt.show()
-plt.close()
+#     ax[i, 0].imshow(cv2.cvtColor(source_image, cv2.COLOR_BGR2RGB))
+#     ax[i, 1].imshow(cv2.cvtColor(predict_image, cv2.COLOR_BGR2RGB))
+#     ax[i, 2].imshow(cv2.cvtColor(reconstructed_image, cv2.COLOR_BGR2RGB))
+#     ax[i, 0].set_title("Obraz A")
+#     ax[i, 1].set_title("Obraz A na obraz B")
+#     ax[i, 2].set_title("Rekonstrukcja B na A")
+#     ax[i, 0].axis("off")
+#     ax[i, 1].axis("off")
+#     ax[i, 2].axis("off")
+#
+#     i = i + 1
+#
+# plt.savefig(str(output_dir) + "/result.jpg")
+# plt.show()
+# plt.close()
 
 # ************************
 
@@ -386,26 +386,26 @@ for source_image in images_B:
 
     cv2.imwrite(str(output_dir) + "/predicted_img_{i}.jpg".format(i=inc), predict_image)
 
-    reconstructed_image = gen_AB.predict(predict_image_tensor)[0]
-    reconstructed_image = numpy.clip(reconstructed_image * 255, 0, 255).astype(numpy.uint8)
+    # reconstructed_image = gen_AB.predict(predict_image_tensor)[0]
+    # reconstructed_image = numpy.clip(reconstructed_image * 255, 0, 255).astype(numpy.uint8)
+    #
+    # cv2.imwrite(str(output_dir) + "/reconstructed_img_{i}.jpg".format(i=inc), reconstructed_image)
+    #
+    # source_image = numpy.clip(source_image * 255, 0, 255).astype(numpy.uint8)
+    # cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
 
-    cv2.imwrite(str(output_dir) + "/reconstructed_img_{i}.jpg".format(i=inc), reconstructed_image)
-
-    source_image = numpy.clip(source_image * 255, 0, 255).astype(numpy.uint8)
-    cv2.imwrite(str(output_dir) + "/img_{i}.jpg".format(i=inc), source_image)
-
-    ax[i, 0].imshow(cv2.cvtColor(source_image, cv2.COLOR_BGR2RGB))
-    ax[i, 1].imshow(cv2.cvtColor(predict_image, cv2.COLOR_BGR2RGB))
-    ax[i, 2].imshow(cv2.cvtColor(reconstructed_image, cv2.COLOR_BGR2RGB))
-    ax[i, 0].set_title("Obraz B")
-    ax[i, 1].set_title("Obraz B na obraz A")
-    ax[i, 2].set_title("Rekonstrukcja A na B")
-    ax[i, 0].axis("off")
-    ax[i, 1].axis("off")
-    ax[i, 2].axis("off")
-
-    i = i + 1
-
-plt.savefig(str(output_dir) + "/result.jpg")
-plt.show()
-plt.close()
+#     ax[i, 0].imshow(cv2.cvtColor(source_image, cv2.COLOR_BGR2RGB))
+#     ax[i, 1].imshow(cv2.cvtColor(predict_image, cv2.COLOR_BGR2RGB))
+#     ax[i, 2].imshow(cv2.cvtColor(reconstructed_image, cv2.COLOR_BGR2RGB))
+#     ax[i, 0].set_title("Obraz B")
+#     ax[i, 1].set_title("Obraz B na obraz A")
+#     ax[i, 2].set_title("Rekonstrukcja A na B")
+#     ax[i, 0].axis("off")
+#     ax[i, 1].axis("off")
+#     ax[i, 2].axis("off")
+#
+#     i = i + 1
+#
+# plt.savefig(str(output_dir) + "/result.jpg")
+# plt.show()
+# plt.close()

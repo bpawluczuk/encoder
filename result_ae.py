@@ -205,6 +205,7 @@ figsize = (20, 20)
 
 # ************************
 
+output_dir = Path('output/AE/laura_oliwka')
 output_dir = Path('output/AE/oliwka_laura')
 _, ax = plt.subplots(2, 3, figsize=figsize)
 

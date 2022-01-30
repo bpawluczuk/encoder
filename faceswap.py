@@ -11,11 +11,11 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_face_mesh = mp.solutions.face_mesh
 
-# oryginal_image_path = "data/laura_frame/03130.jpg"
-# predicted_image_path = "output/AE/laura_oliwka/predicted_img_1.jpg"
+# oryginal_image_path = "data/laura_frame/00000.jpg"
+# predicted_image_path = "output/GAN/laura_oliwka/predicted_img_1.jpg"
 
 oryginal_image_path = "data/oliwia_frame/00000.jpg"
-predicted_image_path = "output/VAE/oliwka_laura/predicted_img_1.jpg"
+predicted_image_path = "output/GAN/oliwka_laura/predicted_img_1.jpg"
 
 dest_dir = "output/faceswap/AE"
 
@@ -150,14 +150,6 @@ result_image_seamless = cv2.seamlessClone(
     cv2.NORMAL_CLONE
 )
 
-# result_image_seamless = cv2.seamlessClone(
-#     oryginal_image,
-#     result_image_seamless,
-#     image_oryginal_face_mask,
-#     center_face,
-#     cv2.NORMAL_CLONE
-# )
-
 cv2.imshow('Result seamlessClone', result_image_seamless)
 cv2.imwrite("output/result/image_result_samless.jpg", result_image_seamless)
 
@@ -172,5 +164,5 @@ source_image[y:(y + mask.shape[0]), x:(x + mask.shape[1])] = result_image_resize
 cv2.imshow("image_oryginal_face_mask", source_image)
 cv2.imwrite("output/result/image_oryginal_face_mask_1.jpg", source_image)
 
-cv2.waitKey(0)
+cv2.waitKey(1)
 cv2.destroyAllWindows()
