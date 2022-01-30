@@ -5,15 +5,15 @@ import dlib
 # initialize dlib library's face detector
 # create dlib library's facial landmark predictor
 frontal_face_detector = dlib.get_frontal_face_detector()
-frontal_face_predictor = dlib.shape_predictor("/Users/bpawluczuk/Sites/python/encoder/detect/shape_predictor_68_face_landmarks.dat")
+frontal_face_predictor = dlib.shape_predictor("detect/shape_predictor_68_face_landmarks.dat")
 
 # read the source face image and convert it to grayscale
-source_image = cv2.imread("/Users/bpawluczuk/Sites/python/encoder/data/ryan/frame132.jpg")
+source_image = cv2.imread("data/laura_frame/00000.jpg")
 source_image_grayscale = cv2.cvtColor(source_image, cv2.COLOR_BGR2GRAY)
 cv2.imshow("source_image", source_image)
 
 # read the destination face image and convert it to grayscale
-destination_image = cv2.imread("/Users/bpawluczuk/Sites/python/encoder/data/harrison/frame3579.jpg")
+destination_image = cv2.imread("data/laura_frame/00000.jpg")
 destination_image_grayscale = cv2.cvtColor(destination_image, cv2.COLOR_BGR2GRAY)
 cv2.imshow("destination_image", destination_image)
 
@@ -54,10 +54,11 @@ for source_face in source_faces:
         x_point = source_face_landmarks.part(landmark_no).x
         y_point = source_face_landmarks.part(landmark_no).y
         source_face_landmark_points.append((x_point, y_point))
-        # #just for demo
-        # cv2.circle(source_image,(x_point,y_point),2,(255,255,0),-1)
-        # cv2.putText(source_image, str(landmark_no), (x_point,y_point), cv2.FONT_HERSHEY_SIMPLEX, .3, (255,255,255))
-        # cv2.imshow("1: landmark points of source",source_image)
+        #just for demo
+        cv2.circle(source_image,(x_point,y_point),2,(255,255,0),-1)
+        cv2.putText(source_image, str(landmark_no), (x_point,y_point), cv2.FONT_HERSHEY_SIMPLEX, .3, (255,255,255))
+        cv2.imshow("1: landmark points of source",source_image)
+        cv2.imwrite("output/landmarks.jpg", source_image)
 
     # converting the points into a numpy array
     source_face_landmark_points_array = np.array(source_face_landmark_points, np.int32)

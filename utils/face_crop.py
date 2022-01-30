@@ -3,11 +3,11 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/laura_frame/"
-dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/LU_NEW/trainLU/"
+source_dir = "data/laura_frame/"
+dest_dir = "data/LU_NEW/trainLU/"
 
-source_dir = "/Users/bpawluczuk/Sites/python/encoder/data/oliwia_frame/"
-dest_dir = "/Users/bpawluczuk/Sites/python/encoder/data/OL_NEW/trainOL/"
+source_dir = "data/oliwia_frame/"
+dest_dir = "data/OL_NEW/trainOL/"
 
 mpFaceDect = mp.solutions.face_detection
 mpDrawing = mp.solutions.drawing_utils

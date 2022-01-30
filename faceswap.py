@@ -15,7 +15,7 @@ mp_face_mesh = mp.solutions.face_mesh
 # predicted_image_path = "output/AE/laura_oliwka/predicted_img_1.jpg"
 
 oryginal_image_path = "data/oliwia_frame/00000.jpg"
-predicted_image_path = "output/GAN/oliwka_laura/predicted_img_1.jpg"
+predicted_image_path = "output/VAE/oliwka_laura/predicted_img_1.jpg"
 
 dest_dir = "output/faceswap/AE"
 
@@ -65,11 +65,11 @@ x, y, w, h, source_image, oryginal_image = getFaceCoordinates(cv2.imread(orygina
 
 # oryginal_image = cv2.imread(oryginal_image_path)
 cv2.imshow('oryginal_image', oryginal_image)
+cv2.imwrite("output/result/oryginal_image.jpg", oryginal_image)
 height, width, _ = oryginal_image.shape
 
 frontal_face_detector = dlib.get_frontal_face_detector()
-frontal_face_predictor = dlib.shape_predictor(
-    "/Users/bpawluczuk/Sites/python/encoder/detect/shape_predictor_68_face_landmarks.dat")
+frontal_face_predictor = dlib.shape_predictor("detect/shape_predictor_68_face_landmarks.dat")
 
 destination_image_grayscale = cv2.cvtColor(oryginal_image, cv2.COLOR_BGR2GRAY)
 destination_faces = frontal_face_detector(destination_image_grayscale, 1)
@@ -84,6 +84,11 @@ for destination_face in destination_faces:
         x_point = destination_face_landmarks.part(landmark_no).x
         y_point = destination_face_landmarks.part(landmark_no).y
         destination_face_landmark_points.append((x_point, y_point))
+        cv2.circle(source_image, (x_point, y_point), 2, (255, 255, 0), -1)
+        cv2.putText(source_image, str(landmark_no), (x_point, y_point), cv2.FONT_HERSHEY_SIMPLEX, .3, (255, 255, 255))
+
+    cv2.imshow("1: landmark points of source", source_image)
+    cv2.imwrite("output/result/landmarks.jpg", source_image)
 
     landmarks = np.array(destination_face_landmark_points, np.int32)
 
@@ -94,31 +99,38 @@ for destination_face in destination_faces:
     image_oryginal_face_mask = cv2.fillConvexPoly(mask_oryginal, convexhull_oryginal, 255)
     image_oryginal_face_mask = cv2.bitwise_not(image_oryginal_face_mask)
     cv2.imshow('Oryginal image mask', image_oryginal_face_mask)
+    cv2.imwrite("output/result/oryginal_image_mask.jpg", image_oryginal_face_mask)
 
     background_oryginal = cv2.bitwise_and(oryginal_image, oryginal_image, mask=image_oryginal_face_mask)
     cv2.imshow('Oryginal image crop face', background_oryginal)
+    cv2.imwrite("output/result/oryginal_image_crop_face.jpg", background_oryginal)
 
     image_oryginal_face = cv2.bitwise_and(oryginal_image, oryginal_image, mask=mask_oryginal)
     cv2.imshow('Oryginal image face', image_oryginal_face)
+    cv2.imwrite("output/result/oryginal_image_face.jpg", image_oryginal_face)
 
 # --------- Predict ---------------
 
 # predict_image = getFaceCoordinates(cv2.imread(predicted_image_path))
 predict_image = cv2.imread(predicted_image_path)
 cv2.imshow('image_predict', predict_image)
+cv2.imwrite("output/result/image_predict.jpg", predict_image)
 
 # ---------------------------------------------------------------
 
 background_predict = cv2.bitwise_and(predict_image, predict_image, mask=image_oryginal_face_mask)
 cv2.imshow('Predict image crop face', background_predict)
+cv2.imwrite("output/result/image_predict_crop_face.jpg", background_predict)
 
 image_predict_face = cv2.bitwise_and(predict_image, predict_image, mask=mask_oryginal)
 cv2.imshow('Predict image face', image_predict_face)
+cv2.imwrite("output/result/image_predict_face.jpg", image_predict_face)
 
 # ---------------------------------------------------------------
 
 image_result = cv2.add(background_oryginal, image_predict_face)
 cv2.imshow('Result', image_result)
+cv2.imwrite("output/result/image_result.jpg", image_result)
 
 # ------- Seamless --------------
 
@@ -147,6 +159,7 @@ result_image_seamless = cv2.seamlessClone(
 # )
 
 cv2.imshow('Result seamlessClone', result_image_seamless)
+cv2.imwrite("output/result/image_result_samless.jpg", result_image_seamless)
 
 # ------- Result --------------
 
@@ -157,7 +170,7 @@ result_image_resize = cv2.resize(result_image_seamless, (w, h))
 mask = np.zeros((h, w, 3), np.uint8)
 source_image[y:(y + mask.shape[0]), x:(x + mask.shape[1])] = result_image_resize
 cv2.imshow("image_oryginal_face_mask", source_image)
-
+cv2.imwrite("output/result/image_oryginal_face_mask_1.jpg", source_image)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()

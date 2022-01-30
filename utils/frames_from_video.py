@@ -1,6 +1,6 @@
 import cv2
 
-dir = "/Users/bpawluczuk/Sites/python/encoder/data/"
+dir = "../data/ol_nowy.mp4"
 
 vidcap = cv2.VideoCapture(dir + "ol_nowy.mp4")
 vidcap.read()
